@@ -114,7 +114,7 @@ export function ProductCatalog({
         {filteredProducts.map((product) => {
           const itemData = selectedItems.get(product.id)
           const quantity = itemData?.quantity || 0
-          const priceType = itemData?.priceType || 'wholesale'
+          const priceType = itemData?.priceType || 'retail'
           
           const currentPrice = priceType === 'customer' ? product.customerPrice :
                               priceType === 'retail' ? product.retailPrice :
