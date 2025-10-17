@@ -32,6 +32,9 @@ export function ProductCatalog({
   const [filterPriceType, setFilterPriceType] = useState<'all' | 'customer' | 'retail' | 'wholesale'>('all')
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set())
 
+  // Determine if a product is a paper pack based on its description
+  const isPaperPack = (p: Product) => /15\s*Tea\s*Bags/i.test(p.description)
+
   // Filter products based on search term and price type
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -114,7 +117,7 @@ export function ProductCatalog({
         {filteredProducts.map((product) => {
           const itemData = selectedItems.get(product.id)
           const quantity = itemData?.quantity || 0
-          const priceType = itemData?.priceType || 'retail'
+          const priceType = itemData?.priceType || (isPaperPack(product) ? 'retail' : 'wholesale')
           
           const currentPrice = priceType === 'customer' ? product.customerPrice :
                               priceType === 'retail' ? product.retailPrice :
