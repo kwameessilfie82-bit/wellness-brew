@@ -9,6 +9,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 80.00,
     retailPrice: 80.00,
     wholesalePrice: 72.00,
+    distributorPrice: 70.00,
     image: "/hr.png",
   },
   
@@ -20,6 +21,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 50.00,
     retailPrice: 40.00,
     wholesalePrice: 38.00,
+    distributorPrice: 36.00,
     image: "/hg.png",
   },
   
@@ -31,6 +33,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 100.00,
     retailPrice: 85.00,
     wholesalePrice: 84.00,
+    distributorPrice: 80.00,
     image: "/hgt.png",
   },
   
@@ -42,6 +45,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 80.00,
     retailPrice: 75.00,
     wholesalePrice: 72.00,
+    distributorPrice: 80.00,
     image: "/hgt.png",
   },
   
@@ -53,6 +57,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 40.00,
     retailPrice: 35.00,
     wholesalePrice: 36.00,
+    distributorPrice: 27.00,
     image: "/hgtube.png",
   },
   
@@ -64,6 +69,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 50.00,
     retailPrice: 40.00,
     wholesalePrice: 38.00,
+    distributorPrice: 36.00,
     image: "/hc.png",
   },
   
@@ -75,6 +81,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 100.00,
     retailPrice: 85.00,
     wholesalePrice: 84.00,
+    distributorPrice: 80.00,
     image: "/hct.png",
   },
   
@@ -86,6 +93,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 80.00,
     retailPrice: 75.00,
     wholesalePrice: 72.00,
+    distributorPrice: 80.00,
     image: "/hct.png",
   },
   
@@ -98,6 +106,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 40.00,
     retailPrice: 35.00,
     wholesalePrice: 36.00,
+    distributorPrice: 27.00,
     image: "/hctube.png",
   },
   
@@ -109,6 +118,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 50.00,
     retailPrice: 40.00,
     wholesalePrice: 38.00,
+    distributorPrice: 36.00,
     image: "/hs.png",
   },
   
@@ -120,6 +130,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 100.00,
     retailPrice: 85.00,
     wholesalePrice: 84.00,
+    distributorPrice: 80.00,
     image: "/hst.png",
   },
   
@@ -131,6 +142,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 80.00,
     retailPrice: 75.00,
     wholesalePrice: 72.00,
+    distributorPrice: 80.00,
     image: "/hst.png",
   },
   
@@ -143,6 +155,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 40.00,
     retailPrice: 35.00,
     wholesalePrice: 36.00,
+    distributorPrice: 27.00,
     image: "/hstube.png",
   },
   
@@ -154,6 +167,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 50.00,
     retailPrice: 40.00,
     wholesalePrice: 38.00,
+    distributorPrice: 36.00,
     image: "/hpr.png",
   },
   
@@ -165,6 +179,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 100.00,
     retailPrice: 85.00,
     wholesalePrice: 84.00,
+    distributorPrice: 80.00,
     image: "/hprt.png",
   },
   
@@ -176,6 +191,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 80.00,
     retailPrice: 75.00,
     wholesalePrice: 72.00,
+    distributorPrice: 80.00,
     image: "/hprt.png",
   },
   
@@ -188,6 +204,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 40.00,
     retailPrice: 35.00,
     wholesalePrice: 36.00,
+    distributorPrice: 27.00,
     image: "/hprtube.png",
   },
   
@@ -199,6 +216,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 50.00,
     retailPrice: 40.00,
     wholesalePrice: 38.00,
+    distributorPrice: 36.00,
     image: "/ho.png",
   },
   
@@ -210,6 +228,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 100.00,
     retailPrice: 85.00,
     wholesalePrice: 84.00,
+    distributorPrice: 80.00,
     image: "/hot.png",
   },
   
@@ -221,6 +240,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 80.00,
     retailPrice: 75.00,
     wholesalePrice: 72.00,
+    distributorPrice: 80.00,
     image: "/hot.png",
   },
   
@@ -232,6 +252,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 40.00,
     retailPrice: 35.00,
     wholesalePrice: 36.00,
+    distributorPrice: 27.00,
     image: "/hotube.png",
   },
   
@@ -243,6 +264,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 50.00,
     retailPrice: 40.00,
     wholesalePrice: 38.00,
+    distributorPrice: 36.00,
     image: "/hpi.png",
   },
   
@@ -254,6 +276,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 100.00,
     retailPrice: 85.00,
     wholesalePrice: 84.00,
+    distributorPrice: 80.00,
     image: "/hpit.png",
   },
   
@@ -265,6 +288,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 80.00,
     retailPrice: 75.00,
     wholesalePrice: 72.00,
+    distributorPrice: 80.00,
     image: "/hpit.png",
   },
   
@@ -276,6 +300,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 40.00,
     retailPrice: 35.00,
     wholesalePrice: 36.00,
+    distributorPrice: 27.00,
     image: "/hpitube.png",
   },
   
@@ -287,6 +312,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 50.00,
     retailPrice: 40.00,
     wholesalePrice: 38.00,
+    distributorPrice: 36.00,
     image: "/hmo.png",
   },
   
@@ -298,6 +324,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 100.00,
     retailPrice: 85.00,
     wholesalePrice: 84.00,
+    distributorPrice: 80.00,
     image: "/hmot.png",
   },
   
@@ -309,6 +336,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 80.00,
     retailPrice: 75.00,
     wholesalePrice: 72.00,
+    distributorPrice: 80.00,
     image: "/hmot.png",
   },
   
@@ -321,6 +349,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 40.00,
     retailPrice: 35.00,
     wholesalePrice: 36.00,
+    distributorPrice: 27.00,
     image: "/hmotube.png",
   },
   
@@ -332,6 +361,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 50.00,
     retailPrice: 40.00,
     wholesalePrice: 38.00,
+    distributorPrice: 36.00,
     image: "/hmi.png",
   },
   
@@ -343,6 +373,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 100.00,
     retailPrice: 85.00,
     wholesalePrice: 84.00,
+    distributorPrice: 80.00,
     image: "/hmit.png",
   },
   
@@ -354,6 +385,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 80.00,
     retailPrice: 75.00,
     wholesalePrice: 72.00,
+    distributorPrice: 80.00,
     image: "/hmit.png",
   },
   
@@ -365,6 +397,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 40.00,
     retailPrice: 35.00,
     wholesalePrice: 36.00,
+    distributorPrice: 27.00,
     image: "/hmitube.png",
   },
   
@@ -376,6 +409,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 50.00,
     retailPrice: 40.00,
     wholesalePrice: 38.00,
+    distributorPrice: 36.00,
     image: "/hl.png",
   },
   
@@ -387,6 +421,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 100.00,
     retailPrice: 85.00,
     wholesalePrice: 84.00,
+    distributorPrice: 80.00,
     image: "/hlt.png",
   },
   
@@ -398,6 +433,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 80.00,
     retailPrice: 75.00,
     wholesalePrice: 72.00,
+    distributorPrice: 80.00,
     image: "/hlt.png",
   },
 
@@ -409,6 +445,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 40.00,
     retailPrice: 35.00,
     wholesalePrice: 36.00,
+    distributorPrice: 27.00,
     image: "/hltube.png",
   },
   
@@ -420,6 +457,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 360.00,
     retailPrice: 350.00,
     wholesalePrice: 330.00,
+    distributorPrice: 300.00,
     image: "/variety-gift.jpg",
   },
   
@@ -431,6 +469,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 30.00,
     retailPrice: 25.00,
     wholesalePrice: 24.00,
+    distributorPrice: 23.00,
     image: "/variety-pack.png",
   },
 
@@ -442,6 +481,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 60.00,
     retailPrice: 55.00,
     wholesalePrice: 50.00,
+    distributorPrice: 48.00,
     image: "/variety-tin.png",
   },
   
@@ -454,6 +494,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 70.00,
     retailPrice: 60.00,
     wholesalePrice: 60.00,
+    distributorPrice: 55.00,
     image: "/loose-pouches.png",
   },
 ]

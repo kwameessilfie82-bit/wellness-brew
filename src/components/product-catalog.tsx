@@ -13,10 +13,10 @@ import type { Product } from "../lib/types"
 
 interface ProductCatalogProps {
   products: Product[]
-  selectedItems: Map<string, { quantity: number; priceType: 'customer' | 'retail' | 'wholesale' }>
-  onAddItem: (product: Product, priceType: 'customer' | 'retail' | 'wholesale') => void
+  selectedItems: Map<string, { quantity: number; priceType: 'customer' | 'retail' | 'wholesale' | 'distributor' }>
+  onAddItem: (product: Product, priceType: 'customer' | 'retail' | 'wholesale' | 'distributor') => void
   onRemoveItem: (productId: string) => void
-  onPriceTypeChange: (productId: string, priceType: 'customer' | 'retail' | 'wholesale') => void
+  onPriceTypeChange: (productId: string, priceType: 'customer' | 'retail' | 'wholesale' | 'distributor') => void
   onAddProduct: (product: Product) => void
 }
 
@@ -29,7 +29,7 @@ export function ProductCatalog({
   onAddProduct 
 }: ProductCatalogProps) {
   const [searchTerm, setSearchTerm] = useState("")
-  const [filterPriceType, setFilterPriceType] = useState<'all' | 'customer' | 'retail' | 'wholesale'>('all')
+  const [filterPriceType, setFilterPriceType] = useState<'all' | 'customer' | 'retail' | 'wholesale' | 'distributor'>('all')
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set())
 
   // Determine if a product is a paper pack based on its description
@@ -47,7 +47,8 @@ export function ProductCatalog({
     // Filter by price type (show products where the selected price type is available)
     const hasPriceType = filterPriceType === 'customer' ? product.customerPrice > 0 :
                         filterPriceType === 'retail' ? product.retailPrice > 0 :
-                        product.wholesalePrice > 0
+                        filterPriceType === 'wholesale' ? product.wholesalePrice > 0 :
+                        product.distributorPrice > 0
     
     return matchesSearch && hasPriceType
   })
@@ -84,7 +85,7 @@ export function ProductCatalog({
           </div>
           
           {/* Price Type Filter */}
-          <Select value={filterPriceType} onValueChange={(value: 'all' | 'customer' | 'retail' | 'wholesale') => setFilterPriceType(value)}>
+          <Select value={filterPriceType} onValueChange={(value: 'all' | 'customer' | 'retail' | 'wholesale' | 'distributor') => setFilterPriceType(value)}>
             <SelectTrigger className="w-full sm:w-48">
               <SelectValue placeholder="Filter by price type" />
             </SelectTrigger>
@@ -93,6 +94,7 @@ export function ProductCatalog({
               <SelectItem value="customer">Customer Pricing</SelectItem>
               <SelectItem value="retail">Retail Pricing</SelectItem>
               <SelectItem value="wholesale">Wholesale Pricing</SelectItem>
+              <SelectItem value="distributor">Distributor Pricing</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -121,7 +123,8 @@ export function ProductCatalog({
           
           const currentPrice = priceType === 'customer' ? product.customerPrice :
                               priceType === 'retail' ? product.retailPrice :
-                              product.wholesalePrice
+                              priceType === 'wholesale' ? product.wholesalePrice :
+                              product.distributorPrice
 
           const hasValidImage = product.image && 
                                product.image !== "/placeholder.svg" && 
@@ -165,7 +168,7 @@ export function ProductCatalog({
                     <span className="text-sm font-medium">Pricing:</span>
                     <Select 
                       value={priceType} 
-                      onValueChange={(value: 'customer' | 'retail' | 'wholesale') => 
+                      onValueChange={(value: 'customer' | 'retail' | 'wholesale' | 'distributor') => 
                         onPriceTypeChange(product.id, value)
                       }
                     >
@@ -176,6 +179,7 @@ export function ProductCatalog({
                         <SelectItem value="customer">Customer</SelectItem>
                         <SelectItem value="retail">Retail</SelectItem>
                         <SelectItem value="wholesale">Wholesale</SelectItem>
+                        <SelectItem value="distributor">Distributor</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

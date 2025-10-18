@@ -21,7 +21,7 @@ import Image from "next/image"
 
 export default function InvoiceGenerator() {
   const [products, setProducts] = useState<Product[]>(sampleProducts)
-  const [selectedItems, setSelectedItems] = useState<Map<string, { quantity: number; priceType: 'customer' | 'retail' | 'wholesale' }>>(new Map())
+  const [selectedItems, setSelectedItems] = useState<Map<string, { quantity: number; priceType: 'customer' | 'retail' | 'wholesale' | 'distributor' }>>(new Map())
   const [invoiceNumber] = useState(generateInvoiceNumber())
   const [invoiceDate] = useState(new Date().toISOString().split("T")[0])
   const [dueDate, setDueDate] = useState(() => {
@@ -75,7 +75,7 @@ export default function InvoiceGenerator() {
     setProducts((prev) => [...prev, product])
   }
 
-  const handleAddItem = (product: Product, priceType: 'customer' | 'retail' | 'wholesale' = 'customer') => {
+  const handleAddItem = (product: Product, priceType: 'customer' | 'retail' | 'wholesale' | 'distributor' = 'customer') => {
     setSelectedItems((prev) => {
       const newMap = new Map(prev)
       const current = newMap.get(product.id)
@@ -107,7 +107,7 @@ export default function InvoiceGenerator() {
     })
   }
 
-  const handlePriceTypeChange = (productId: string, priceType: 'customer' | 'retail' | 'wholesale') => {
+  const handlePriceTypeChange = (productId: string, priceType: 'customer' | 'retail' | 'wholesale' | 'distributor') => {
     setSelectedItems((prev) => {
       const newMap = new Map(prev)
       const current = newMap.get(productId)
@@ -128,7 +128,8 @@ export default function InvoiceGenerator() {
       
       const currentPrice = itemData.priceType === 'customer' ? product.customerPrice :
                           itemData.priceType === 'retail' ? product.retailPrice :
-                          product.wholesalePrice
+                          itemData.priceType === 'wholesale' ? product.wholesalePrice :
+                          product.distributorPrice
       
       return {
         ...product,
@@ -452,10 +453,10 @@ export default function InvoiceGenerator() {
             </div>
             <div className="min-w-0 flex-1">
               <h1 className="text-2xl sm:text-3xl font-bold text-foreground leading-tight">
-                NutriHealth Invoice Generator
+                NutriHealth
               </h1>
               <p className="text-sm text-muted-foreground mt-1">
-                Create professional invoices for your healthy and tasty teas
+                Professional invoice management for your healthy and tasty teas
               </p>
             </div>
           </div>

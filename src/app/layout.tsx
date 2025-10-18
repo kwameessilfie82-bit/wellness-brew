@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NutriHealth Invoice Generator",
+  title: "NutriHealth",
   description: "Easily generates invoices for nutrihealth distributors",
 };
 

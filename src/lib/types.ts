@@ -5,13 +5,14 @@ export interface Product {
     customerPrice: number
     retailPrice: number
     wholesalePrice: number
+    distributorPrice: number
     image: string
   }
   
   export interface InvoiceItem extends Product {
     quantity: number
     lineTotal: number
-    selectedPriceType: 'customer' | 'retail' | 'wholesale'
+    selectedPriceType: 'customer' | 'retail' | 'wholesale' | 'distributor'
     currentPrice: number
   }
   
