@@ -166,6 +166,24 @@ export function InvoicePreview({ data }: InvoicePreviewProps) {
             </div>
           )}
           
+          {/* Electronic Signature */}
+          <div className="mt-6">
+            <div className="flex justify-end">
+              <div className="text-center">
+                <div className="mb-2">
+                  <Image 
+                    src="/signature.png" 
+                    alt="Electronic Signature" 
+                    width={120} 
+                    height={60} 
+                    className="object-contain"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">Distributor Signature</p>
+              </div>
+            </div>
+          </div>
+          
           {/* Product Logos Footer */}
           <div className="mt-8 pt-6 border-t border-border">
             <div className="flex flex-wrap justify-center items-center gap-4 md:gap-6">
