@@ -23,13 +23,14 @@ export function AddProductDialog({ onAddProduct }: AddProductDialogProps) {
     customerPrice: "",
     retailPrice: "",
     wholesalePrice: "",
+    distributorPrice: "",
     image: "",
   })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!formData.name || !formData.customerPrice || !formData.retailPrice || !formData.wholesalePrice) {
+    if (!formData.name || !formData.customerPrice || !formData.retailPrice || !formData.wholesalePrice || !formData.distributorPrice) {
       return
     }
 
@@ -40,6 +41,7 @@ export function AddProductDialog({ onAddProduct }: AddProductDialogProps) {
       customerPrice: Number.parseFloat(formData.customerPrice),
       retailPrice: Number.parseFloat(formData.retailPrice),
       wholesalePrice: Number.parseFloat(formData.wholesalePrice),
+      distributorPrice: Number.parseFloat(formData.distributorPrice),
       image: formData.image || "/diverse-products-still-life.png",
     }
 
@@ -50,6 +52,7 @@ export function AddProductDialog({ onAddProduct }: AddProductDialogProps) {
       customerPrice: "", 
       retailPrice: "", 
       wholesalePrice: "", 
+      distributorPrice: "",
       image: "" 
     })
     setOpen(false)
@@ -90,7 +93,7 @@ export function AddProductDialog({ onAddProduct }: AddProductDialogProps) {
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="space-y-2">
               <Label htmlFor="customerPrice">Customer Price (GHS) *</Label>
               <Input
@@ -128,6 +131,20 @@ export function AddProductDialog({ onAddProduct }: AddProductDialogProps) {
                 min="0"
                 value={formData.wholesalePrice}
                 onChange={(e) => setFormData({ ...formData, wholesalePrice: e.target.value })}
+                placeholder="0.00"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="distributorPrice">Distributor Price (GHS) *</Label>
+              <Input
+                id="distributorPrice"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.distributorPrice}
+                onChange={(e) => setFormData({ ...formData, distributorPrice: e.target.value })}
                 placeholder="0.00"
                 required
               />
