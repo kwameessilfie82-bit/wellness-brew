@@ -222,6 +222,9 @@ export default function InvoiceGenerator() {
               .justify-between {
                 justify-content: space-between;
               }
+              .justify-end {
+                justify-content: flex-end;
+              }
               .items-start {
                 align-items: flex-start;
               }
@@ -374,8 +377,23 @@ export default function InvoiceGenerator() {
               .grid-cols-2 {
                 grid-template-columns: repeat(2, 1fr);
               }
+              .md\\:grid-cols-2 {
+                grid-template-columns: repeat(2, 1fr);
+              }
+              .flex-wrap {
+                flex-wrap: wrap;
+              }
+              .justify-center {
+                justify-content: center;
+              }
+              .items-center {
+                align-items: center;
+              }
               .gap-4 {
                 gap: 16px;
+              }
+              .gap-6 {
+                gap: 24px;
               }
               .relative {
                 position: relative;
@@ -395,10 +413,216 @@ export default function InvoiceGenerator() {
               .object-cover {
                 object-fit: cover;
               }
+              .object-contain {
+                object-fit: contain;
+              }
               .separator {
                 height: 1px;
                 background-color: #ddd;
                 margin: 16px 0;
+              }
+              .border-t {
+                border-top: 1px solid #ddd;
+              }
+              .border-border {
+                border-color: #ddd;
+              }
+              .pt-4 {
+                padding-top: 16px;
+              }
+              .pt-6 {
+                padding-top: 24px;
+              }
+              .mt-6 {
+                margin-top: 24px;
+              }
+              .mt-8 {
+                margin-top: 32px;
+              }
+              .mb-2 {
+                margin-bottom: 8px;
+              }
+              .space-y-4 > * + * {
+                margin-top: 16px;
+              }
+              .w-full {
+                width: 100%;
+              }
+              .max-w-sm {
+                max-width: 384px;
+              }
+              .text-lg {
+                font-size: 18px;
+              }
+              .text-xl {
+                font-size: 20px;
+              }
+              .italic {
+                font-style: italic;
+              }
+              .uppercase {
+                text-transform: uppercase;
+              }
+              .font-medium {
+                font-weight: 500;
+              }
+              .font-semibold {
+                font-weight: 600;
+              }
+              .font-bold {
+                font-weight: bold;
+              }
+              .text-muted-foreground {
+                color: #666;
+              }
+              .text-primary {
+                color: #000;
+              }
+              .text-foreground {
+                color: #000;
+              }
+              .text-destructive {
+                color: #dc2626;
+              }
+              .bg-secondary {
+                background-color: #f5f5f5;
+              }
+              .rounded {
+                border-radius: 4px;
+              }
+              .rounded-lg {
+                border-radius: 8px;
+              }
+              .p-4 {
+                padding: 16px;
+              }
+              .p-8 {
+                padding: 32px;
+              }
+              .px-2 {
+                padding-left: 8px;
+                padding-right: 8px;
+              }
+              .px-4 {
+                padding-left: 16px;
+                padding-right: 16px;
+              }
+              .py-3 {
+                padding-top: 12px;
+                padding-bottom: 12px;
+              }
+              .py-4 {
+                padding-top: 16px;
+                padding-bottom: 16px;
+              }
+              .mb-4 {
+                margin-bottom: 16px;
+              }
+              .mt-4 {
+                margin-top: 16px;
+              }
+              .flex-shrink-0 {
+                flex-shrink: 0;
+              }
+              .overflow-hidden {
+                overflow: hidden;
+              }
+              .whitespace-pre-line {
+                white-space: pre-line;
+              }
+              .border-b {
+                border-bottom: 1px solid #ddd;
+              }
+              .border-b-2 {
+                border-bottom: 2px solid #000;
+              }
+              .border-primary {
+                border-color: #000;
+              }
+              .border-border {
+                border-color: #ddd;
+              }
+              .border {
+                border: 1px solid #ddd;
+              }
+              .w-12 {
+                width: 48px;
+              }
+              .h-12 {
+                height: 48px;
+              }
+              .w-16 {
+                width: 64px;
+              }
+              .h-16 {
+                height: 64px;
+              }
+              .w-32 {
+                width: 128px;
+              }
+              .w-48 {
+                width: 192px;
+              }
+              .max-w-4xl {
+                max-width: 896px;
+              }
+              .mx-auto {
+                margin-left: auto;
+                margin-right: auto;
+              }
+              .space-y-2 > * + * {
+                margin-top: 8px;
+              }
+              .space-y-8 > * + * {
+                margin-top: 32px;
+              }
+              .leading-tight {
+                line-height: 1.25;
+              }
+              .min-w-0 {
+                min-width: 0;
+              }
+              .flex-1 {
+                flex: 1 1 0%;
+              }
+              .flex-col {
+                flex-direction: column;
+              }
+              .sm\\:flex-row {
+                flex-direction: row;
+              }
+              .sm\\:items-center {
+                align-items: center;
+              }
+              .sm\\:w-auto {
+                width: auto;
+              }
+              .sm\\:text-3xl {
+                font-size: 30px;
+              }
+              .lg\\:flex-row {
+                flex-direction: row;
+              }
+              .lg\\:items-center {
+                align-items: center;
+              }
+              .lg\\:justify-between {
+                justify-content: space-between;
+              }
+              .lg\\:space-y-0 > * + * {
+                margin-top: 0;
+              }
+              .lg\\:w-12 {
+                width: 48px;
+              }
+              .lg\\:h-12 {
+                height: 48px;
+              }
+              .md\\:grid-cols-2 {
+                grid-template-columns: repeat(2, 1fr);
+              }
+              .md\\:p-12 {
+                padding: 48px;
               }
               @media print {
                 body {
