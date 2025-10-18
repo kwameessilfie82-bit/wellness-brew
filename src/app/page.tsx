@@ -177,10 +177,13 @@ export default function InvoiceGenerator() {
       await new Promise(resolve => setTimeout(resolve, 500))
       
       // Use browser's print function with proper styles
-      const printWindow = window.open('', '_blank')
+      const printWindow = window.open('', '_blank', 'noopener,noreferrer')
       if (!printWindow) {
         throw new Error("Popup blocked. Please allow popups for this site.")
       }
+      
+      // Disable URL display in the print window
+      printWindow.document.title = `Invoice ${invoiceData.invoiceNumber}`
       
       // Get the invoice content
       const invoiceContent = invoiceRef.current?.innerHTML
@@ -195,6 +198,8 @@ export default function InvoiceGenerator() {
           <head>
             <title>Invoice ${invoiceData.invoiceNumber}</title>
             <meta charset="utf-8">
+            <meta name="robots" content="noindex, nofollow">
+            <meta name="referrer" content="no-referrer">
             <style>
               * {
                 margin: 0;
@@ -634,6 +639,32 @@ export default function InvoiceGenerator() {
                   padding: 0;
                   max-width: none;
                 }
+                /* Hide URL and page info that browsers add to PDFs */
+                @page {
+                  margin: 0;
+                  size: A4;
+                }
+                body::before,
+                body::after {
+                  display: none !important;
+                }
+                /* Hide any browser-generated content */
+                .print\\:hidden {
+                  display: none !important;
+                }
+              }
+              
+              /* Additional styles to prevent URL display */
+              body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+              
+              /* Hide any potential URL display areas */
+              .url-display,
+              .page-url,
+              .browser-url {
+                display: none !important;
               }
             </style>
           </head>
@@ -650,6 +681,10 @@ export default function InvoiceGenerator() {
       
       // Wait for content to load
       await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      // Hide URL bar and other browser UI elements
+      printWindow.document.body.style.margin = '0'
+      printWindow.document.body.style.padding = '0'
       
       // Trigger print dialog
       printWindow.print()
