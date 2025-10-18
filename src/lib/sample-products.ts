@@ -456,7 +456,7 @@ export const sampleProducts: Product[] = [
     description: "36 Assorted Teas",
     customerPrice: 360.00,
     retailPrice: 350.00,
-    wholesalePrice: 330.00,
+    wholesalePrice: 340.00,
     distributorPrice: 300.00,
     image: "/variety-gift.jpg",
   },
