@@ -433,7 +433,7 @@ export const sampleProducts: Product[] = [
     customerPrice: 80.00,
     retailPrice: 75.00,
     wholesalePrice: 72.00,
-    distributorPrice: 80.00,
+    distributorPrice: 71.00,
     image: "/hlt.png",
   },
 
