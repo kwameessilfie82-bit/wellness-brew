@@ -636,6 +636,24 @@ export default function InvoiceGenerator() {
                 }
                 @page {
                   margin: 0.5in;
+                  /* Hide browser headers and footers */
+                  @top-left { content: ""; }
+                  @top-center { content: ""; }
+                  @top-right { content: ""; }
+                  @bottom-left { content: ""; }
+                  @bottom-center { content: ""; }
+                  @bottom-right { content: ""; }
+                }
+                /* Additional CSS to hide URL and page info */
+                body::before,
+                body::after {
+                  display: none !important;
+                }
+                /* Hide any browser-generated URL display */
+                .print-url,
+                .browser-url,
+                .page-url {
+                  display: none !important;
                 }
               }
             </style>
@@ -653,6 +671,27 @@ export default function InvoiceGenerator() {
       
       // Wait for content to load
       await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      // Add additional CSS to hide URL after content loads
+      const style = printWindow.document.createElement('style')
+      style.textContent = `
+        @media print {
+          @page {
+            margin: 0.5in;
+            @top-left { content: ""; }
+            @top-center { content: ""; }
+            @top-right { content: ""; }
+            @bottom-left { content: ""; }
+            @bottom-center { content: ""; }
+            @bottom-right { content: ""; }
+          }
+          body::before,
+          body::after {
+            display: none !important;
+          }
+        }
+      `
+      printWindow.document.head.appendChild(style)
       
       // Trigger print dialog
       printWindow.print()
