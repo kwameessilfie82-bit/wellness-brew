@@ -165,6 +165,23 @@ export function InvoicePreview({ data }: InvoicePreviewProps) {
               <p className="text-sm text-muted-foreground">{data.latePaymentPolicy}</p>
             </div>
           )}
+          
+          {/* Product Logos Footer */}
+          <div className="mt-8 pt-6 border-t border-border">
+            <div className="flex flex-wrap justify-center items-center gap-4 md:gap-6">
+              <Image src="/hprf.jpg" alt="Hibiscus Prekese" width={60} height={60} className="object-contain" />
+              <Image src="/hmif.jpg" alt="Hibiscus Mint" width={60} height={60} className="object-contain" />
+              <Image src="/hgf.jpg" alt="Hibiscus Ginger" width={60} height={60} className="object-contain" />
+              <Image src="/hof.jpg" alt="Hibiscus Orange" width={60} height={60} className="object-contain" />
+              <Image src="/hr.png" alt="Hibiscus Roots Infusions" width={60} height={60} className="object-contain" />
+              <Image src="/hlgf.jpg" alt="Hibiscus Lemon Grass" width={60} height={60} className="object-contain" />
+              <Image src="/hcf.jpg" alt="Hibiscus Cinnamon" width={60} height={60} className="object-contain" />
+              <Image src="/hsf.jpg" alt="Hibiscus Senna" width={60} height={60} className="object-contain" />
+              <Image src="/hmof.jpg" alt="Hibiscus Moringa" width={60} height={60} className="object-contain" />
+              <Image src="/hpif.jpg" alt="Hibiscus Pineapple" width={60} height={60} className="object-contain" />
+            </div>
+          </div>
+          
           <div className="text-center pt-4">
             <p className="text-xs text-muted-foreground">Thank you for your business!</p>
           </div>

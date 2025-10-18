@@ -51,7 +51,7 @@ export default function InvoiceGenerator() {
 
   const [taxRate, setTaxRate] = useState(0)
   const [discount, setDiscount] = useState(0)
-  const [notes, setNotes] = useState("Thank you for your business! We appreciate your trust in NutriHealth.")
+  const [notes, setNotes] = useState("We appreciate your trust in NutriHealth.")
   const [latePaymentPolicy, setLatePaymentPolicy] = useState(
     "Payment is due within 90 days. Late payments may incur a 2% monthly interest charge.",
   )
