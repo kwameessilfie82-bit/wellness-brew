@@ -153,29 +153,24 @@ export function InvoicePreview({ data }: InvoicePreviewProps) {
 
         {/* Footer */}
         <div className="space-y-4 pt-4">
+          <div className="flex justify-between items-center">
           {data.notes && (
             <div>
               <h3 className="text-sm font-semibold text-muted-foreground uppercase mb-2">Notes</h3>
               <p className="text-sm text-foreground">{data.notes}</p>
             </div>
           )}
-          {data.showLatePaymentPolicy !== false && data.latePaymentPolicy && (
-            <div>
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase mb-2">Late Payment Policy</h3>
-              <p className="text-sm text-muted-foreground">{data.latePaymentPolicy}</p>
-            </div>
-          )}
-          
+                    
           {/* Electronic Signature */}
-          <div className="mt-6">
+          <div className="">
             <div className="flex justify-end">
               <div className="text-center">
                 <div className="mb-2">
                   <Image 
                     src="/signature.png" 
                     alt="Electronic Signature" 
-                    width={120} 
-                    height={60} 
+                    width={100} 
+                    height={40} 
                     className="object-contain"
                   />
                 </div>
@@ -183,10 +178,20 @@ export function InvoicePreview({ data }: InvoicePreviewProps) {
               </div>
             </div>
           </div>
+
+          </div>
+
+          {data.showLatePaymentPolicy !== false && data.latePaymentPolicy && (
+            <div>
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase mb-2">Late Payment Policy</h3>
+              <p className="text-sm text-muted-foreground">{data.latePaymentPolicy}</p>
+            </div>
+          )}
+
           
           {/* Product Logos Footer */}
           <div className="mt-8 pt-6 border-t border-border">
-            <div className="flex flex-wrap justify-center items-center gap-4 md:gap-6">
+            <div className="flex flex-wrap justify-center items-center gap-1 md:gap-6">
               <Image src="/hprf.jpg" alt="Hibiscus Prekese" width={60} height={60} className="object-contain" />
               <Image src="/hmif.jpg" alt="Hibiscus Mint" width={60} height={60} className="object-contain" />
               <Image src="/hgf.jpg" alt="Hibiscus Ginger" width={60} height={60} className="object-contain" />
