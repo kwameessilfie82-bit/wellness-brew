@@ -61,7 +61,7 @@ const putHandler = withAdminAuth(
         name: name || existingCategory.name,
         slug: slug || existingCategory.slug,
         description: description !== undefined ? description : existingCategory.description,
-        image: image !== undefined ? image : existingCategory.image,
+        image: image !== undefined ? (Array.isArray(image) ? JSON.stringify(image) : image) : existingCategory.image,
         isActive: isActive !== undefined ? isActive : existingCategory.isActive,
         sortOrder: sortOrder !== undefined ? sortOrder : existingCategory.sortOrder,
         updatedAt: new Date(),

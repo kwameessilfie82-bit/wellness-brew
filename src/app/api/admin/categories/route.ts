@@ -91,7 +91,7 @@ const postHandler = withAdminAuth(
         name,
         slug: uniqueSlug,
         description: description || "",
-        image: image || "",
+        image: Array.isArray(image) ? JSON.stringify(image) : (image || ""),
         isActive: isActive !== false,
         sortOrder: 0,
         createdAt: new Date(),

@@ -34,6 +34,7 @@ export function CategoryManagement({ }: CategoryManagementProps) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isCreating, setIsCreating] = useState(false);
   const [newCategory, setNewCategory] = useState({
     name: "",
     description: "",
@@ -71,6 +72,18 @@ export function CategoryManagement({ }: CategoryManagementProps) {
   useEffect(() => {
     if (isEditDialogOpen && editingCategory) {
       try {
+        if (!editingCategory.image) {
+          setEditCategoryImages([]);
+          return;
+        }
+        
+        // Check if it's already a data URL or regular URL (not JSON)
+        if (typeof editingCategory.image === 'string' && (editingCategory.image.startsWith('data:') || editingCategory.image.startsWith('http') || editingCategory.image.startsWith('/'))) {
+          setEditCategoryImages([editingCategory.image]);
+          return;
+        }
+        
+        // Try to parse as JSON array
         const parsed = JSON.parse(editingCategory.image || "[]");
         if (Array.isArray(parsed)) {
           setEditCategoryImages(parsed.length > 0 ? [parsed[0]] : []);
@@ -113,6 +126,7 @@ export function CategoryManagement({ }: CategoryManagementProps) {
 
   const handleCreateCategory = async () => {
     try {
+      setIsCreating(true);
       const response = await fetch('/api/admin/categories', {
         method: 'POST',
         headers: {
@@ -143,6 +157,8 @@ export function CategoryManagement({ }: CategoryManagementProps) {
     } catch (error) {
       console.error('Error creating category:', error);
       alert('Error creating category. Please try again.');
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -331,8 +347,15 @@ export function CategoryManagement({ }: CategoryManagementProps) {
               <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleCreateCategory}>
-                Create Category
+              <Button onClick={handleCreateCategory} disabled={isCreating} aria-busy={isCreating}>
+                {isCreating ? (
+                  <span className="inline-flex items-center gap-2 text-primary-foreground">
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    Creating...
+                  </span>
+                ) : (
+                  "Create Category"
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -379,26 +402,36 @@ export function CategoryManagement({ }: CategoryManagementProps) {
               {filteredCategories.map((item) => (
                 <div key={item.id} className="group overflow-hidden rounded-lg border bg-card shadow-sm transition hover:shadow-md">
                   <div className="relative aspect-[4/3] bg-muted">
-                    <FallbackImage
-                      alt={item.name}
-                      className=""
-                      fill
-                      loading="lazy"
-                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-                      src={(() => {
-                        try {
-                          if (!item.image) return '/placeholder.svg';
-                          const parsedImages = JSON.parse(item.image);
-                          if (Array.isArray(parsedImages) && parsedImages.length > 0) {
-                            return parsedImages[0];
+                    {(() => {
+                      try {
+                        if (!item.image) return <FallbackImage alt={item.name} className="" fill loading="lazy" sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw" src="/placeholder.svg" />;
+                        
+                        // Check if it's already a data URL or regular URL (not JSON)
+                        if (typeof item.image === 'string' && (item.image.startsWith('data:') || item.image.startsWith('http') || item.image.startsWith('/'))) {
+                          // It's a direct URL string
+                          if (item.image.startsWith('data:') || item.image.startsWith('blob:')) {
+                            return <img alt={item.name} className="h-full w-full object-cover" src={item.image} />;
                           }
-                          return '/placeholder.svg';
-                        } catch (error) {
-                          console.error('❌ Error parsing category images:', error, 'Images data:', item.image);
-                          return '/placeholder.svg';
+                          return <FallbackImage alt={item.name} className="" fill loading="lazy" sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw" src={item.image} />;
                         }
-                      })()}
-                    />
+                        
+                        // Try to parse as JSON array
+                        const parsedImages = JSON.parse(item.image);
+                        if (Array.isArray(parsedImages) && parsedImages.length > 0) {
+                          const imageSrc = parsedImages[0];
+                          // If it's a data URL or blob URL, use regular img tag
+                          if (imageSrc.startsWith('data:') || imageSrc.startsWith('blob:')) {
+                            return <img alt={item.name} className="h-full w-full object-cover" src={imageSrc} />;
+                          }
+                          // Otherwise use FallbackImage for regular URLs
+                          return <FallbackImage alt={item.name} className="" fill loading="lazy" sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw" src={imageSrc} />;
+                        }
+                        return <FallbackImage alt={item.name} className="" fill loading="lazy" sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw" src="/placeholder.svg" />;
+                      } catch (error) {
+                        console.error('❌ Error parsing category images:', error, 'Images data:', item.image);
+                        return <FallbackImage alt={item.name} className="" fill loading="lazy" sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw" src="/placeholder.svg" />;
+                      }
+                    })()}
                     <div className="absolute left-2 top-2">
                       <Badge variant={item.isActive ? "default" : "secondary"}>
                         {item.isActive ? "Active" : "Inactive"}
@@ -496,6 +529,13 @@ export function CategoryManagement({ }: CategoryManagementProps) {
                 {(() => {
                   try {
                     if (editCategoryImages.length === 0 && editingCategory?.image) {
+                      // Check if it's already a data URL or regular URL (not JSON)
+                      if (typeof editingCategory.image === 'string' && (editingCategory.image.startsWith('data:') || editingCategory.image.startsWith('http') || editingCategory.image.startsWith('/'))) {
+                        setEditCategoryImages([editingCategory.image]);
+                        return null;
+                      }
+                      
+                      // Try to parse as JSON array
                       const parsed = JSON.parse(editingCategory.image || "[]");
                       if (Array.isArray(parsed)) {
                         setEditCategoryImages(parsed);
