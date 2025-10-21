@@ -41,6 +41,48 @@ export function CategoryManagement({ }: CategoryManagementProps) {
     isActive: true,
   });
 
+  // Image handling state for create/edit
+  const [newCategoryImages, setNewCategoryImages] = useState<string[]>([]);
+  const [editCategoryImages, setEditCategoryImages] = useState<string[]>([]);
+
+  const addImageFile = async (file: File, isEdit = false) => {
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Image must be less than 2MB");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      const setFn = isEdit ? setEditCategoryImages : setNewCategoryImages;
+      // Single-image policy: always override with the latest
+      setFn([dataUrl]);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeImageAt = (index: number, isEdit = false) => {
+    const setFn = isEdit ? setEditCategoryImages : setNewCategoryImages;
+    const getArr = isEdit ? editCategoryImages : newCategoryImages;
+    setFn(getArr.filter((_, i) => i !== index));
+  };
+
+  // Initialize edit images when opening the edit dialog
+  useEffect(() => {
+    if (isEditDialogOpen && editingCategory) {
+      try {
+        const parsed = JSON.parse(editingCategory.image || "[]");
+        if (Array.isArray(parsed)) {
+          setEditCategoryImages(parsed.length > 0 ? [parsed[0]] : []);
+        } else {
+          setEditCategoryImages([]);
+        }
+      } catch {
+        setEditCategoryImages([]);
+      }
+    }
+  }, [isEditDialogOpen, editingCategory]);
+
   // Fetch categories from API
   const fetchCategories = async () => {
     try {
@@ -76,7 +118,10 @@ export function CategoryManagement({ }: CategoryManagementProps) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(newCategory),
+        body: JSON.stringify({
+          ...newCategory,
+          image: newCategoryImages.length > 0 ? newCategoryImages : [],
+        }),
       });
 
       if (response.ok) {
@@ -88,6 +133,7 @@ export function CategoryManagement({ }: CategoryManagementProps) {
           image: "",
           isActive: true,
         });
+        setNewCategoryImages([]);
         setIsCreateDialogOpen(false);
       } else {
         const error = await response.json();
@@ -114,7 +160,10 @@ export function CategoryManagement({ }: CategoryManagementProps) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(editingCategory),
+        body: JSON.stringify({
+          ...editingCategory,
+          image: editCategoryImages.length > 0 ? editCategoryImages : [],
+        }),
       });
 
       if (response.ok) {
@@ -124,6 +173,7 @@ export function CategoryManagement({ }: CategoryManagementProps) {
         ));
         setIsEditDialogOpen(false);
         setEditingCategory(null);
+        setEditCategoryImages([]);
       } else {
         const error = await response.json();
         console.error('Failed to update category:', error);
@@ -232,14 +282,40 @@ export function CategoryManagement({ }: CategoryManagementProps) {
                   placeholder="Brief description of this category"
                 />
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="image">Image URL</Label>
-                <Input
-                  id="image"
-                  value={newCategory.image}
-                  onChange={(e) => setNewCategory({ ...newCategory, image: e.target.value })}
-                  placeholder="https://example.com/image.jpg"
-                />
+              {/* Images: upload from device only */}
+              <div className="space-y-2">
+                <Label>Images</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) addImageFile(file, false);
+                      // reset input so the same file can be chosen again if needed
+                      e.currentTarget.value = "";
+                    }}
+                  />
+                </div>
+                <div className="grid grid-cols-1 gap-2">
+                  <div className="relative group aspect-square rounded overflow-hidden border">
+                    {newCategoryImages[0] && (newCategoryImages[0].startsWith('data:') || newCategoryImages[0].startsWith('blob:')) ? (
+                      <img alt="New category image" className="h-full w-full object-cover" src={newCategoryImages[0]} />
+                    ) : (
+                      <FallbackImage src={newCategoryImages[0] || "/placeholder.svg"} alt="New category image" className="h-full w-full object-cover" width={120} height={120} />
+                    )}
+                    {newCategoryImages.length > 0 && (
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => removeImageAt(0, false)}
+                      >
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </div>
               {/* Sort order removed */}
               <div className="flex items-center space-x-2">
@@ -309,7 +385,19 @@ export function CategoryManagement({ }: CategoryManagementProps) {
                       fill
                       loading="lazy"
                       sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-                      src={item.image || ""}
+                      src={(() => {
+                        try {
+                          if (!item.image) return '/placeholder.svg';
+                          const parsedImages = JSON.parse(item.image);
+                          if (Array.isArray(parsedImages) && parsedImages.length > 0) {
+                            return parsedImages[0];
+                          }
+                          return '/placeholder.svg';
+                        } catch (error) {
+                          console.error('❌ Error parsing category images:', error, 'Images data:', item.image);
+                          return '/placeholder.svg';
+                        }
+                      })()}
                     />
                     <div className="absolute left-2 top-2">
                       <Badge variant={item.isActive ? "default" : "secondary"}>
@@ -390,13 +478,51 @@ export function CategoryManagement({ }: CategoryManagementProps) {
                   onChange={(e) => setEditingCategory({ ...editingCategory, description: e.target.value })}
                 />
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="edit-image">Image URL</Label>
-                <Input
-                  id="edit-image"
-                  value={editingCategory.image || ""}
-                  onChange={(e) => setEditingCategory({ ...editingCategory, image: e.target.value })}
-                />
+              {/* Edit Images: upload from device only */}
+              <div className="space-y-2">
+                <Label>Images</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) addImageFile(file, true);
+                      e.currentTarget.value = "";
+                    }}
+                  />
+                </div>
+                {/* Initialize edit images from existing category images once */}
+                {(() => {
+                  try {
+                    if (editCategoryImages.length === 0 && editingCategory?.image) {
+                      const parsed = JSON.parse(editingCategory.image || "[]");
+                      if (Array.isArray(parsed)) {
+                        setEditCategoryImages(parsed);
+                      }
+                    }
+                  } catch {}
+                  return null;
+                })()}
+                <div className="grid grid-cols-1 gap-2">
+                  <div className="relative group aspect-square rounded overflow-hidden border">
+                    {editCategoryImages[0] && (editCategoryImages[0].startsWith('data:') || editCategoryImages[0].startsWith('blob:')) ? (
+                      <img alt="Category image" className="h-full w-full object-cover" src={editCategoryImages[0]} />
+                    ) : (
+                      <FallbackImage src={editCategoryImages[0] || "/placeholder.svg"} alt="Category image" className="h-full w-full object-cover" width={120} height={120} />
+                    )}
+                    {editCategoryImages.length > 0 && (
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => removeImageAt(0, true)}
+                      >
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </div>
               <div className="grid gap-2">
                 {/* Sort order removed */}

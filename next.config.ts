@@ -48,22 +48,6 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  // Handle redirects to ensure consistent domain usage
-  async redirects() {
-    return [
-      {
-        source: "/:path*",
-        has: [
-          {
-            type: "host",
-            value: "^(?!nutrihealth-inventory-management\\.vercel\\.app$).*", // any host NOT matching your main domain
-          },
-        ],
-        destination: "https://nutrihealth-inventory-management.vercel.app/:path*",
-        permanent: true,
-      },
-    ];
-  },
 };
 
 export default nextConfig;
