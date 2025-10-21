@@ -56,7 +56,7 @@ const nextConfig: NextConfig = {
         has: [
           {
             type: "host",
-            value: "nutrihealth-inventory-management.vercel.app",
+            value: "^(?!nutrihealth-inventory-management\\.vercel\\.app$).*", // any host NOT matching your main domain
           },
         ],
         destination: "https://nutrihealth-inventory-management.vercel.app/:path*",
