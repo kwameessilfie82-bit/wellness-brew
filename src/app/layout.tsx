@@ -1,21 +1,29 @@
 import type { Metadata } from "next";
+
+
+// import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import { ThemeProvider } from "@/components/theme-provider"
+
+import { SEO_CONFIG } from "@/app";
+import "@/css/globals.css";
+import { ConditionalLayout } from "@/ui/components/conditional-layout";
+import { ThemeProvider } from "@/ui/components/theme-provider";
+import { Toaster } from "@/ui/primitives/sonner";
+
 
 const geistSans = Geist({
-  variable: "--font-geist-sans",
   subsets: ["latin"],
+  variable: "--font-geist-sans",
 });
 
 const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
   subsets: ["latin"],
+  variable: "--font-geist-mono",
 });
 
 export const metadata: Metadata = {
-  title: "NutriHealth",
-  description: "Easily generates invoices for nutrihealth distributors",
+  description: `${SEO_CONFIG.description}`,
+  title: `${SEO_CONFIG.fullName}`,
 };
 
 export default function RootLayout({
@@ -26,16 +34,25 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`
+          ${geistSans.variable}
+          ${geistMono.variable}
+          min-h-screen bg-gradient-to-br from-white to-slate-100
+          text-neutral-900 antialiased
+          selection:bg-primary/80
+          dark:from-neutral-950 dark:to-neutral-900 dark:text-neutral-100
+        `}
       >
         <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            {children}
-          </ThemeProvider>
+          attribute="class"
+          defaultTheme="system"
+          disableTransitionOnChange
+          enableSystem
+        >
+            <ConditionalLayout>{children}</ConditionalLayout>
+            <Toaster />
+        </ThemeProvider>
+        {/* <SpeedInsights /> */}
       </body>
     </html>
   );
