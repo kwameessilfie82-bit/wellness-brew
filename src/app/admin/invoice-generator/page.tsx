@@ -75,7 +75,7 @@ export default function InvoiceGenerator() {
     setProducts((prev) => [...prev, product])
   }
 
-  const handleAddItem = (product: Product, priceType: 'customer' | 'retail' | 'wholesale' | 'distributor' = 'customer') => {
+  const handleAddItem = (product: Product, priceType: 'customer' | 'retail' | 'wholesale' | 'wholesale2' | 'distributor' = 'customer') => {
     setSelectedItems((prev) => {
       const newMap = new Map(prev)
       const current = newMap.get(product.id)
@@ -107,7 +107,7 @@ export default function InvoiceGenerator() {
     })
   }
 
-  const handlePriceTypeChange = (productId: string, priceType: 'customer' | 'retail' | 'wholesale' | 'distributor') => {
+  const handlePriceTypeChange = (productId: string, priceType: 'customer' | 'retail' | 'wholesale' | 'wholesale2' | 'distributor') => {
     setSelectedItems((prev) => {
       const newMap = new Map(prev)
       const current = newMap.get(productId)
@@ -129,6 +129,7 @@ export default function InvoiceGenerator() {
       const currentPrice = itemData.priceType === 'customer' ? product.customerPrice :
                           itemData.priceType === 'retail' ? product.retailPrice :
                           itemData.priceType === 'wholesale' ? product.wholesalePrice :
+                          itemData.priceType === 'wholesale2' ? product.wholesalePrice2 :
                           product.distributorPrice
       
       return {

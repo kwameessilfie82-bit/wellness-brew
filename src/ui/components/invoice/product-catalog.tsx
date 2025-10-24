@@ -13,10 +13,10 @@ import type { Product } from "@/lib/types"
 
 interface ProductCatalogProps {
   products: Product[]
-  selectedItems: Map<string, { quantity: number; priceType: 'customer' | 'retail' | 'wholesale' | 'distributor' }>
-  onAddItem: (product: Product, priceType: 'customer' | 'retail' | 'wholesale' | 'distributor') => void
+  selectedItems: Map<string, { quantity: number; priceType: 'customer' | 'retail' | 'wholesale' | 'wholesale2' | 'distributor' }>
+  onAddItem: (product: Product, priceType: 'customer' | 'retail' | 'wholesale' | 'wholesale2' | 'distributor') => void
   onRemoveItem: (productId: string) => void
-  onPriceTypeChange: (productId: string, priceType: 'customer' | 'retail' | 'wholesale' | 'distributor') => void
+  onPriceTypeChange: (productId: string, priceType: 'customer' | 'retail' | 'wholesale' | 'wholesale2' | 'distributor') => void
   onAddProduct: (product: Product) => void
 }
 
@@ -29,7 +29,7 @@ export function ProductCatalog({
   onAddProduct 
 }: ProductCatalogProps) {
   const [searchTerm, setSearchTerm] = useState("")
-  const [filterPriceType, setFilterPriceType] = useState<'all' | 'customer' | 'retail' | 'wholesale' | 'distributor'>('all')
+  const [filterPriceType, setFilterPriceType] = useState<'all' | 'customer' | 'retail' | 'wholesale' | 'wholesale2' | 'distributor'>('all')
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set())
 
   // Determine if a product is a paper pack based on its description
@@ -48,6 +48,7 @@ export function ProductCatalog({
     const hasPriceType = filterPriceType === 'customer' ? product.customerPrice > 0 :
                         filterPriceType === 'retail' ? product.retailPrice > 0 :
                         filterPriceType === 'wholesale' ? product.wholesalePrice > 0 :
+                        filterPriceType === 'wholesale2' ? product.wholesalePrice2 > 0 :
                         product.distributorPrice > 0
     
     return matchesSearch && hasPriceType
@@ -85,7 +86,7 @@ export function ProductCatalog({
           </div>
           
           {/* Price Type Filter */}
-          <Select value={filterPriceType} onValueChange={(value: 'all' | 'customer' | 'retail' | 'wholesale' | 'distributor') => setFilterPriceType(value)}>
+          <Select value={filterPriceType} onValueChange={(value: 'all' | 'customer' | 'retail' | 'wholesale' | 'wholesale2' | 'distributor') => setFilterPriceType(value)}>
             <SelectTrigger className="w-full sm:w-48">
               <SelectValue placeholder="Filter by price type" />
             </SelectTrigger>
@@ -94,6 +95,7 @@ export function ProductCatalog({
               <SelectItem value="customer">Customer Pricing</SelectItem>
               <SelectItem value="retail">Retail Pricing</SelectItem>
               <SelectItem value="wholesale">Wholesale Pricing</SelectItem>
+              <SelectItem value="wholesale2">Wholesale Pricing 2</SelectItem>
               <SelectItem value="distributor">Distributor Pricing</SelectItem>
             </SelectContent>
           </Select>
@@ -124,6 +126,7 @@ export function ProductCatalog({
           const currentPrice = priceType === 'customer' ? product.customerPrice :
                               priceType === 'retail' ? product.retailPrice :
                               priceType === 'wholesale' ? product.wholesalePrice :
+                              priceType === 'wholesale2' ? product.wholesalePrice2 :
                               product.distributorPrice
 
           const hasValidImage = product.image && 
@@ -168,7 +171,7 @@ export function ProductCatalog({
                     <span className="text-sm font-medium">Pricing:</span>
                     <Select 
                       value={priceType} 
-                      onValueChange={(value: 'customer' | 'retail' | 'wholesale' | 'distributor') => 
+                      onValueChange={(value: 'customer' | 'retail' | 'wholesale' | 'wholesale2' | 'distributor') => 
                         onPriceTypeChange(product.id, value)
                       }
                     >
@@ -179,6 +182,7 @@ export function ProductCatalog({
                         <SelectItem value="customer">Customer</SelectItem>
                         <SelectItem value="retail">Retail</SelectItem>
                         <SelectItem value="wholesale">Wholesale</SelectItem>
+                        <SelectItem value="wholesale2">Wholesale 2</SelectItem>
                         <SelectItem value="distributor">Distributor</SelectItem>
                       </SelectContent>
                     </Select>

@@ -5,6 +5,7 @@ export interface Product {
     customerPrice: number
     retailPrice: number
     wholesalePrice: number
+    wholesalePrice2: number
     distributorPrice: number
     image: string
   }
@@ -12,7 +13,7 @@ export interface Product {
   export interface InvoiceItem extends Product {
     quantity: number
     lineTotal: number
-    selectedPriceType: 'customer' | 'retail' | 'wholesale' | 'distributor'
+    selectedPriceType: 'customer' | 'retail' | 'wholesale' | 'wholesale2' | 'distributor'
     currentPrice: number
   }
   

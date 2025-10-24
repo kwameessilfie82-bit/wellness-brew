@@ -285,7 +285,7 @@ export function CategoryManagement({ }: CategoryManagementProps) {
                   id="name"
                   value={newCategory.name}
                   onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
-                  placeholder="e.g., Prescriptions"
+                  placeholder="e.g., Paperpacks"
                 />
               </div>
               {/* Slug removed; auto-generated from name */}
