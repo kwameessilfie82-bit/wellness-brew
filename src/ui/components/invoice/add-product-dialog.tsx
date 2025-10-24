@@ -23,6 +23,7 @@ export function AddProductDialog({ onAddProduct }: AddProductDialogProps) {
     customerPrice: "",
     retailPrice: "",
     wholesalePrice: "",
+    wholesalePrice2: "",
     distributorPrice: "",
     image: "",
   })
@@ -30,7 +31,7 @@ export function AddProductDialog({ onAddProduct }: AddProductDialogProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!formData.name || !formData.customerPrice || !formData.retailPrice || !formData.wholesalePrice || !formData.distributorPrice) {
+    if (!formData.name || !formData.customerPrice || !formData.retailPrice || !formData.wholesalePrice || !formData.wholesalePrice2 || !formData.distributorPrice) {
       return
     }
 
@@ -41,6 +42,7 @@ export function AddProductDialog({ onAddProduct }: AddProductDialogProps) {
       customerPrice: Number.parseFloat(formData.customerPrice),
       retailPrice: Number.parseFloat(formData.retailPrice),
       wholesalePrice: Number.parseFloat(formData.wholesalePrice),
+      wholesalePrice2: Number.parseFloat(formData.wholesalePrice2),
       distributorPrice: Number.parseFloat(formData.distributorPrice),
       image: formData.image || "/diverse-products-still-life.png",
     }
@@ -52,6 +54,7 @@ export function AddProductDialog({ onAddProduct }: AddProductDialogProps) {
       customerPrice: "", 
       retailPrice: "", 
       wholesalePrice: "", 
+      wholesalePrice2: "",
       distributorPrice: "",
       image: "" 
     })
@@ -93,7 +96,7 @@ export function AddProductDialog({ onAddProduct }: AddProductDialogProps) {
             />
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div className="space-y-2">
               <Label htmlFor="customerPrice">Customer Price (GHS) *</Label>
               <Input
@@ -131,6 +134,20 @@ export function AddProductDialog({ onAddProduct }: AddProductDialogProps) {
                 min="0"
                 value={formData.wholesalePrice}
                 onChange={(e) => setFormData({ ...formData, wholesalePrice: e.target.value })}
+                placeholder="0.00"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="wholesalePrice2">Wholesale Price 2 (GHS) *</Label>
+              <Input
+                id="wholesalePrice2"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.wholesalePrice2}
+                onChange={(e) => setFormData({ ...formData, wholesalePrice2: e.target.value })}
                 placeholder="0.00"
                 required
               />
