@@ -21,7 +21,7 @@ import Image from "next/image"
 
 export default function InvoiceGenerator() {
   const [products, setProducts] = useState<Product[]>(sampleProducts)
-  const [selectedItems, setSelectedItems] = useState<Map<string, { quantity: number; priceType: 'customer' | 'retail' | 'wholesale' | 'distributor' }>>(new Map())
+  const [selectedItems, setSelectedItems] = useState<Map<string, { quantity: number; priceType: 'customer' | 'retail' | 'wholesale' | 'wholesale2' | 'distributor' }>>(new Map())
   const [invoiceNumber] = useState(generateInvoiceNumber())
   const [invoiceDate] = useState(new Date().toISOString().split("T")[0])
   const [dueDate, setDueDate] = useState(() => {
