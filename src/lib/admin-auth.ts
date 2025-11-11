@@ -11,6 +11,7 @@ import {
   type AdminPermissions,
 } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
+import { userTable } from "@/db/schema";
 
 // Default admin permissions
 // Roles: manager (full access), admin (limited - no users or dashboards), customer (no admin access)
@@ -83,17 +84,103 @@ export async function getAdminUser(userId: string): Promise<AdminUserWithDetails
       },
     });
 
-    if (!adminUser) {
+    // If not found by userId (e.g., after DB restore or auth reset),
+    // reconcile by email and relink the admin_user to the current userId.
+    let resolvedAdminUser = adminUser;
+    if (!resolvedAdminUser) {
+      const currentUser = await getCurrentUser();
+      const currentEmail = currentUser?.email ?? null;
+
+      if (currentEmail) {
+        // Find any existing admin_user linked to a user with the same email
+        const userWithAdmins = await db.query.userTable.findFirst({
+          where: eq(userTable.email, currentEmail),
+          with: {
+            adminUser: {
+              with: {
+                role: true,
+                user: {
+                  columns: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    image: true,
+                  },
+                },
+                createdBy: {
+                  with: {
+                    user: {
+                      columns: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        image: true,
+                      },
+                    },
+                    role: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        const candidate = userWithAdmins?.adminUser?.find((a) => a.isActive) ?? null;
+
+        if (candidate && candidate.userId !== userId) {
+          // Relink this admin record to the current userId
+          await db
+            .update(adminUserTable)
+            .set({
+              userId,
+              isActive: true,
+              updatedAt: new Date(),
+            })
+            .where(eq(adminUserTable.id, candidate.id));
+
+          // Re-fetch using the canonical query above to keep normalization logic unified
+          resolvedAdminUser = await db.query.adminUserTable.findFirst({
+            where: and(eq(adminUserTable.userId, userId), eq(adminUserTable.isActive, true)),
+            with: {
+              user: {
+                columns: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  image: true,
+                },
+              },
+              role: true,
+              createdBy: {
+                with: {
+                  user: {
+                    columns: {
+                      id: true,
+                      name: true,
+                      email: true,
+                      image: true,
+                    },
+                  },
+                  role: true,
+                },
+              },
+            },
+          });
+        }
+      }
+    }
+
+    if (!resolvedAdminUser) {
       return null;
     }
 
     // Parse permissions for current role
-    const permissions = JSON.parse(adminUser.role.permissions) as AdminPermissions;
+    const permissions = JSON.parse(resolvedAdminUser.role.permissions) as AdminPermissions;
 
     // Normalize createdBy relation to match AdminUserWithDetails shape
     let createdByNormalized: AdminUserWithDetails | null = null;
-    if (adminUser.createdBy) {
-      const cb = adminUser.createdBy as unknown as AdminUserWithDetails;
+    if (resolvedAdminUser.createdBy) {
+      const cb = resolvedAdminUser.createdBy as unknown as AdminUserWithDetails;
       createdByNormalized = {
         id: cb.id,
         userId: cb.userId,
@@ -111,9 +198,9 @@ export async function getAdminUser(userId: string): Promise<AdminUserWithDetails
     }
 
     return {
-      ...adminUser,
+      ...resolvedAdminUser,
       role: {
-        ...adminUser.role,
+        ...resolvedAdminUser.role,
         permissions,
       },
       createdBy: createdByNormalized,
