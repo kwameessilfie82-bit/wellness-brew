@@ -51,6 +51,7 @@ export default function InvoiceGenerator() {
 
   const [taxRate, setTaxRate] = useState(0)
   const [discount, setDiscount] = useState(0)
+  const [customDesignPrinting, setCustomDesignPrinting] = useState(0)
   const [notes, setNotes] = useState("We appreciate your trust in NutriHealth.")
   const [latePaymentPolicy, setLatePaymentPolicy] = useState(
     "Payment is due within 90 days. Late payments may incur a 2% monthly interest charge.",
@@ -144,7 +145,7 @@ export default function InvoiceGenerator() {
 
   const subtotal = calculateSubtotal(invoiceItems)
   const taxAmount = calculateTax(subtotal, taxRate)
-  const total = calculateTotal(subtotal, taxAmount, discount)
+  const total = calculateTotal(subtotal, taxAmount, discount, customDesignPrinting)
 
   const invoiceData: InvoiceData = {
     invoiceNumber,
@@ -158,6 +159,7 @@ export default function InvoiceGenerator() {
     taxRate,
     taxAmount,
     discount,
+    customDesignPrinting,
     total,
     paymentMethods,
     notes,
@@ -787,6 +789,7 @@ export default function InvoiceGenerator() {
               showDueDate={showDueDate}
               taxRate={taxRate}
               discount={discount}
+              customDesignPrinting={customDesignPrinting}
               notes={notes}
               latePaymentPolicy={latePaymentPolicy}
               showLatePaymentPolicy={showLatePaymentPolicy}
@@ -797,6 +800,7 @@ export default function InvoiceGenerator() {
               onShowDueDateChange={setShowDueDate}
               onTaxRateChange={setTaxRate}
               onDiscountChange={setDiscount}
+              onCustomDesignPrintingChange={setCustomDesignPrinting}
               onNotesChange={setNotes}
               onLatePaymentPolicyChange={setLatePaymentPolicy}
               onShowLatePaymentPolicyChange={setShowLatePaymentPolicy}

@@ -10,7 +10,7 @@ export const sampleProducts: Product[] = [
     retailPrice: 85.00,
     wholesalePrice: 72.00,
     wholesalePrice2: 80.00,
-    distributorPrice: 70.00,
+    distributorPrice: 100.00,
     image: "/hr.png",
   },
   

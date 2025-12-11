@@ -13,6 +13,7 @@ interface InvoiceFormProps {
   showDueDate: boolean
   taxRate: number
   discount: number
+  customDesignPrinting: number
   notes: string
   latePaymentPolicy: string
   showLatePaymentPolicy: boolean
@@ -23,6 +24,7 @@ interface InvoiceFormProps {
   onShowDueDateChange: (show: boolean) => void
   onTaxRateChange: (rate: number) => void
   onDiscountChange: (discount: number) => void
+  onCustomDesignPrintingChange: (amount: number) => void
   onNotesChange: (notes: string) => void
   onLatePaymentPolicyChange: (policy: string) => void
   onShowLatePaymentPolicyChange: (show: boolean) => void
@@ -36,6 +38,7 @@ export function InvoiceForm({
   showDueDate,
   taxRate,
   discount,
+  customDesignPrinting,
   notes,
   latePaymentPolicy,
   showLatePaymentPolicy,
@@ -46,6 +49,7 @@ export function InvoiceForm({
   onShowDueDateChange,
   onTaxRateChange,
   onDiscountChange,
+  onCustomDesignPrintingChange,
   onNotesChange,
   onLatePaymentPolicyChange,
   onShowLatePaymentPolicyChange,
@@ -191,6 +195,17 @@ export function InvoiceForm({
                 step="0.01"
                 value={discount}
                 onChange={(e) => onDiscountChange(Number.parseFloat(e.target.value) || 0)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="customDesignPrinting">Custom Design and Printing (GHS)</Label>
+              <Input
+                id="customDesignPrinting"
+                type="number"
+                min="0"
+                step="0.01"
+                value={customDesignPrinting}
+                onChange={(e) => onCustomDesignPrintingChange(Number.parseFloat(e.target.value) || 0)}
               />
             </div>
           </div>

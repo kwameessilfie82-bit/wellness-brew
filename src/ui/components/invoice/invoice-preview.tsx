@@ -116,6 +116,12 @@ export function InvoicePreview({ data }: InvoicePreviewProps) {
                   <span className="font-medium text-destructive">-{formatCurrency(data.discount)}</span>
                 </div>
               )}
+              {data.customDesignPrinting > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Custom Design and Printing:</span>
+                  <span className="font-medium text-foreground">+{formatCurrency(data.customDesignPrinting)}</span>
+                </div>
+              )}
               <Separator />
               <div className="flex justify-between text-lg font-bold">
                 <span className="text-foreground">Total Due:</span>

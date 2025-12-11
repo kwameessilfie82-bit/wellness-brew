@@ -52,7 +52,12 @@ export function calculateTax(subtotal: number, taxRate: number): number {
   return (subtotal * taxRate) / 100
 }
 
-export function calculateTotal(subtotal: number, taxAmount: number, discount: number): number {
-  return subtotal + taxAmount - discount
+export function calculateTotal(
+  subtotal: number,
+  taxAmount: number,
+  discount: number,
+  customDesignPrinting: number,
+): number {
+  return subtotal + taxAmount - discount + customDesignPrinting
 }
   

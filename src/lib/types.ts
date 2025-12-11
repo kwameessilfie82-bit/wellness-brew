@@ -50,6 +50,7 @@ export interface Product {
     taxRate: number
     taxAmount: number
     discount: number
+    customDesignPrinting: number
     total: number
     paymentMethods: PaymentMethod[]
     notes: string
