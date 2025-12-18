@@ -122,6 +122,12 @@ export function InvoicePreview({ data }: InvoicePreviewProps) {
                   <span className="font-medium text-foreground">+{formatCurrency(data.customDesignPrinting)}</span>
                 </div>
               )}
+              {data.deliveries > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Deliveries:</span>
+                  <span className="font-medium text-foreground">+{formatCurrency(data.deliveries)}</span>
+                </div>
+              )}
               <Separator />
               <div className="flex justify-between text-lg font-bold">
                 <span className="text-foreground">Total Due:</span>

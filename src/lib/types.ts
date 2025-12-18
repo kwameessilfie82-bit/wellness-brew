@@ -51,6 +51,7 @@ export interface Product {
     taxAmount: number
     discount: number
     customDesignPrinting: number
+    deliveries: number
     total: number
     paymentMethods: PaymentMethod[]
     notes: string

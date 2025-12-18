@@ -57,7 +57,8 @@ export function calculateTotal(
   taxAmount: number,
   discount: number,
   customDesignPrinting: number,
+  deliveries: number,
 ): number {
-  return subtotal + taxAmount - discount + customDesignPrinting
+  return subtotal + taxAmount - discount + customDesignPrinting + deliveries
 }
   
