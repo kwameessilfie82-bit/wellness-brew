@@ -10,6 +10,7 @@ interface InvoicePreviewProps {
   data: InvoiceData
 }
 
+
 export function InvoicePreview({ data }: InvoicePreviewProps) {
   return (
     <Card className="w-full max-w-4xl mx-auto print:shadow-none">
