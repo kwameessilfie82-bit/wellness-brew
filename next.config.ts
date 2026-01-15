@@ -29,7 +29,7 @@ const nextConfig: NextConfig = {
           {
             key: "Access-Control-Allow-Origin",
             value: process.env.NODE_ENV === "production" 
-              ? "https://nutrihealth-inventory-management.vercel.app" 
+              ? "https://leafyvibestea.vercel.app" 
               : "*",
           },
           {

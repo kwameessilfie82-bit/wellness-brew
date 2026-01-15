@@ -16,23 +16,11 @@ const curatedCategories: Array<{
   description?: string;
   sortOrder?: number;
 }> = [
-  { name: "Prescriptions", description: "Prescription-only medicines and repeats" },
-  { name: "Medicines", description: "General medicines for common conditions" },
-  { name: "Vitamins", description: "Essential vitamins and minerals" },
-  { name: "Supplements", description: "Dietary and nutritional supplements" },
-  { name: "Medical Devices", description: "Home health and diagnostic devices" },
-  { name: "Mother & Baby", description: "Maternity and baby care essentials" },
-  { name: "Toiletries", description: "Everyday personal care products" },
-  { name: "Cold, Cough & Flu", description: "Relief for cold, cough and flu" },
-  { name: "First Aid", description: "First aid supplies and wound care" },
-  { name: "Allergy & Hayfever", description: "Allergy relief and antihistamines" },
-  { name: "Eye Care", description: "Eye health and contact lens care" },
-  { name: "Baby Medicine", description: "Medicines formulated for babies" },
-  { name: "Dental Care", description: "Oral hygiene and dental health" },
-  { name: "Foot Care", description: "Foot health and orthotic care" },
-  { name: "Digestion & Stomach", description: "Digestive health and antacids" },
-  { name: "Feminine Care", description: "Women's health and intimate care" },
-  { name: "Pain Relief", description: "Analgesics and pain management" },
+  { name: "Tin (25)", description: "Tea products in 25-count tins", sortOrder: 0 },
+  { name: "Tin (20)", description: "Tea products in 20-count tins", sortOrder: 1 },
+  { name: "Paper Tubes", description: "Tea products in paper tubes", sortOrder: 2 },
+  { name: "Paper Packs", description: "Tea products in paper packs", sortOrder: 3 },
+  { name: "Gift Boxes", description: "Tea products in gift boxes", sortOrder: 4 },
 ];
 
 const handler = withAdminAuth(async (_request: NextRequest, adminUser) => {

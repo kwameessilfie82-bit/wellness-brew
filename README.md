@@ -1,4 +1,4 @@
-# NutriHealth Invoice Generator
+# leafyvibestea
 
 A modern, professional invoice generator built with Next.js and Tailwind CSS, specifically designed for health and nutrition businesses. Create beautiful, detailed invoices for your products and services with ease.
 
@@ -57,7 +57,7 @@ A modern, professional invoice generator built with Next.js and Tailwind CSS, sp
 1. Clone the repository:
 ```bash
 git clone <repository-url>
-cd nutrihealth-invoice
+cd leafyvibestea-invoice
 ```
 
 2. Install dependencies:

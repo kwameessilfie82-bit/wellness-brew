@@ -9,14 +9,14 @@ const getBaseURL = () => {
   if (typeof window !== "undefined") {
     // Client-side: use the current origin with www
     const currentOrigin = window.location.origin;
-    if (currentOrigin.includes("nutrihealth-inventory-management.vercel.app")) {
-      return "https://nutrihealth-inventory-management.vercel.app";
+    if (currentOrigin.includes("nutrihealth-inventory-management.vercel.app") || currentOrigin.includes("leafyvibestea")) {
+      return "https://leafyvibestea.vercel.app";
     }
     return currentOrigin;
   }
   
   // Server-side: use environment variable or default to www version
-  return process.env.NEXT_PUBLIC_APP_URL || "https://nutrihealth-inventory-management.vercel.app";
+  return process.env.NEXT_PUBLIC_APP_URL || "https://leafyvibestea.vercel.app";
 };
 
 // Create and export the auth client

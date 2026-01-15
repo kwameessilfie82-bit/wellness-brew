@@ -1,59 +1,36 @@
-import type { Metadata } from "next";
-
-
-// import { SpeedInsights } from "@vercel/speed-insights/next";
-import { Geist, Geist_Mono } from "next/font/google";
-
-import { SEO_CONFIG } from "@/app";
 import "@/css/globals.css";
-import { ConditionalLayout } from "@/ui/components/conditional-layout";
+import { CartProvider } from "@/lib/cart-context";
 import { ThemeProvider } from "@/ui/components/theme-provider";
-import { Toaster } from "@/ui/primitives/sonner";
+import { Analytics } from "@vercel/analytics/next";
+import type { Metadata } from "next";
+import { Geist, Geist_Mono, Playfair_Display } from "next/font/google";
+import type React from "react";
 
-const geistSans = Geist({
-  subsets: ["latin"],
-  variable: "--font-geist-sans",
-});
-
-
-const geistMono = Geist_Mono({
-  subsets: ["latin"],
-  variable: "--font-geist-mono",
-});
+const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
+const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
+const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-serif" });
 
 export const metadata: Metadata = {
-  description: `${SEO_CONFIG.description}`,
-  title: `${SEO_CONFIG.fullName}`,
+	title: "LeafyVibesTea - Premium Tea & Wellness",
+	description:
+		"Discover premium teas, wellness blends, and teaware. Your journey to a healthier lifestyle starts with the perfect cup.",
 };
 
 export default function RootLayout({
-  children,
+	children,
 }: Readonly<{
-  children: React.ReactNode;
+	children: React.ReactNode;
 }>) {
-  return (
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={`
-          ${geistSans.variable}
-          ${geistMono.variable}
-          min-h-screen bg-gradient-to-br from-white to-slate-100
-          text-neutral-900 antialiased
-          selection:bg-primary/80
-          dark:from-neutral-950 dark:to-neutral-900 dark:text-neutral-100
-        `}
-      >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          disableTransitionOnChange
-          enableSystem
-        >
-            <ConditionalLayout>{children}</ConditionalLayout>
-            <Toaster />
-        </ThemeProvider>
-        {/* <SpeedInsights /> */}
-      </body>
-    </html>
-  );
+	return (
+		<html lang="en" suppressHydrationWarning>
+			<body className={`${geist.variable} ${geistMono.variable} ${playfair.variable} font-sans antialiased`}>
+				<ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+					<CartProvider>
+						{children}
+						<Analytics />
+					</CartProvider>
+				</ThemeProvider>
+			</body>
+		</html>
+	);
 }

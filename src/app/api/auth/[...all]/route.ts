@@ -9,8 +9,8 @@ const { GET, POST } = toNextJsHandler(auth);
 export async function OPTIONS(request: NextRequest) {
   const origin = request.headers.get("origin");
   const allowedOrigins = [
-    "https://www.nutrihealth-inventory-management.vercel.app",
-    "https://nutrihealth-inventory-management.vercel.app",
+    "https://www.leafyvibestea.vercel.app",
+    "https://leafyvibestea.vercel.app",
     "http://localhost:3000",
   ];
 

@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
         originalPrice: productTable.originalPrice,
         sku: productTable.sku,
         barcode: productTable.barcode,
-        images: productTable.images,
+        images: productTable.images, // This is a JSON string
         isActive: productTable.isActive,
         isFeatured: productTable.isFeatured,
         manufacturer: productTable.manufacturer,

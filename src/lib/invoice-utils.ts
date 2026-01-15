@@ -1,7 +1,7 @@
 // Store the current invoice number in localStorage for persistence
 function getCurrentInvoiceNumber(): number {
   if (typeof window !== 'undefined') {
-    const stored = localStorage.getItem('nutrihealth-invoice-number')
+    const stored = localStorage.getItem('leafyvibestea-invoice-number')
     if (stored) {
       return parseInt(stored, 10)
     }
@@ -12,7 +12,7 @@ function getCurrentInvoiceNumber(): number {
 
 function setCurrentInvoiceNumber(number: number): void {
   if (typeof window !== 'undefined') {
-    localStorage.setItem('nutrihealth-invoice-number', number.toString())
+    localStorage.setItem('leafyvibestea-invoice-number', number.toString())
   }
 }
 

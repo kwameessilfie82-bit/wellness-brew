@@ -35,7 +35,7 @@ export default function InvoiceGenerator() {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
 
   const [seller, setSeller] = useState<SellerInfo>({
-    businessName: "NutriHealth",
+    businessName: "leafyvibestea",
     address: "Parakuo Estate, Dome, Accra",
     phone: "+233553981862",
     email: "",
@@ -53,7 +53,7 @@ export default function InvoiceGenerator() {
   const [discount, setDiscount] = useState(0)
   const [customDesignPrinting, setCustomDesignPrinting] = useState(0)
   const [deliveries, setDeliveries] = useState(0)
-  const [notes, setNotes] = useState("We appreciate your trust in NutriHealth.")
+  const [notes, setNotes] = useState("We appreciate your trust in leafyvibestea.")
   const [latePaymentPolicy, setLatePaymentPolicy] = useState(
     "Payment is due within 90 days. Late payments may incur a 2% monthly interest charge.",
   )
@@ -67,7 +67,7 @@ export default function InvoiceGenerator() {
     },
     {
       type: "mobile",
-      details: "Provider: MTN\nMerchant ID: 974356\nMerchant Name: PillJoint Pharmacy Limited\nReference: NutriHealth\nPillJoint Contact Line: 0540734749",
+      details: "Provider: MTN\nMerchant ID: 974356\nMerchant Name: PillJoint Pharmacy Limited\nReference: leafyvibestea\nPillJoint Contact Line: 0540734749",
     },
   ])
 
@@ -720,11 +720,11 @@ export default function InvoiceGenerator() {
           {/* Logo and Title Section */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
             <div className="w-12 h-12 lg:w-12 lg:h-12 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
-              <Image src="/NutriHealth.png" alt="NutriHealth logo" width={110} height={110} className="object-cover" />
+              <Image src="/leafyvibestea.png" alt="leafyvibestea logo" width={110} height={110} className="object-cover" />
             </div>
             <div className="min-w-0 flex-1">
               <h1 className="text-2xl sm:text-3xl font-bold text-foreground leading-tight">
-                NutriHealth
+                leafyvibestea
               </h1>
               <p className="text-sm text-muted-foreground mt-1">
                 Professional invoice management for your healthy and tasty teas

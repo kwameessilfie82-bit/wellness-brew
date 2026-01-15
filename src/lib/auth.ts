@@ -73,7 +73,7 @@ if (hasGoogleCredentials) {
 const getServerBaseURL = () => {
   // Always use the www version in production to avoid CORS issues
   if (process.env.NODE_ENV === "production") {
-    return "https://nutrihealth-inventory-management.vercel.app";
+    return "https://leafyvibestea.vercel.app";
   }
   return process.env.NEXT_SERVER_APP_URL || "http://localhost:3000";
 };

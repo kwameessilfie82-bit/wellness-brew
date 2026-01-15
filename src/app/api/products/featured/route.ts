@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { productTable, categoryTable, inventoryTable } from "@/db/schema";
-import { eq, and, desc, gt } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 
 export async function GET() {
   try {
@@ -33,8 +33,7 @@ export async function GET() {
       .leftJoin(inventoryTable, eq(productTable.id, inventoryTable.productId))
       .where(and(
         eq(productTable.isActive, true),
-        eq(productTable.isFeatured, true),
-        gt(inventoryTable.quantityAvailable, 0)
+        eq(productTable.isFeatured, true)
       ))
       .orderBy(desc(productTable.createdAt))
       .limit(30);
@@ -66,10 +65,7 @@ export async function GET() {
         .from(productTable)
         .leftJoin(categoryTable, eq(productTable.categoryId, categoryTable.id))
         .leftJoin(inventoryTable, eq(productTable.id, inventoryTable.productId))
-        .where(and(
-          eq(productTable.isActive, true),
-          gt(inventoryTable.quantityAvailable, 0)
-        ))
+        .where(eq(productTable.isActive, true))
         .orderBy(desc(productTable.createdAt))
         .limit(30 - featuredProducts.length);
 
@@ -79,7 +75,12 @@ export async function GET() {
       featuredProducts = [...featuredProducts, ...uniqueAdditionalProducts];
     }
 
-    return NextResponse.json({ products: featuredProducts });
+    // Filter out products with no inventory or zero stock (optional - you can remove this if you want to show all)
+    const productsWithStock = featuredProducts.filter(p => 
+      p.quantityAvailable === null || p.quantityAvailable === undefined || p.quantityAvailable > 0
+    );
+
+    return NextResponse.json({ products: productsWithStock });
   } catch (error) {
     console.error("Error fetching featured products:", error);
     return NextResponse.json(

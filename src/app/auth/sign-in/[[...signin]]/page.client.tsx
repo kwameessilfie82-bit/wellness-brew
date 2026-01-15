@@ -41,7 +41,7 @@ export function SignInPageClient() {
         <Card className="w-full max-w-md border-border/60 shadow-lg">
           <CardContent className="pt-8 pb-8">
             <div className="flex flex-col items-center text-center space-y-2">
-                <Image src="/NutriHealth.png" alt="" width={120} height={120} />
+                <Image src="/leafyvibestea.png" alt="" width={120} height={120} />
 
               <h1 className="text-2xl font-bold">Welcome back</h1>
               <p className="text-sm text-muted-foreground max-w-sm">

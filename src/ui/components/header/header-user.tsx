@@ -118,12 +118,23 @@ export function HeaderUserDropdown({
         
         {/* Show dashboard link based on role */}
         {adminRole && (
-          <DropdownMenuItem asChild>
-            <Link className="cursor-pointer" href={adminRole === 'manager' ? '/admin' : '/admin/inventory'}>
-              <Shield className="mr-2 h-4 w-4" />
-              {adminRole === 'manager' ? "Manager's Dashboard" : 'Admin Dashboard'}
-            </Link>
-          </DropdownMenuItem>
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link className="cursor-pointer" href="/admin/inventory">
+                <Shield className="mr-2 h-4 w-4" />
+                Dashboard
+              </Link>
+            </DropdownMenuItem>
+            {adminRole === 'manager' && (
+              <DropdownMenuItem asChild>
+                <Link className="cursor-pointer" href="/admin">
+                  <Shield className="mr-2 h-4 w-4" />
+                  Manager Dashboard
+                </Link>
+              </DropdownMenuItem>
+            )}
+          </>
         )}
         
         {/* Theme Toggle Section */}

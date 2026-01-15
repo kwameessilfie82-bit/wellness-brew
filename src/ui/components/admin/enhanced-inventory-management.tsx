@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Minus, Loader2, Plus, Search, AlertTriangle, TrendingUp, TrendingDown, Package, Edit, Trash2, CheckSquare } from "lucide-react";
+import { Minus, Loader2, Plus, Search, AlertTriangle, TrendingUp, TrendingDown, Package, Edit, Trash2, CheckSquare, Database } from "lucide-react";
 
 import { Button } from "@/ui/primitives/button";
 import { Input } from "@/ui/primitives/input";
@@ -104,6 +104,7 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isSavingStock, setIsSavingStock] = useState(false);
   const [updatingReserved, setUpdatingReserved] = useState<string | null>(null);
+  const [isSeeding, setIsSeeding] = useState(false);
 
 
   const addImageFile = async (file: File, isEdit = false) => {
@@ -422,6 +423,32 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
     }
   };
 
+  // Seed inventory with sample products
+  const handleSeedInventory = async () => {
+    if (!confirm('This will seed the inventory with all products from the invoice generator. Continue?')) return;
+    
+    try {
+      setIsSeeding(true);
+      const response = await fetch('/api/admin/inventory/seed', {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        alert(`Successfully seeded ${data.inserted} products with inventory!`);
+        loadInventory();
+      } else {
+        const error = await response.json();
+        alert(`Failed to seed inventory: ${error.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error seeding inventory:', error);
+      alert('Failed to seed inventory. Please try again.');
+    } finally {
+      setIsSeeding(false);
+    }
+  };
+
   // Delete product
   const handleDeleteProduct = async (productId: string) => {
     if (!productId) {
@@ -555,13 +582,31 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
             Manage your product inventory, stock levels, and restocking
           </p>
         </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Product
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={handleSeedInventory}
+            disabled={isSeeding}
+          >
+            {isSeeding ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Seeding...
+              </>
+            ) : (
+              <>
+                <Package className="mr-2 h-4 w-4" />
+                Seed Inventory
+              </>
+            )}
+          </Button>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Product
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Add New Product</DialogTitle>
@@ -1357,6 +1402,9 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
                   setIsStockDialogOpen(false);
                   setSelectedProduct(null);
                   loadInventory();
+                } catch (error) {
+                  console.error('Error saving stock:', error);
+                  alert('Failed to save stock. Please try again.');
                 } finally {
                   setIsSavingStock(false);
                 }

@@ -19,11 +19,11 @@ export function InvoicePreview({ data }: InvoicePreviewProps) {
           <div className="space-y-2">
             <div className="flex items-center gap-6">
               <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
-                <Image src="/NutriHealth.png" alt="NutriHealth logo" width={60} height={60} /> 
+                <Image src="/leafyvibestea.png" alt="leafyvibestea logo" width={60} height={60} /> 
               </div>
               <div className="flex-1 text-center">
                 <h1 className="text-2xl font-bold text-foreground leading-tight">{data.seller.businessName}</h1>
-                <p className="text-sm text-muted-foreground mt-1">Health & Nutrition Services</p>
+                <p className="text-sm text-muted-foreground mt-1">Premium Tea & Wellness</p>
               </div>
             </div>
             <div className="text-sm text-muted-foreground space-y-1 mt-4">
