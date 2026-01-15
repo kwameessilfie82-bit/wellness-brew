@@ -748,8 +748,9 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
           </DialogContent>
         </Dialog>
         </div>
+      </div>
 
-        {/* Edit Product Dialog */}
+      {/* Edit Product Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
@@ -1424,7 +1425,6 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
     </div>
   );
 }
