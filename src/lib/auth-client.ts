@@ -9,7 +9,7 @@ const getBaseURL = () => {
   if (typeof window !== "undefined") {
     // Client-side: use the current origin with www
     const currentOrigin = window.location.origin;
-    if (currentOrigin.includes("nutrihealth-inventory-management.vercel.app") || currentOrigin.includes("leafyvibestea")) {
+    if (currentOrigin.includes("laefyvibestea.vercel.app") || currentOrigin.includes("leafyvibestea")) {
       return "https://leafyvibestea.vercel.app";
     }
     return currentOrigin;

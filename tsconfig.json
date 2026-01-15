@@ -37,6 +37,5 @@
   ],
   "exclude": [
     "node_modules",
-    "leafy-vibes-tea-website-learn-from-me"
   ]
 }

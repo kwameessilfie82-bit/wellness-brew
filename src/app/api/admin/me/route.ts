@@ -14,8 +14,8 @@ export async function GET() {
 
     return NextResponse.json({
       id: adminUser.id,
-      email: adminUser.email,
-      name: adminUser.name,
+      email: adminUser.user?.email || "",
+      name: adminUser.user?.name || "",
       role: adminUser.role ? {
         id: adminUser.role.id,
         name: adminUser.role.name,

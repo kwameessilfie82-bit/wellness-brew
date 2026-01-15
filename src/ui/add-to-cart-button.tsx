@@ -3,7 +3,14 @@
 import { ShoppingCart } from "lucide-react"
 import { Button } from "@/ui/primitives/button";
 import { useCart } from "@/lib/cart-context"
-import type { Product } from "@/lib/products"
+// Product type definition
+interface Product {
+  id: string | number;
+  name: string;
+  price: number;
+  image?: string;
+  description?: string;
+}
 
 interface AddToCartButtonProps {
   product: Product
@@ -11,15 +18,14 @@ interface AddToCartButtonProps {
 }
 
 export function AddToCartButton({ product, className }: AddToCartButtonProps) {
-  const { addItem } = useCart()
+  const { addToCart } = useCart()
 
   const handleAddToCart = () => {
-    addItem({
+    addToCart({
       id: product.id,
       name: product.name,
       price: product.price,
       image: product.image,
-      quantity: 1,
     })
   }
 

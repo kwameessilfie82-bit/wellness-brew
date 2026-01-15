@@ -10,11 +10,9 @@ import { useEffect, useState } from "react"
 interface FeaturedProduct {
   id: string
   name: string
-  price: string
-  images: string
-  shortDescription?: string
+  price: number
+  image: string
   description?: string
-  quantityAvailable?: number
 }
 
 export default function HomePage() {
@@ -32,7 +30,7 @@ export default function HomePage() {
           const products = data.products.slice(0, 4).map((p: any) => ({
             id: p.id,
             name: p.name,
-            price: parseFloat(p.price || 0),
+            price: typeof p.price === 'string' ? parseFloat(p.price || '0') : (p.price || 0),
             image: (() => {
               try {
                 const images = typeof p.images === 'string' ? JSON.parse(p.images) : p.images;
@@ -42,7 +40,7 @@ export default function HomePage() {
               }
             })(),
             description: p.shortDescription || p.description || "",
-          }))
+          })) as FeaturedProduct[]
           setFeaturedProducts(products)
         }
       } catch (error) {
@@ -102,7 +100,10 @@ export default function HomePage() {
           ) : featuredProducts.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {featuredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
+                <ProductCard 
+                  key={product.id} 
+                  product={product}
+                />
               ))}
             </div>
           ) : (

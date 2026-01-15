@@ -1,13 +1,28 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
+// Removed framer-motion dependency - using CSS transitions instead
 import { Minus, Plus, ShoppingCart, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import * as React from "react";
 
 import { cn } from "@/lib/cn";
-import { useMediaQuery } from "@/lib/hooks/use-media-query";
+// useMediaQuery hook - simple implementation
+function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = React.useState(false);
+
+  React.useEffect(() => {
+    const media = window.matchMedia(query);
+    if (media.matches !== matches) {
+      setMatches(media.matches);
+    }
+    const listener = () => setMatches(media.matches);
+    media.addEventListener("change", listener);
+    return () => media.removeEventListener("change", listener);
+  }, [matches, query]);
+
+  return matches;
+}
 import { Badge } from "@/ui/primitives/badge";
 import { Button } from "@/ui/primitives/button";
 import {
@@ -116,14 +131,8 @@ export function CartClient({ className, mockCart }: CartProps) {
         </div>
 
         <div className="flex-1 overflow-y-auto px-6">
-          <AnimatePresence>
-            {cartItems.length === 0 ? (
-              <motion.div
-                animate={{ opacity: 1 }}
-                className="flex flex-col items-center justify-center py-12"
-                exit={{ opacity: 0 }}
-                initial={{ opacity: 0 }}
-              >
+          {cartItems.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12">
                 <div
                   className={`
                     mb-4 flex h-20 w-20 items-center justify-center rounded-full
@@ -149,22 +158,17 @@ export function CartClient({ className, mockCart }: CartProps) {
                     </Link>
                   </DrawerClose>
                 )}
-              </motion.div>
+              </div>
             ) : (
               <div className="space-y-4 py-4">
                 {cartItems.map((item) => (
-                  <motion.div
-                    animate={{ opacity: 1, y: 0 }}
+                  <div
+                    key={item.id}
                     className={`
                       group relative flex rounded-lg border bg-card p-2
                       shadow-sm transition-colors
                       hover:bg-accent/50
                     `}
-                    exit={{ opacity: 0, y: -10 }}
-                    initial={{ opacity: 0, y: 10 }}
-                    key={item.id}
-                    layout
-                    transition={{ duration: 0.15 }}
                   >
                     <div className="relative h-20 w-20 overflow-hidden rounded">
                       <Image
@@ -251,11 +255,10 @@ export function CartClient({ className, mockCart }: CartProps) {
                         </div>
                       </div>
                     </div>
-                  </motion.div>
+                  </div>
                 ))}
               </div>
             )}
-          </AnimatePresence>
         </div>
 
         {cartItems.length > 0 && (
