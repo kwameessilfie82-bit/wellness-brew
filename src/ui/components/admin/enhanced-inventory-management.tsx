@@ -607,7 +607,7 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
                 Add Product
               </Button>
             </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Add New Product</DialogTitle>
               <DialogDescription>
@@ -747,6 +747,7 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        </div>
 
         {/* Edit Product Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
@@ -903,7 +904,6 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div>
 
       {/* Stats Cards */}
       {/* Inventory Stats - Mobile Optimized */}
@@ -1424,6 +1424,7 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
     </div>
   );
 }
