@@ -575,18 +575,19 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Inventory</h1>
           <p className="text-muted-foreground">
             Manage your product inventory, stock levels, and restocking
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <Button
             variant="outline"
             onClick={handleSeedInventory}
             disabled={isSeeding}
+            className="w-full sm:w-auto"
           >
             {isSeeding ? (
               <>
@@ -602,7 +603,7 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
           </Button>
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="w-full sm:w-auto">
                 <Plus className="mr-2 h-4 w-4" />
                 Add Product
               </Button>

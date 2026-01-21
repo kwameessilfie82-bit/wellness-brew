@@ -26,7 +26,7 @@ const getHandler = withAdminAuth(
         orderBy: (categories, { asc }) => [asc(categories.name)],
       });
 
-      // product counts per category
+      // product counts per category (count all products, not just active ones)
       const counts = await db
         .select({
           categoryId: productTable.categoryId,

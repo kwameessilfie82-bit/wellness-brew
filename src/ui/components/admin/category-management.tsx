@@ -240,9 +240,8 @@ export function CategoryManagement({ }: CategoryManagementProps) {
 
       if (response.ok) {
         const data = await response.json();
-        setCategories(categories.map(cat =>
-          cat.id === categoryId ? data.category : cat
-        ));
+        // Refresh categories to get updated product counts
+        await fetchCategories();
       } else {
         const error = await response.json();
         console.error('Failed to toggle category status:', error);

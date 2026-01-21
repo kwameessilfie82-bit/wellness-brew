@@ -64,7 +64,7 @@ function DesktopSidebar({ adminUser, pathname, filteredNavigation }: {
     <div className="hidden lg:flex lg:flex-col lg:w-64 min-h-screen bg-background border-r shadow-lg">
       {/* Logo */}
       <div className="flex items-center justify-center h-16 px-4 bg-background">
-        <h1 className="text-xl font-bold text-primary">{SEO_CONFIG.name} Management</h1>
+        <h1 className="text-xl font-bold">{SEO_CONFIG.name} Management</h1>
       </div>
       
       {/* User Info */}
@@ -149,7 +149,7 @@ function MobileSidebar({ adminUser, pathname, filteredNavigation }: {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center h-16 px-4 bg-background">
-            <h1 className="text-lg font-bold text-primary">Inventory Management</h1>
+            <h1 className="text-lg font-bold">Inventory Management</h1>
           </div>
           
           {/* User Info */}

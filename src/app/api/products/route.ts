@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { productTable, categoryTable, inventoryTable } from "@/db/schema";
-import { eq, and, ilike, desc, or } from "drizzle-orm";
+import { eq, and, ilike, desc, or, sql } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
   try {
@@ -37,7 +37,12 @@ export async function GET(request: NextRequest) {
 
     // Build where conditions
     const whereConditions = [
-      eq(productTable.isActive, true)
+      eq(productTable.isActive, true),
+      // Only show products from active categories (or products without categories)
+      or(
+        eq(categoryTable.isActive, true),
+        sql`${categoryTable.id} IS NULL`
+      )!
     ];
 
     if (category && category !== "all") {
@@ -94,7 +99,13 @@ export async function GET(request: NextRequest) {
       .offset(offset);
 
     // Get total count for pagination (efficient count by filter)
-    const totalCount = await db.$count(productTable, and(...whereConditions));
+    // Need to join with category table for count as well
+    const countResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(productTable)
+      .leftJoin(categoryTable, eq(productTable.categoryId, categoryTable.id))
+      .where(and(...whereConditions));
+    const totalCount = Number(countResult[0]?.count || 0);
 
     return NextResponse.json({ 
       products,
