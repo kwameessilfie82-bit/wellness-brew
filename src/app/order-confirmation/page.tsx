@@ -124,16 +124,16 @@ function OrderConfirmationContent() {
                     <div className="flex-1">
                       <p className="font-medium">{item.name}</p>
                       <p className="text-sm text-muted-foreground">Quantity: {item.quantity}</p>
-                      <p className="text-sm font-medium mt-1">${item.price.toFixed(2)}</p>
+                      <p className="text-sm font-medium mt-1">GHS {item.price.toFixed(2)}</p>
                     </div>
-                    <p className="font-medium">${(item.price * item.quantity).toFixed(2)}</p>
+                    <p className="font-medium">GHS {(item.price * item.quantity).toFixed(2)}</p>
                   </div>
                 ))}
               </div>
               <div className="border-t border-border mt-6 pt-4">
                 <div className="flex items-center justify-between text-xl font-bold">
                   <span>Total</span>
-                  <span>${order.total.toFixed(2)}</span>
+                  <span>GHS {order.total.toFixed(2)}</span>
                 </div>
               </div>
             </CardContent>

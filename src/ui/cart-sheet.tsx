@@ -61,7 +61,7 @@ export function CartSheet({ open, onOpenChange }: CartSheetProps) {
                       >
                         {item.name}
                       </Link>
-                      <p className="text-sm font-semibold mt-1">${item.price.toFixed(2)}</p>
+                      <p className="text-sm font-semibold mt-1">GHS {item.price.toFixed(2)}</p>
                       <div className="flex items-center gap-2 mt-2">
                         <Button
                           variant="outline"
@@ -86,7 +86,7 @@ export function CartSheet({ open, onOpenChange }: CartSheetProps) {
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeItem(item.id)}>
                         <X className="h-4 w-4" />
                       </Button>
-                      <p className="font-semibold">${(item.price * item.quantity).toFixed(2)}</p>
+                      <p className="font-semibold">GHS {(item.price * item.quantity).toFixed(2)}</p>
                     </div>
                   </div>
                 ))}
@@ -96,7 +96,7 @@ export function CartSheet({ open, onOpenChange }: CartSheetProps) {
             <div className="border-t border-border pt-4 space-y-4">
               <div className="flex items-center justify-between text-lg font-semibold">
                 <span>Subtotal</span>
-                <span>${totalPrice.toFixed(2)}</span>
+                <span>GHS {totalPrice.toFixed(2)}</span>
               </div>
               <p className="text-sm text-muted-foreground">Shipping and taxes calculated at checkout</p>
               <Button onClick={handleCheckout} size="lg" className="w-full">

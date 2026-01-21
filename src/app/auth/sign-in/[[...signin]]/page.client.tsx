@@ -58,10 +58,10 @@ export function SignInPageClient() {
             <div className="mt-6 grid gap-3">
               <Button
                 size="lg"
-                className="w-full gap-2"
+                className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90 border-primary"
                 disabled={loading}
                 onClick={handleGoogleLogin}
-                variant="outline"
+                variant="default"
               >
                 {loading ? (
                   <>

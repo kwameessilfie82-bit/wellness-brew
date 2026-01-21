@@ -103,13 +103,13 @@ export default function OrdersPage() {
                             <p className="font-medium line-clamp-1">{item.name}</p>
                             <p className="text-sm text-muted-foreground">Quantity: {item.quantity}</p>
                           </div>
-                          <p className="text-sm font-medium">${(item.price * item.quantity).toFixed(2)}</p>
+                          <p className="text-sm font-medium">GHS {(item.price * item.quantity).toFixed(2)}</p>
                         </div>
                       ))}
                     </div>
                     <div className="flex items-center justify-between border-t border-border pt-4">
                       <span className="font-semibold">Total</span>
-                      <span className="text-xl font-bold">${order.total.toFixed(2)}</span>
+                      <span className="text-xl font-bold">GHS {order.total.toFixed(2)}</span>
                     </div>
                     <div className="flex gap-3 mt-4">
                       <Button variant="outline" className="flex-1 bg-transparent" asChild>

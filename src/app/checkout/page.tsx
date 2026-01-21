@@ -179,7 +179,7 @@ export default function CheckoutPage() {
                             <p className="text-sm text-muted-foreground">5-7 business days</p>
                           </Label>
                         </div>
-                        <span className="font-medium">$7.99</span>
+                        <span className="font-medium">GHS 7.99</span>
                       </div>
                       <div className="flex items-center justify-between p-4 border border-border rounded-lg mb-3">
                         <div className="flex items-center space-x-3">
@@ -189,7 +189,7 @@ export default function CheckoutPage() {
                             <p className="text-sm text-muted-foreground">2-3 business days</p>
                           </Label>
                         </div>
-                        <span className="font-medium">$15.99</span>
+                        <span className="font-medium">GHS 15.99</span>
                       </div>
                       <div className="flex items-center justify-between p-4 border border-border rounded-lg">
                         <div className="flex items-center space-x-3">
@@ -199,7 +199,7 @@ export default function CheckoutPage() {
                             <p className="text-sm text-muted-foreground">1 business day</p>
                           </Label>
                         </div>
-                        <span className="font-medium">$24.99</span>
+                        <span className="font-medium">GHS 24.99</span>
                       </div>
                     </RadioGroup>
                   </CardContent>
@@ -275,7 +275,7 @@ export default function CheckoutPage() {
                           <p className="text-sm font-medium line-clamp-2">{item.name}</p>
                           <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
                         </div>
-                        <p className="text-sm font-medium">${(item.price * item.quantity).toFixed(2)}</p>
+                        <p className="text-sm font-medium">GHS {(item.price * item.quantity).toFixed(2)}</p>
                       </div>
                     ))}
                   </div>
@@ -283,22 +283,22 @@ export default function CheckoutPage() {
                   <div className="space-y-2 mb-4 border-t border-border pt-4">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Subtotal</span>
-                      <span>${totalPrice.toFixed(2)}</span>
+                      <span>GHS {totalPrice.toFixed(2)}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Shipping</span>
-                      <span>${shippingCost.toFixed(2)}</span>
+                      <span>GHS {shippingCost.toFixed(2)}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Tax</span>
-                      <span>${tax.toFixed(2)}</span>
+                      <span>GHS {tax.toFixed(2)}</span>
                     </div>
                   </div>
 
                   <div className="border-t border-border pt-4 mb-6">
                     <div className="flex items-center justify-between text-xl font-bold">
                       <span>Total</span>
-                      <span>${total.toFixed(2)}</span>
+                      <span>GHS {total.toFixed(2)}</span>
                     </div>
                   </div>
 

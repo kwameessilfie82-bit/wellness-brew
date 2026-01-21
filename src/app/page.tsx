@@ -6,6 +6,8 @@ import { Navigation } from "@/ui/navigation"
 import { Footer } from "@/ui/footer"
 import { ProductCard } from "@/ui/product-card"
 import { useEffect, useState } from "react"
+import Image from "next/image"
+import { cn } from "@/lib/cn"
 
 interface FeaturedProduct {
   id: string
@@ -58,27 +60,50 @@ export default function HomePage() {
       <Navigation />
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-b from-primary/10 to-background py-20 md:py-32">
-        <div className="section-container">
-          <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 mb-4 bg-secondary/20 px-3 py-1 rounded-full">
-              <Leaf className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium text-accent">100% Natural & Organic</span>
+      <section className="relative overflow-hidden py-20 md:py-32">
+        {/* Dot Background Pattern */}
+        <div
+          className={cn(
+            "absolute inset-0",
+            "[background-size:20px_20px]",
+            "[background-image:radial-gradient(#e0e0e0_1px,transparent_1px)]",
+            "dark:[background-image:radial-gradient(#404040_1px,transparent_1px)]",
+          )}
+        />
+        {/* Radial gradient overlay for faded look */}
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-background [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)] dark:bg-background"></div>
+        
+        <div className="section-container relative z-10">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div className="max-w-2xl">
+              <div className="inline-flex items-center gap-2 mb-4 bg-secondary/20 px-3 py-1 rounded-full">
+                <Leaf className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium text-primary">100% Natural & Organic Rose of Sharon</span>
+              </div>
+              <h1 className="text-5xl md:text-6xl font-serif font-bold text-foreground mb-4 leading-tight">
+                Experience the Power of Rose of Sharon
+              </h1>
+              <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
+                Discover premium Rose of Sharon (Hibiscus) teas crafted for your mind, body, and spirit. Each blend is
+                carefully selected and sourced from the rich continent of Africa, featuring the healing properties of this sacred flower.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link href="/shop" className="btn-primary whitespace-nowrap text-center">
+                  Explore Our Collection
+                </Link>
+                <Link href="/about" className="btn-secondary whitespace-nowrap text-center">
+                  Learn Our Story
+                </Link>
+              </div>
             </div>
-            <h1 className="text-5xl md:text-6xl font-serif font-bold text-foreground mb-4 leading-tight">
-              Elevate Your Wellness Journey
-            </h1>
-            <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-              Discover premium herbal and specialty teas crafted for your mind, body, and spirit. Each blend is
-              carefully selected and sourced from the finest tea gardens.
-            </p>
-            <div className="flex gap-4">
-              <Link href="/shop" className="btn-primary">
-                Explore Our Collection
-              </Link>
-              <Link href="/about" className="btn-secondary">
-                Learn Our Story
-              </Link>
+            <div className="relative h-[400px] md:h-[500px] rounded-lg overflow-hidden z-10">
+              <Image
+                src="/rose of sharon.png"
+                alt="Rose of Sharon - Hibiscus flower"
+                fill
+                className="object-cover"
+                priority
+              />
             </div>
           </div>
         </div>
@@ -129,7 +154,7 @@ export default function HomePage() {
               <Truck className="w-8 h-8 text-primary flex-shrink-0 mt-1" />
               <div>
                 <h3 className="font-semibold text-lg mb-2">Free Shipping</h3>
-                <p className="text-muted-foreground">On orders over $50. Fast delivery to your door</p>
+                <p className="text-muted-foreground">On orders over GHS 50. Fast delivery to your door</p>
               </div>
             </div>
             <div className="flex gap-4">

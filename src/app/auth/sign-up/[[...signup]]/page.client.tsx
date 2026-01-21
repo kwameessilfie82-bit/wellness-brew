@@ -120,10 +120,10 @@ export function SignUpPageClient() {
                 <div className="text-sm font-medium text-destructive mb-3">{error}</div>
               )}
               <Button
-                className="w-full gap-2"
+                className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90 border-primary"
                 disabled={loading}
                 onClick={handleGoogleSignUp}
-                variant="outline"
+                variant="default"
               >
                 {loading ? (
                   <>

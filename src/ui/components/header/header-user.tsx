@@ -126,14 +126,6 @@ export function HeaderUserDropdown({
                 Dashboard
               </Link>
             </DropdownMenuItem>
-            {adminRole === 'manager' && (
-              <DropdownMenuItem asChild>
-                <Link className="cursor-pointer" href="/admin">
-                  <Shield className="mr-2 h-4 w-4" />
-                  Manager Dashboard
-                </Link>
-              </DropdownMenuItem>
-            )}
           </>
         )}
         

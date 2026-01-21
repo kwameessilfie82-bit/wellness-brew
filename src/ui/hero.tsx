@@ -11,15 +11,15 @@ export function Hero() {
           <div className="space-y-8">
             <div className="inline-block">
               <span className="text-sm font-medium text-primary bg-primary/10 px-4 py-2 rounded-full">
-                {"✨ Premium Tea Collection"}
+                {"✨ Premium Rose of Sharon Collection"}
               </span>
             </div>
             <h1 className="text-5xl md:text-7xl font-serif font-bold text-balance leading-tight">
-              Welcome To Your Tea Haven
+              Experience the Healing Power of Rose of Sharon
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground text-pretty leading-relaxed">
-              Discover our carefully curated collection of premium teas, wellness blends, and artisan teaware. Every sip
-              is a journey to comfort and healing.
+              Discover our carefully curated collection of premium Rose of Sharon (Hibiscus) teas, wellness blends, and artisan teaware. 
+              Every sip is a journey to comfort and healing, inspired by this sacred flower.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Button size="lg" className="text-base group">
@@ -36,8 +36,8 @@ export function Hero() {
           <div className="relative h-[400px] md:h-[600px]">
             <div className="absolute inset-0 bg-primary/5 rounded-3xl" />
             <Image
-              src="/premium-tea-cup-with-fresh-tea-leaves-and-steam.jpg"
-              alt="Premium tea collection"
+              src="/rose of sharon.png"
+              alt="Rose of Sharon - Premium Hibiscus Tea"
               fill
               className="object-cover rounded-3xl"
               priority

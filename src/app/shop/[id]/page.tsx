@@ -146,7 +146,7 @@ export default function ProductDetailPage() {
             {/* Price and Stock */}
             <div className="border-t border-b border-border py-6">
               <div className="flex items-center justify-between mb-4">
-                <p className="text-4xl font-bold">${product.price.toFixed(2)}</p>
+                <p className="text-4xl font-bold">GHS {product.price.toFixed(2)}</p>
                 {product.quantityAvailable !== undefined && (
                   <Badge variant={product.quantityAvailable > 0 ? "default" : "destructive"}>
                     {product.quantityAvailable > 0 ? `${product.quantityAvailable} in stock` : "Out of stock"}

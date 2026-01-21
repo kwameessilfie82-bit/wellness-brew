@@ -58,7 +58,7 @@ export default function CartPage() {
                       >
                         {item.name}
                       </Link>
-                      <p className="text-lg font-bold mt-2">${item.price.toFixed(2)}</p>
+                      <p className="text-lg font-bold mt-2">GHS {item.price.toFixed(2)}</p>
                       <div className="flex items-center gap-3 mt-4">
                         <Button
                           variant="outline"
@@ -81,7 +81,7 @@ export default function CartPage() {
                       <Button variant="ghost" size="icon" onClick={() => removeItem(item.id)}>
                         <X className="h-5 w-5" />
                       </Button>
-                      <p className="text-xl font-bold">${(item.price * item.quantity).toFixed(2)}</p>
+                      <p className="text-xl font-bold">GHS {(item.price * item.quantity).toFixed(2)}</p>
                     </div>
                   </div>
                 ))}
@@ -94,7 +94,7 @@ export default function CartPage() {
                   <div className="space-y-3 mb-6">
                     <div className="flex items-center justify-between">
                       <span className="text-muted-foreground">Subtotal</span>
-                      <span className="font-medium">${totalPrice.toFixed(2)}</span>
+                      <span className="font-medium">GHS {totalPrice.toFixed(2)}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-muted-foreground">Shipping</span>
@@ -108,7 +108,7 @@ export default function CartPage() {
                   <div className="border-t border-border pt-4 mb-6">
                     <div className="flex items-center justify-between text-xl font-bold">
                       <span>Total</span>
-                      <span>${totalPrice.toFixed(2)}</span>
+                      <span>GHS {totalPrice.toFixed(2)}</span>
                     </div>
                   </div>
                   <Button size="lg" className="w-full mb-3" onClick={() => router.push("/checkout")}>

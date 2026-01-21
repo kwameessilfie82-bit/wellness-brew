@@ -21,8 +21,8 @@ export function Footer() {
               >
                 Herbal
               </Link>
-              <Link href="/shop?category=green" className="text-sm text-muted-foreground hover:text-primary transition">
-                Green Tea
+              <Link href="/shop?category=hibiscus" className="text-sm text-muted-foreground hover:text-primary transition">
+                Hibiscus Tea
               </Link>
             </nav>
           </div>
@@ -31,9 +31,6 @@ export function Footer() {
             <nav className="flex flex-col gap-2">
               <Link href="/about" className="text-sm text-muted-foreground hover:text-primary transition">
                 About Us
-              </Link>
-              <Link href="/learn" className="text-sm text-muted-foreground hover:text-primary transition">
-                Blog
               </Link>
               <Link href="/contact" className="text-sm text-muted-foreground hover:text-primary transition">
                 Contact

@@ -4,7 +4,7 @@ import { Leaf, Sparkles, Heart, Coffee } from "lucide-react"
 const categories = [
   {
     icon: Leaf,
-    title: "Green Teas",
+    title: "Hibiscus Teas",
     description: "Fresh & revitalizing blends",
     color: "bg-primary/10 text-primary",
   },

@@ -15,11 +15,11 @@ const products = [
     badgeColor: "bg-accent text-accent-foreground",
   },
   {
-    name: "Moringa Green Tea",
+    name: "Moringa Hibiscus Tea",
     price: "₵50.00",
     rating: 4.9,
     reviews: 98,
-    image: "moringa green tea with leaves in elegant packaging",
+    image: "moringa hibiscus tea with leaves in elegant packaging",
     badge: "New",
     badgeColor: "bg-primary text-primary-foreground",
   },
@@ -71,7 +71,7 @@ export function FeaturedProducts() {
                   <h3 className="text-lg font-semibold group-hover:text-primary transition-colors">{product.name}</h3>
                   <div className="flex items-center gap-2">
                     <div className="flex items-center">
-                      <Star className="h-4 w-4 fill-accent text-accent" />
+                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                       <span className="text-sm font-medium ml-1">{product.rating}</span>
                     </div>
                     <span className="text-xs text-muted-foreground">

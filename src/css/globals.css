@@ -4,22 +4,22 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* LeafyVibesTea Premium Color Palette */
-  --background: #faf8f3;
-  --foreground: #2d2416;
+  /* LeafyVibesTea Premium Color Palette - Rose of Sharon Theme */
+  --background: #ffffff;
+  --foreground: #1a1a1a;
   --card: #ffffff;
-  --card-foreground: #2d2416;
-  --primary: #6b9f7f;
+  --card-foreground: #1a1a1a;
+  --primary: #380001;
   --primary-foreground: #ffffff;
-  --secondary: #d4a574;
-  --secondary-foreground: #2d2416;
-  --accent: #8b6f47;
+  --secondary: #f8e8e8;
+  --secondary-foreground: #380001;
+  --accent: #5a0019;
   --accent-foreground: #ffffff;
-  --muted: #e8e3dd;
-  --muted-foreground: #6b6b63;
-  --border: #e8e3dd;
-  --input: #faf8f3;
-  --ring: #6b9f7f;
+  --muted: #f5f5f5;
+  --muted-foreground: #666666;
+  --border: #e0e0e0;
+  --input: #ffffff;
+  --ring: #380001;
   --radius: 0.5rem;
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: #ffffff;
@@ -41,21 +41,21 @@
 }
 
 .dark {
-  --background: #1a1610;
-  --foreground: #f5f1eb;
-  --card: #2d2416;
-  --card-foreground: #f5f1eb;
-  --primary: #7eba94;
-  --primary-foreground: #1a1610;
-  --secondary: #d4a574;
-  --secondary-foreground: #1a1610;
-  --accent: #a68d6a;
-  --accent-foreground: #1a1610;
-  --muted: #3d3630;
-  --muted-foreground: #a8a39d;
-  --border: #3d3630;
-  --input: #2d2416;
-  --ring: #7eba94;
+  --background: #0a0a0a;
+  --foreground: #ffffff;
+  --card: #1a1a1a;
+  --card-foreground: #ffffff;
+  --primary: #5a0019;
+  --primary-foreground: #ffffff;
+  --secondary: #2a0010;
+  --secondary-foreground: #ffffff;
+  --accent: #7a0029;
+  --accent-foreground: #ffffff;
+  --muted: #2a2a2a;
+  --muted-foreground: #b0b0b0;
+  --border: #333333;
+  --input: #1a1a1a;
+  --ring: #5a0019;
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: #1a1610;
   --popover: #2d2416;

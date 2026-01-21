@@ -40,11 +40,11 @@ export function ProductCard({ product }: { product: Product }) {
           <div className="flex items-center justify-between">
             {product.rating && (
               <div className="flex items-center gap-1">
-                <Star className="w-4 h-4 fill-secondary text-secondary" />
+                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                 <span className="text-sm font-medium">{product.rating}</span>
               </div>
             )}
-            <div className="text-lg font-bold text-primary">${product.price}</div>
+            <div className="text-lg font-bold">GHS {product.price}</div>
           </div>
           <button
             onClick={handleAddToCart}

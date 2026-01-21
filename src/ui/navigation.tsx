@@ -22,8 +22,8 @@ export function Navigation() {
   return (
     <header className="sticky top-0 z-50 bg-card border-b border-border">
       <div className="section-container flex items-center justify-between h-16">
-        <Link href="/" className="font-serif text-2xl font-bold text-primary">
-          LeafyVibesTea
+        <Link href="/" className="font-serif text-2xl font-bold">
+          Wellness Brew
         </Link>
 
         {/* Desktop Navigation */}
