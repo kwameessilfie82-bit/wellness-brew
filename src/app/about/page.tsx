@@ -21,28 +21,28 @@ export default function AboutPage() {
 
           {/* Hibiscus Images Section */}
           <div className="grid md:grid-cols-3 gap-6 mb-16">
-            <div className="relative h-64 rounded-lg overflow-hidden">
+            <div className="relative h-64 rounded-lg overflow-hidden bg-secondary/20 flex items-center justify-center">
               <Image
                 src="/hibiscus.png"
                 alt="Hibiscus flower"
                 fill
-                className="object-cover"
+                className="object-contain p-2"
               />
             </div>
-            <div className="relative h-64 rounded-lg overflow-hidden">
+            <div className="relative h-64 rounded-lg overflow-hidden bg-secondary/20 flex items-center justify-center">
               <Image
                 src="/rose of sharon.png"
                 alt="Rose of Sharon flower"
                 fill
-                className="object-cover"
+                className="object-contain p-2"
               />
             </div>
-            <div className="relative h-64 rounded-lg overflow-hidden">
+            <div className="relative h-64 rounded-lg overflow-hidden bg-secondary/20 flex items-center justify-center">
               <Image
                 src="/hibiscus 3.png"
                 alt="Hibiscus tea"
                 fill
-                className="object-cover"
+                className="object-contain p-2"
               />
             </div>
           </div>
@@ -77,20 +77,20 @@ export default function AboutPage() {
 
           {/* Additional Hibiscus Images */}
           <div className="grid md:grid-cols-2 gap-6 mt-16">
-            <div className="relative h-80 rounded-lg overflow-hidden">
+            <div className="relative h-80 rounded-lg overflow-hidden bg-secondary/20 flex items-center justify-center">
               <Image
                 src="/rose of sharon 1.png"
                 alt="Rose of Sharon flower"
                 fill
-                className="object-cover"
+                className="object-contain p-4"
               />
             </div>
-            <div className="relative h-80 rounded-lg overflow-hidden">
+            <div className="relative h-80 rounded-lg overflow-hidden bg-secondary/20 flex items-center justify-center">
               <Image
                 src="/rose of sharon 2.png"
                 alt="Rose of Sharon flower"
                 fill
-                className="object-cover"
+                className="object-contain p-4"
               />
             </div>
           </div>
