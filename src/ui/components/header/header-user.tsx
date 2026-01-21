@@ -98,7 +98,7 @@ export function HeaderUserDropdown({
               {userEmail}
             </p>
             {adminRole && (
-              <Badge variant="secondary" className="w-fit text-xs">
+              <Badge variant="default" className="w-fit text-xs bg-primary text-primary-foreground">
                 {adminRole === 'super_admin' ? 'Manager' : 
                  adminRole === 'admin' ? 'Admin' : 
                  adminRole.replace('_', ' ').toUpperCase()}

@@ -6,18 +6,30 @@ import { useCart } from "@/lib/cart-context"
 import { CartSheet } from "@/ui/cart-sheet"
 import { Menu, Search, ShoppingCart, X } from "lucide-react"
 import Link from "next/link"
-import { useState } from "react"
+import { useState, FormEvent } from "react"
 import { useCurrentUser } from "@/lib/auth-client"
 import { Skeleton } from "@/ui/primitives/skeleton"
 import { ThemeToggle } from "@/ui/components/theme-toggle"
 import { NavigationUserInfo } from "@/ui/components/navigation-user-info"
+import { useRouter } from "next/navigation"
 
 export function Navigation() {
+  const router = useRouter()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [isCartOpen, setIsCartOpen] = useState(false)
+  const [searchValue, setSearchValue] = useState("")
   const { totalItems } = useCart()
   const { isPending, user } = useCurrentUser()
+
+  const handleSearch = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (searchValue.trim()) {
+      router.push(`/shop?search=${encodeURIComponent(searchValue.trim())}`)
+      setIsSearchOpen(false)
+      setSearchValue("")
+    }
+  }
 
   return (
     <header className="sticky top-0 z-50 bg-card border-b border-border">
@@ -48,7 +60,7 @@ export function Navigation() {
             variant="ghost"
             size="icon"
             onClick={() => setIsSearchOpen(!isSearchOpen)}
-            className="hidden md:flex"
+            className="flex"
           >
             <Search className="h-5 w-5" />
           </Button>
@@ -92,7 +104,21 @@ export function Navigation() {
       {/* Search Bar */}
       {isSearchOpen && (
         <div className="border-t border-border pb-4 pt-4 animate-in fade-in slide-in-from-top-2">
-          <Input type="search" placeholder="Search for teas..." className="max-w-md mx-auto" />
+          <form onSubmit={handleSearch} className="max-w-md mx-auto px-4">
+            <div className="flex gap-2">
+              <Input 
+                type="search" 
+                placeholder="Search for teas..." 
+                className="flex-1" 
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
+                autoFocus
+              />
+              <Button type="submit" size="default">
+                Search
+              </Button>
+            </div>
+          </form>
         </div>
       )}
 
