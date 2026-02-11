@@ -9,14 +9,14 @@ const getBaseURL = () => {
   if (typeof window !== "undefined") {
     // Client-side: use the current origin with www
     const currentOrigin = window.location.origin;
-    if (currentOrigin.includes("laefyvibestea.vercel.app") || currentOrigin.includes("leafyvibestea")) {
-      return "https://leafyvibestea.vercel.app";
+    if (currentOrigin.includes("wellnessgroupgh.com") || currentOrigin.includes("wellnessgroupgh")) {
+      return "https://wellnessgroupgh.com";
     }
     return currentOrigin;
   }
   
   // Server-side: use environment variable or default to www version
-  return process.env.NEXT_PUBLIC_APP_URL || "https://leafyvibestea.vercel.app";
+  return process.env.NEXT_PUBLIC_APP_URL || "https://wellnessgroupgh.com";
 };
 
 // Create and export the auth client

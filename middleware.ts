@@ -7,8 +7,8 @@ export function middleware(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith('/api/')) {
     const origin = request.headers.get('origin');
     const allowedOrigins = [
-      'https://www.leafyvibestea.vercel.app',
-      'https://leafyvibestea.vercel.app',
+      'https://www.wellnessgroupgh.com',
+      'https://wellnessgroupgh.com',
       'http://localhost:3000'
     ];
     
