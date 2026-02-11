@@ -13,13 +13,6 @@ interface InvoicePreviewProps {
 export function InvoicePreview({ data }: InvoicePreviewProps) {
   return (
     <Card className="w-full max-w-4xl mx-auto print:shadow-none">
-       {/* Title (Center) */}
-       <div className="p-4 md:p-6 text-center">
-            <h1 className="text-3xl font-bold text-foreground leading-tight">Hibiscus Teas</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Cheques Payable to: PillJoint Pharmacy Ltd
-            </p>
-          </div>
 
       <CardContent className="p-4 md:p-6 space-y-8"> 
         <div className="flex justify-between">
@@ -39,9 +32,18 @@ export function InvoicePreview({ data }: InvoicePreviewProps) {
           </div>
         </div>
 
+            {/* Title (Center) */}
+       <div className="p-4 md:p-6 text-center space-y-2">
+            <h1 className="text-3xl font-bold text-foreground leading-tight">Hibiscus Teas</h1>
+            <p className="text-xs text-muted-foreground mt-1">
+              Cheques Payable to: PillJoint Pharmacy Ltd
+            </p>
+            <p className="text-sm text-muted-foreground mt-1">Premium Tea & Wellness</p>
+          </div>
+
           {/* Invoice Details (Right) */}
-          <div className="text-right space-y-2">
-            <h2 className="text-4xl font-bold text-primary">INVOICE</h2>
+          <div className="text-right space-y-2 mt-6">
+            <h2 className="text-xl font-bold text-primary">INVOICE</h2>
             <div className="text-sm space-y-1">
               <p className="font-semibold text-foreground">{data.invoiceNumber}</p>
               <p className="text-muted-foreground">
