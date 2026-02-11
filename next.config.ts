@@ -20,6 +20,7 @@ const nextConfig: NextConfig = {
   compiler: {
     removeConsole: process.env.NODE_ENV === "production",
   },
+  
   // Add CORS headers for API routes
   async headers() {
     return [
