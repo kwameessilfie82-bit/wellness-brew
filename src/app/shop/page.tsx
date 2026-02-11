@@ -37,41 +37,41 @@ function ShopPageContent() {
   const observerTarget = useRef<HTMLDivElement>(null)
 
   const fetchProducts = useCallback(async (page: number = 1, append: boolean = false) => {
-    try {
+      try {
       if (page === 1) {
         setLoading(true)
       } else {
         setLoadingMore(true)
       }
 
-      const params = new URLSearchParams()
-      if (selectedCategory !== "all") {
-        params.set("category", selectedCategory)
-      }
+        const params = new URLSearchParams()
+        if (selectedCategory !== "all") {
+          params.set("category", selectedCategory)
+        }
       if (searchQuery) {
         params.set("search", searchQuery)
       }
       params.set("page", page.toString())
       params.set("limit", "12")
+        
+        const response = await fetch(`/api/products?${params.toString()}`)
+        const data = await response.json()
       
-      const response = await fetch(`/api/products?${params.toString()}`)
-      const data = await response.json()
-      
-      // Parse images from JSON string to array
+        // Parse images from JSON string to array
       const productsWithParsedImages = (data.products || []).map((p: Product & { images?: string | string[] }) => ({
-        ...p,
-        images: (() => {
-          try {
-            if (typeof p.images === 'string') {
-              return JSON.parse(p.images);
+          ...p,
+          images: (() => {
+            try {
+              if (typeof p.images === 'string') {
+                return JSON.parse(p.images);
+              }
+              return Array.isArray(p.images) ? p.images : [];
+            } catch {
+              return [];
             }
-            return Array.isArray(p.images) ? p.images : [];
-          } catch {
-            return [];
-          }
-        })(),
-        price: typeof p.price === 'string' ? parseFloat(p.price) : p.price,
-      }))
+          })(),
+          price: typeof p.price === 'string' ? parseFloat(p.price) : p.price,
+        }))
 
       if (append) {
         setProducts(prev => {
@@ -87,12 +87,12 @@ function ShopPageContent() {
       if (data.pagination) {
         setPagination(data.pagination)
       }
-    } catch (error) {
-      console.error("Error fetching products:", error)
-    } finally {
-      setLoading(false)
+      } catch (error) {
+        console.error("Error fetching products:", error)
+      } finally {
+        setLoading(false)
       setLoadingMore(false)
-    }
+      }
   }, [selectedCategory, searchQuery])
 
   useEffect(() => {
@@ -107,15 +107,15 @@ function ShopPageContent() {
     fetchProducts(1, false)
   }, [selectedCategory, searchQuery, fetchProducts])
 
-  const fetchCategories = async () => {
-    try {
-      const response = await fetch("/api/categories")
-      const data = await response.json()
-      setCategories(["all", ...(data.categories?.map((c: { slug?: string; name?: string }) => c.slug || c.name) || [])])
-    } catch (error) {
-      console.error("Error fetching categories:", error)
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch("/api/categories")
+        const data = await response.json()
+        setCategories(["all", ...(data.categories?.map((c: { slug?: string; name?: string }) => c.slug || c.name) || [])])
+      } catch (error) {
+        console.error("Error fetching categories:", error)
+      }
     }
-  }
 
   useEffect(() => {
     fetchCategories()

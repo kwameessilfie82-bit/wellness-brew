@@ -13,26 +13,33 @@ interface InvoicePreviewProps {
 export function InvoicePreview({ data }: InvoicePreviewProps) {
   return (
     <Card className="w-full max-w-4xl mx-auto print:shadow-none">
-      <CardContent className="p-8 md:p-12 space-y-8">
+       {/* Title (Center) */}
+       <div className="p-4 md:p-6 text-center">
+            <h1 className="text-3xl font-bold text-foreground leading-tight">Hibiscus Teas</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Cheques Payable to: PillJoint Pharmacy Ltd
+            </p>
+          </div>
+
+      <CardContent className="p-4 md:p-6 space-y-8"> 
+        <div className="flex justify-between">
          {/* Header Section */}
-        <div className="flex justify-between items-start">
-          <div className="space-y-2">
-            <div className="flex items-center gap-6">
-              <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
-                <Image src="/leafyvibestea.png" alt="leafyvibestea logo" width={60} height={60} /> 
-              </div>
-              <div className="flex-1 text-center">
-                <h1 className="text-2xl font-bold text-foreground leading-tight">{data.seller.businessName}</h1>
-                <p className="text-sm text-muted-foreground mt-1">Premium Tea & Wellness</p>
-              </div>
+         <div className="grid grid-cols-[auto,1fr,auto] items-center gap-4">
+          {/* Logo and Seller Info (Left) */}
+          <div className="flex items-start gap-4">
+            <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
+              <Image src="/leafyvibestea.png" alt="leafyvibestea logo" width={60} height={60} /> 
             </div>
-            <div className="text-sm text-muted-foreground space-y-1 mt-4">
+            <div className="text-sm text-muted-foreground space-y-1">
               <p>{data.seller.address}</p>
               <p>{data.seller.phone}</p>
               <p>{data.seller.email}</p>
               <p className="font-medium">{data.seller.taxId}</p>
             </div>
           </div>
+        </div>
+
+          {/* Invoice Details (Right) */}
           <div className="text-right space-y-2">
             <h2 className="text-4xl font-bold text-primary">INVOICE</h2>
             <div className="text-sm space-y-1">
@@ -200,23 +207,6 @@ export function InvoicePreview({ data }: InvoicePreviewProps) {
             </div>
           )}
 
-          
-          {/* Product Logos Footer */}
-          <div className="mt-8 pt-6 border-t border-border">
-            <div className="flex flex-wrap justify-center items-center gap-1 md:gap-6">
-              <Image src="/hprf.jpg" alt="Hibiscus Prekese" width={60} height={60} className="object-contain" />
-              <Image src="/hmif.jpg" alt="Hibiscus Mint" width={60} height={60} className="object-contain" />
-              <Image src="/hgf.jpg" alt="Hibiscus Ginger" width={60} height={60} className="object-contain" />
-              <Image src="/hof.jpg" alt="Hibiscus Orange" width={60} height={60} className="object-contain" />
-              <Image src="/hr.png" alt="Hibiscus Roots Infusions" width={60} height={60} className="object-contain" />
-              <Image src="/hlgf.jpg" alt="Hibiscus Lemon Grass" width={60} height={60} className="object-contain" />
-              <Image src="/hcf.jpg" alt="Hibiscus Cinnamon" width={60} height={60} className="object-contain" />
-              <Image src="/hsf.jpg" alt="Hibiscus Senna" width={60} height={60} className="object-contain" />
-              <Image src="/hmof.jpg" alt="Hibiscus Moringa" width={60} height={60} className="object-contain" />
-              <Image src="/hpif.jpg" alt="Hibiscus Pineapple" width={60} height={60} className="object-contain" />
-            </div>
-          </div>
-          
           <div className="text-center pt-4">
             <p className="text-xs text-muted-foreground">Thank you for your business!</p>
           </div>
