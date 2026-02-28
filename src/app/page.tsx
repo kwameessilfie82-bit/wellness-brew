@@ -78,13 +78,13 @@ export default function HomePage() {
             <div className="max-w-2xl">
               <div className="inline-flex items-center gap-2 mb-4 bg-secondary/20 px-3 py-1 rounded-full">
                 <Leaf className="w-4 h-4 text-primary" />
-                <span className="text-sm font-medium text-primary">100% Natural & Organic Rose of Sharon</span>
+                <span className="text-sm font-medium text-primary">100% Natural & Organic Premium Teas</span>
               </div>
               <h1 className="text-5xl md:text-6xl font-serif font-bold text-foreground mb-4 leading-tight">
-                Experience the Power of Rose of Sharon
+                Experience the Power of Wellness in a Cup
               </h1>
               <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-                Discover premium Rose of Sharon (Hibiscus) teas crafted for your mind, body, and spirit. Each blend is
+                Discover premium teas (enriched with Hearbs and Spices) crafted for your mind, body, and spirit. Each blend is
                 carefully selected and sourced from the rich continent of Africa, featuring the healing properties of this sacred flower.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">

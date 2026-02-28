@@ -350,9 +350,10 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
 
   // Create new product
   const handleCreateProduct = async () => {
-    // Client-side validation: name, price, category required; SKU/description optional
+    // Client-side validation: name, price, category, description required; others optional
     const errors: string[] = [];
     if (!newProduct.name.trim()) errors.push("Product name is required");
+    if (!newProduct.description.trim()) errors.push("Product description is required");
     if (!newProduct.categoryId) errors.push("Category is required");
     if (!newProduct.price || isNaN(Number(newProduct.price))) errors.push("Valid price is required");
     if (errors.length > 0) {
@@ -618,12 +619,15 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Product Name</Label>
+                  <Label htmlFor="name">
+                    Product Name <span className="text-destructive">*</span>
+                  </Label>
                   <Input
                     id="name"
                     value={newProduct.name}
                     onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
                     placeholder="Enter product name"
+                    required
                   />
                 </div>
                 <div className="space-y-2">
@@ -658,20 +662,26 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="price">Price</Label>
+                  <Label htmlFor="price">
+                    Price <span className="text-destructive">*</span>
+                  </Label>
                   <Input
                     id="price"
                     type="number"
                     value={newProduct.price}
                     onChange={(e) => setNewProduct({...newProduct, price: e.target.value})}
                     placeholder="0.00"
+                    required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="category">Category</Label>
+                  <Label htmlFor="category">
+                    Category <span className="text-destructive">*</span>
+                  </Label>
                   <Select
                     value={newProduct.categoryId}
                     onValueChange={(value) => setNewProduct({...newProduct, categoryId: value})}
+                    required
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select category" />
@@ -687,12 +697,15 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">
+                  Description <span className="text-destructive">*</span>
+                </Label>
                 <Textarea
                   id="description"
                   value={newProduct.description}
                   onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
                   placeholder="Enter product description"
+                  required
                 />
               </div>
               {/* Images: upload from device only */}

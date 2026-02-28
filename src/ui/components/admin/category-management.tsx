@@ -125,6 +125,16 @@ export function CategoryManagement({ }: CategoryManagementProps) {
   );
 
   const handleCreateCategory = async () => {
+    // Client-side validation: name and description required
+    const errors: string[] = []
+    if (!newCategory.name.trim()) errors.push("Category name is required")
+    if (!newCategory.description.trim()) errors.push("Category description is required")
+
+    if (errors.length > 0) {
+      alert(errors.join("\n"))
+      return
+    }
+
     try {
       setIsCreating(true);
       const response = await fetch('/api/admin/categories', {
@@ -277,24 +287,30 @@ export function CategoryManagement({ }: CategoryManagementProps) {
                 Add a new product category to organize your inventory.
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
+              <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="name">Category Name</Label>
+                <Label htmlFor="name">
+                  Category Name <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   id="name"
                   value={newCategory.name}
                   onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
                   placeholder="e.g., Paperpacks"
+                  required
                 />
               </div>
               {/* Slug removed; auto-generated from name */}
               <div className="grid gap-2">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">
+                  Description <span className="text-destructive">*</span>
+                </Label>
                 <Textarea
                   id="description"
                   value={newCategory.description}
                   onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
                   placeholder="Brief description of this category"
+                  required
                 />
               </div>
               {/* Images: upload from device only */}
