@@ -11,7 +11,7 @@ export default function AboutPage() {
         <div className="section-container">
           <div className="max-w-3xl mx-auto text-center mb-16">
             <h1 className="text-5xl md:text-6xl font-serif font-bold text-foreground mb-6">
-              About LeafyVibesTea
+              About Wellness Brew
             </h1>
             <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
               We are passionate about bringing you the finest selection of premium Rose of Sharon (Hibiscus) teas and wellness products. 
@@ -51,7 +51,7 @@ export default function AboutPage() {
             <div>
               <h2 className="text-3xl font-serif font-bold mb-4">Our Story</h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                Founded with a vision to make premium wellness products accessible to everyone, LeafyVibesTea has been 
+                Founded with a vision to make premium wellness products accessible to everyone, Wellness Brew has been 
                 dedicated to sourcing the finest Rose of Sharon (Hibiscus) teas and herbal blends from around the world. 
                 Each product is carefully selected for its quality, purity, and health benefits.
               </p>

@@ -103,14 +103,14 @@ export default function TermsPage() {
                 <h2 className="text-2xl font-serif font-bold text-foreground mb-4">9. Intellectual Property</h2>
                 <p className="leading-relaxed">
                   All content on this website, including text, graphics, logos, images, and software, is the property of 
-                  LeafyVibesTea or its content suppliers and is protected by copyright and other intellectual property laws.
+                  Wellness Brew or its content suppliers and is protected by copyright and other intellectual property laws.
                 </p>
               </section>
 
               <section>
                 <h2 className="text-2xl font-serif font-bold text-foreground mb-4">10. Limitation of Liability</h2>
                 <p className="leading-relaxed">
-                  LeafyVibesTea shall not be liable for any indirect, incidental, special, consequential, or punitive damages 
+                  Wellness Brew shall not be liable for any indirect, incidental, special, consequential, or punitive damages 
                   resulting from your use of or inability to use the website or products.
                 </p>
               </section>

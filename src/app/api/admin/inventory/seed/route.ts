@@ -122,7 +122,7 @@ const handler = withAdminAuth(async (_request: NextRequest, adminUser) => {
           isFeatured: index < 4, // First 4 products are featured
           requiresPrescription: false,
           weight: null,
-          manufacturer: "LeafyVibesTea",
+          manufacturer: "Wellness Brew",
           createdAt: now,
           updatedAt: now,
           createdBy: adminUser.id,

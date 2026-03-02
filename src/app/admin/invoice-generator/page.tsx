@@ -35,7 +35,7 @@ export default function InvoiceGenerator() {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
 
   const [seller, setSeller] = useState<SellerInfo>({
-    businessName: "leafyvibestea",
+    businessName: "Wellness Brew",
     address: "Parakuo Estate, Dome, Accra",
     phone: "+233553981862",
     email: "",

@@ -11,7 +11,7 @@ const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
 const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-serif" });
 
 export const metadata: Metadata = {
-	title: "LeafyVibesTea - Premium Tea & Wellness",
+	title: "Wellness Brew - Premium Tea & Wellness",
 	description:
 		"Discover premium teas, wellness blends, and teaware. Your journey to a healthier lifestyle starts with the perfect cup.",
 };

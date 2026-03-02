@@ -1,8 +1,8 @@
 export const SEO_CONFIG = {
   description:
-    "LeafyVibesTea: Premium tea and wellness e-commerce site.",
-  fullName: "LeafyVibesTea",
-  name: "LeafyVibesTea",
+    "Wellness Brew: Premium tea and wellness e-commerce site.",
+  fullName: "Wellness Brew",
+  name: "Wellness Brew",
   slogan: "Your journey to wellness starts with the perfect cup.",
 };
 

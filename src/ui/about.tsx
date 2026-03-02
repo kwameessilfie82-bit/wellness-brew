@@ -24,7 +24,7 @@ export function About() {
             <h2 className="text-3xl md:text-5xl font-serif font-bold text-balance">A Tea Lover&apos;s Safe Haven</h2>
             <div className="space-y-4 text-muted-foreground leading-relaxed">
               <p>
-                At leafyvibestea, we believe tea is more than just a drink. It&apos;s comfort, healing, and a daily
+                At Wellness Brew, we believe tea is more than just a drink. It&apos;s comfort, healing, and a daily
                 ritual of slowing down in our fast-paced world.
               </p>
               <p>
