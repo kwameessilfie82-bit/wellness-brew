@@ -9,7 +9,7 @@ const getHandler = withAdminAuth(async (request) => {
       request.url,
       request.url.startsWith("http")
         ? undefined
-        : process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+        : process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000" || "https://wellness-brew.vercel.app",
     );
     const search = url.searchParams.get("search");
     const status = url.searchParams.get("status");

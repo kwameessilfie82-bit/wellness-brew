@@ -12,7 +12,7 @@ import { Shell } from "@/ui/primitives/shell";
 export const metadata: Metadata = {
   description: "Sign out of your account",
   metadataBase: new URL(
-    process.env.NEXT_SERVER_APP_URL || "http://localhost:3000",
+    process.env.NEXT_SERVER_APP_URL || "http://localhost:3000" || "https://wellness-brew.vercel.app",
   ),
   title: "Sign out",
 };

@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
       request.url,
       request.url.startsWith("http")
         ? undefined
-        : process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+        : process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000" || "https://wellness-brew.vercel.app",
     );
     const q = url.searchParams.get("q") ?? "";
     const limit = Math.min(

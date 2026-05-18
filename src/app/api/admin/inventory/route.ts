@@ -14,7 +14,7 @@ function parseSearchParams(request: NextRequest) {
     request.url,
     request.url.startsWith("http")
       ? undefined
-      : process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+      : process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000" || "https://wellness-brew.vercel.app",
   );
 
   return {

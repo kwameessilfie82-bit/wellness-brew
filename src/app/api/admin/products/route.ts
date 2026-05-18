@@ -19,7 +19,7 @@ const getHandler = withAdminAuth(
         if (request.url.startsWith('http')) {
           url = new URL(request.url);
         } else {
-          const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+          const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000' || 'https://wellness-brew.vercel.app';
           url = new URL(request.url, baseUrl);
         }
         searchParams = url.searchParams;

@@ -29,7 +29,7 @@ interface Product {
 
 async function getProduct(slug: string): Promise<Product | null> {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/products?slug=${slug}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000' || 'https://wellness-brew.vercel.app'}/api/products?slug=${slug}`, {
       cache: 'no-store'
     });
     

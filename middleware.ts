@@ -11,6 +11,7 @@ export async function middleware(request: NextRequest) {
       "https://www.wellnessgroupgh.com",
       "https://wellnessgroupgh.com",
       "http://localhost:3000",
+      "https://wellness-brew.vercel.app",
     ];
 
     if (origin && allowedOrigins.includes(origin)) {
