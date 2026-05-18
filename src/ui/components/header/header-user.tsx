@@ -11,6 +11,7 @@ import { useTheme } from "next-themes";
 import * as React from "react";
 
 import { cn } from "@/lib/cn";
+import { SignOutDialog } from "@/ui/components/sign-out-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/ui/primitives/avatar";
 import { Badge } from "@/ui/primitives/badge";
 import { Button } from "@/ui/primitives/button";
@@ -49,13 +50,16 @@ export function HeaderUserDropdown({
 }: HeaderUserDropdownProps) {
   const { setTheme, theme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
+  const [menuOpen, setMenuOpen] = React.useState(false);
+  const [signOutOpen, setSignOutOpen] = React.useState(false);
 
   React.useEffect(() => {
     requestAnimationFrame(() => setMounted(true));
   }, []);
 
   return (
-    <DropdownMenu>
+    <>
+    <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
       <DropdownMenuTrigger asChild>
         <Button
           className="relative overflow-hidden rounded-full"
@@ -198,18 +202,22 @@ export function HeaderUserDropdown({
 
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          asChild
           className={cn(
             "cursor-pointer",
             isDashboard ? "text-red-600" : "txt-destructive focus:text-destrctive",
           )}
+          onSelect={(e) => {
+            e.preventDefault();
+            setMenuOpen(false);
+            setSignOutOpen(true);
+          }}
         >
-          <Link href="/auth/sign-out">
-            <LogOut className="mr-2 h-4 w-4" />
-            Log out
-          </Link>
+          <LogOut className="mr-2 h-4 w-4" />
+          Log out
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+    <SignOutDialog open={signOutOpen} onOpenChange={setSignOutOpen} />
+    </>
   );
 }

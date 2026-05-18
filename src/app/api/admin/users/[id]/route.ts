@@ -1,56 +1,47 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { withAdminAuth } from "@/lib/admin-middleware";
-import { db } from "@/db";
-import { userTable } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { deleteUserCompletely } from "@/lib/queries/delete-user";
 
-
-// DELETE /api/admin/users/[id] - Delete user
 const deleteHandler = withAdminAuth(
   async (_request: NextRequest, adminUser, context?: { params: Record<string, string> }) => {
     try {
       const params = context?.params as { id: string };
       const userId = params.id;
 
-      // Prevent self-deletion
       if (adminUser.userId === userId) {
         return NextResponse.json(
           { error: "You cannot delete your own account" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
-      // Check if user exists
-      const user = await db.query.userTable.findFirst({
-        where: eq(userTable.id, userId),
-      });
+      const result = await deleteUserCompletely(userId);
 
-      if (!user) {
+      if (!result.ok) {
         return NextResponse.json(
-          { error: "User not found" },
-          { status: 404 }
+          { error: result.error },
+          { status: result.status },
         );
       }
 
-      // Delete the user (this should cascade delete related records, including admin role if any)
-      await db.delete(userTable)
-        .where(eq(userTable.id, userId));
-
-      return NextResponse.json({ 
-        message: "User deleted successfully" 
+      return NextResponse.json({
+        message: "User and all related data deleted successfully",
       });
     } catch (error) {
       console.error("Error deleting user:", error);
-      return NextResponse.json(
-        { error: "Failed to delete user" },
-        { status: 500 }
-      );
+      const message =
+        error instanceof Error ? error.message : "Failed to delete user";
+      return NextResponse.json({ error: message }, { status: 500 });
     }
   },
-  "canManageCustomers"
+  "canManageCustomers",
 );
 
-export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> },
+) {
   const { id } = await context.params;
   return deleteHandler(request, { params: { id } });
 }
