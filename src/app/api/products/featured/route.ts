@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import { eq, and, desc } from "drizzle-orm";
+
 import { db } from "@/db";
 import { productTable, categoryTable, inventoryTable } from "@/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { mapProductsResponse } from "@/lib/api/products";
 
 export async function GET() {
   try {
@@ -80,7 +82,18 @@ export async function GET() {
       p.quantityAvailable === null || p.quantityAvailable === undefined || p.quantityAvailable > 0
     );
 
-    return NextResponse.json({ products: productsWithStock });
+    const normalized = mapProductsResponse(
+      productsWithStock as Record<string, unknown>[],
+    );
+
+    return NextResponse.json(
+      { products: normalized },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120",
+        },
+      },
+    );
   } catch (error) {
     console.error("Error fetching featured products:", error);
     return NextResponse.json(

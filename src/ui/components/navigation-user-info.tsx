@@ -1,74 +1,72 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { HeaderUserDropdown } from "@/ui/components/header/header-user"
-import { Skeleton } from "@/ui/primitives/skeleton"
-import { useCurrentUser } from "@/lib/auth-client"
+import { useEffect, useState } from "react";
+
+import { HeaderUserDropdown } from "@/ui/components/header/header-user";
+import { Skeleton } from "@/ui/primitives/skeleton";
+import { useCurrentUser } from "@/lib/auth-client";
 
 interface UserInfo {
-  email: string
-  name: string
-  image?: string | null
-  adminRole?: string | null
+  email: string;
+  name: string;
+  image?: string | null;
+  isAdmin: boolean;
+  adminRole?: string | null;
 }
 
 export function NavigationUserInfo() {
-  const { isPending, user } = useCurrentUser()
-  const [userInfo, setUserInfo] = useState<UserInfo | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { isPending, user } = useCurrentUser();
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchUserInfo = async () => {
       if (!user) {
-        setLoading(false)
-        return
+        setLoading(false);
+        return;
       }
 
       try {
-        const response = await fetch('/api/admin/me')
-        if (response.ok) {
-          const data = await response.json()
-          setUserInfo({
-            email: user.email || '',
-            name: user.name || '',
-            image: user.image,
-            adminRole: data.role?.name || null,
-          })
-        } else {
-          // User is not an admin
-          setUserInfo({
-            email: user.email || '',
-            name: user.name || '',
-            image: user.image,
-            adminRole: null,
-          })
-        }
-      } catch (error) {
-        // User is not an admin or error occurred
+        const response = await fetch("/api/admin/me");
+        const data = await response.json();
+
+        const isAdmin = Boolean(data.isAdmin);
+        const roleName =
+          data.role?.name ?? data.adminUser?.role?.name ?? null;
+
         setUserInfo({
-          email: user.email || '',
-          name: user.name || '',
+          email: user.email || "",
+          name: user.name || "",
           image: user.image,
+          isAdmin,
+          adminRole: isAdmin ? roleName : null,
+        });
+      } catch {
+        setUserInfo({
+          email: user.email || "",
+          name: user.name || "",
+          image: user.image,
+          isAdmin: false,
           adminRole: null,
-        })
+        });
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
     if (!isPending && user) {
-      fetchUserInfo()
+      void fetchUserInfo();
     } else if (!isPending && !user) {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [isPending, user])
+  }, [isPending, user]);
 
   if (isPending || loading) {
-    return <Skeleton className="h-9 w-9 rounded-full" />
+    return <Skeleton className="h-9 w-9 rounded-full" />;
   }
 
   if (!user || !userInfo) {
-    return null
+    return null;
   }
 
   return (
@@ -77,7 +75,8 @@ export function NavigationUserInfo() {
       userEmail={userInfo.email}
       userImage={userInfo.image}
       userName={userInfo.name}
+      isAdmin={userInfo.isAdmin}
       adminRole={userInfo.adminRole || undefined}
     />
-  )
+  );
 }

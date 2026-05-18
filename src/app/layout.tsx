@@ -1,6 +1,7 @@
 import "@/css/globals.css";
 import { CartProvider } from "@/lib/cart-context";
 import { ThemeProvider } from "@/ui/components/theme-provider";
+import { Toaster } from "@/ui/primitives/sonner";
 import { Analytics } from "@vercel/analytics/next";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Playfair_Display } from "next/font/google";
@@ -27,6 +28,7 @@ export default function RootLayout({
 				<ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
 					<CartProvider>
 						{children}
+						<Toaster richColors closeButton position="top-center" />
 						<Analytics />
 					</CartProvider>
 				</ThemeProvider>

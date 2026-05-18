@@ -4,81 +4,92 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* LeafyVibesTea Premium Color Palette - Rose of Sharon Theme */
-  --background: #ffffff;
-  --foreground: #1a1a1a;
+  --background: #faf9f6;
+  --foreground: #1c1917;
   --card: #ffffff;
-  --card-foreground: #1a1a1a;
-  --primary: #380001;
-  --primary-foreground: #ffffff;
-  --secondary: #f8e8e8;
-  --secondary-foreground: #380001;
-  --accent: #5a0019;
-  --accent-foreground: #ffffff;
-  --muted: #f5f5f5;
-  --muted-foreground: #666666;
-  --border: #e0e0e0;
-  --input: #e0e0e0;
-  --ring: #380001;
-  --radius: 0.5rem;
-  --destructive: oklch(0.577 0.245 27.325);
+  --card-foreground: #1c1917;
+  --primary: #2f6b4f;
+  --primary-foreground: #f8faf8;
+  --secondary: #e8f3ec;
+  --secondary-foreground: #1f4d38;
+  --accent: #d4a054;
+  --accent-foreground: #1c1917;
+  --muted: #f0ebe3;
+  --muted-foreground: #57534e;
+  --border: #e7e0d5;
+  --input: #e7e0d5;
+  --ring: #2f6b4f;
+  --radius: 0.75rem;
+  --destructive: #dc2626;
   --destructive-foreground: #ffffff;
   --popover: #ffffff;
-  --popover-foreground: #250d13;
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --popover-foreground: #1c1917;
+  --chart-1: #2f6b4f;
+  --chart-2: #d4a054;
+  --chart-3: #6b9b7a;
+  --chart-4: #8b5cf6;
+  --chart-5: #f59e0b;
+  --sidebar: #faf9f6;
+  --sidebar-foreground: #1c1917;
+  --sidebar-primary: #2f6b4f;
+  --sidebar-primary-foreground: #f8faf8;
+  --sidebar-accent: #e8f3ec;
+  --sidebar-accent-foreground: #1f4d38;
+  --sidebar-border: #e7e0d5;
+  --sidebar-ring: #2f6b4f;
+  --heading: #1c1917;
+  --gradient-start: #e8f3ec;
+  --gradient-end: #faf9f6;
+  --brand: #2f6b4f;
+  --brand-subtle: #e8f3ec;
+  --gradient-text-from: #2f6b4f;
+  --gradient-text-to: #b8862e;
 }
 
 .dark {
-  --background: #0a0a0a;
-  --foreground: #ffffff;
-  --card: #1a1a1a;
-  --card-foreground: #ffffff;
-  --primary: #5a0019;
-  --primary-foreground: #ffffff;
-  --secondary: #2a0010;
-  --secondary-foreground: #ffffff;
-  --accent: #7a0029;
-  --accent-foreground: #ffffff;
-  --muted: #2a2a2a;
-  --muted-foreground: #b0b0b0;
-  --border: #333333;
-  --input: #333333;
-  --ring: #5a0019;
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: #1a1014;
-  --popover: #2d161e;
-  --popover-foreground: #f5f1eb;
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
+  --background: #0c0f0d;
+  --foreground: #f2f7f4;
+  --card: #151a17;
+  --card-foreground: #f2f7f4;
+  --primary: #5cb888;
+  --primary-foreground: #06100b;
+  --secondary: #1a2822;
+  --secondary-foreground: #d4ebe0;
+  --accent: #f0cc7a;
+  --accent-foreground: #1a1408;
+  --muted: #1f2623;
+  --muted-foreground: #a8bdb3;
+  --border: #2d3833;
+  --input: #2d3833;
+  --ring: #7ed4a6;
+  --destructive: #f87171;
+  --destructive-foreground: #ffffff;
+  --popover: #151a17;
+  --popover-foreground: #f2f7f4;
+  --gradient-start: #152820;
+  --gradient-end: #0c0f0d;
+  --heading: #ffffff;
+  --brand: #8ee4b4;
+  --brand-subtle: #1a3328;
+  --gradient-text-from: #9ef0c4;
+  --gradient-text-to: #f8e08c;
+  --chart-1: #8ee4b4;
+  --chart-2: #f0cc7a;
+  --chart-3: #6b9b7a;
+  --sidebar: #0c0f0d;
+  --sidebar-foreground: #f2f7f4;
+  --sidebar-primary: #8ee4b4;
+  --sidebar-primary-foreground: #06100b;
+  --sidebar-accent: #1a2822;
+  --sidebar-accent-foreground: #d4ebe0;
+  --sidebar-border: #2d3833;
+  --sidebar-ring: #7ed4a6;
 }
 
 @theme inline {
-  --font-sans: "Geist", system-ui, sans-serif;
-  --font-serif: "Georgia", serif;
-  --font-mono: "Geist Mono", monospace;
+  --font-sans: var(--font-sans), system-ui, sans-serif;
+  --font-serif: var(--font-serif), Georgia, serif;
+  --font-mono: var(--font-mono), monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -115,25 +126,190 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-heading: var(--heading);
+  --color-brand: var(--brand);
+  --color-brand-subtle: var(--brand-subtle);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    scroll-behavior: smooth;
+  }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    background-image: radial-gradient(
+      ellipse 80% 50% at 50% -20%,
+      var(--gradient-start),
+      transparent
+    );
+  }
+  .dark body {
+    background-image: radial-gradient(
+      ellipse 70% 45% at 50% -15%,
+      color-mix(in oklab, var(--gradient-start) 70%, transparent),
+      transparent
+    );
+  }
+  .dark h1,
+  .dark h2,
+  .dark h3 {
+    color: var(--heading);
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply px-6 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium transition hover:opacity-90;
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-2.5 font-medium text-primary-foreground shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0;
   }
   .btn-secondary {
-    @apply px-6 py-2.5 rounded-lg bg-secondary text-secondary-foreground font-medium transition hover:opacity-90;
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-border bg-card px-6 py-2.5 font-medium text-foreground shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md;
   }
   .section-container {
-    @apply max-w-7xl mx-auto px-4 md:px-8;
+    @apply mx-auto max-w-7xl px-4 md:px-8;
+  }
+  .animate-fade-in-up {
+    animation: fade-in-up 0.6s ease-out both;
+  }
+  .animate-fade-in-up-delay-1 {
+    animation: fade-in-up 0.6s ease-out 0.1s both;
+  }
+  .animate-fade-in-up-delay-2 {
+    animation: fade-in-up 0.6s ease-out 0.2s both;
+  }
+  .animate-fade-in-up-delay-3 {
+    animation: fade-in-up 0.6s ease-out 0.3s both;
+  }
+  .glass-nav {
+    @apply border-b border-border/60 bg-card/80 backdrop-blur-lg;
+  }
+  .dark .glass-nav {
+    @apply border-border/80 bg-card/95;
+  }
+  .text-brand {
+    color: var(--brand);
+  }
+  .text-gradient-hero {
+    background-image: linear-gradient(
+      120deg,
+      var(--gradient-text-from) 0%,
+      var(--gradient-text-to) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: var(--gradient-text-to);
+  }
+  .badge-brand {
+    @apply inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-medium;
+    border-color: color-mix(in oklab, var(--brand) 35%, transparent);
+    background-color: color-mix(in oklab, var(--brand-subtle) 80%, transparent);
+    color: var(--brand);
+  }
+  .section-hero-bg {
+    @apply border-b border-border/60 bg-secondary/30;
+  }
+  .dark .section-hero-bg {
+    @apply border-border/50 bg-card/50;
+  }
+  /* Hero decorative layers — pattern fades out so no hard edge vs next section */
+  .hero-glow {
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(
+        ellipse 90% 70% at 85% 15%,
+        color-mix(in oklab, var(--gradient-start) 55%, transparent),
+        transparent 55%
+      ),
+      radial-gradient(
+        ellipse 70% 55% at 10% 85%,
+        color-mix(in oklab, var(--accent) 22%, transparent),
+        transparent 50%
+      );
+    opacity: 0.55;
+  }
+  .dark .hero-glow {
+    opacity: 0.35;
+  }
+  .hero-pattern {
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    opacity: 0.35;
+    background-size: 24px 24px;
+    background-image: radial-gradient(
+      circle at 1px 1px,
+      color-mix(in oklab, var(--border) 70%, transparent) 1px,
+      transparent 0
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      black 0%,
+      black 35%,
+      transparent 92%
+    );
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      black 0%,
+      black 35%,
+      transparent 92%
+    );
+  }
+  .dark .hero-pattern {
+    opacity: 0.22;
+  }
+  .hero-bottom-blend {
+    pointer-events: none;
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 5;
+    height: min(28vh, 220px);
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      color-mix(in oklab, var(--background) 25%, transparent) 35%,
+      color-mix(in oklab, var(--background) 70%, transparent) 65%,
+      var(--background) 100%
+    );
+  }
+  .product-card-hover {
+    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/5;
+  }
+  .admin-panel {
+    @apply min-h-full rounded-2xl border border-border/60 bg-card/40 p-4 sm:p-6;
+  }
+  .admin-stat-card {
+    @apply flex items-center gap-3 rounded-2xl border border-border/60 bg-card p-4 shadow-sm;
+  }
+  .admin-stat-card--success {
+    @apply border-primary/25 bg-primary/5;
+  }
+  .admin-stat-card--warning {
+    @apply border-accent/30 bg-accent/10;
+  }
+  .admin-stat-card--danger {
+    @apply border-destructive/25 bg-destructive/5;
+  }
+  .admin-sidebar {
+    @apply sticky top-0 h-screen;
+  }
+  .admin-table-wrap {
+    @apply overflow-x-auto rounded-xl border border-border/60;
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

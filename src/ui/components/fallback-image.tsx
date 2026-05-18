@@ -16,6 +16,7 @@ interface FallbackImageProps {
   width?: number;
   height?: number;
   unoptimized?: boolean;
+  priority?: boolean;
 }
 
 export function FallbackImage({
@@ -27,27 +28,26 @@ export function FallbackImage({
   src,
   width,
   height,
+  priority,
 }: FallbackImageProps) {
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
 
-  // Validate src URL to prevent URL construction errors
   const isValidSrc = (() => {
     if (!src) return false;
     try {
-      // Check if it's a valid URL or a valid relative path
-      if (src.startsWith('http') || src.startsWith('https')) {
+      if (src.startsWith("http") || src.startsWith("https")) {
         new URL(src);
         return true;
-      } else if (src.startsWith('data:') || src.startsWith('blob:')) {
-        // Allow Data URLs and Blob URLs for local previews/uploads
+      }
+      if (src.startsWith("data:") || src.startsWith("blob:")) {
         return true;
-      } else if (src.startsWith('/') || src.startsWith('./') || src.startsWith('../')) {
+      }
+      if (src.startsWith("/") || src.startsWith("./") || src.startsWith("../")) {
         return true;
       }
       return false;
-    } catch (error) {
-      console.error('❌ Invalid image src URL:', src, error);
+    } catch {
       return false;
     }
   })();
@@ -67,7 +67,7 @@ export function FallbackImage({
         className={cn(
           "flex items-center justify-center bg-muted/50",
           fill ? "absolute inset-0" : "",
-          className
+          className,
         )}
         style={!fill ? { width, height } : undefined}
       >
@@ -80,41 +80,38 @@ export function FallbackImage({
   }
 
   return (
-    <>
-      {imageLoading && (
-        <div
-          className={cn(
-            "absolute inset-0 flex items-center justify-center bg-muted/30",
-            fill ? "absolute inset-0" : "",
-            className
-          )}
-          style={!fill ? { width, height } : undefined}
-        >
+    <div
+      className={cn(
+        "relative overflow-hidden",
+        fill ? "absolute inset-0 h-full w-full" : "inline-block",
+        className,
+      )}
+      style={!fill ? { width, height } : undefined}
+    >
+      {imageLoading ? (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-muted/30">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
         </div>
-      )}
+      ) : null}
       <Image
         alt={alt}
         className={cn(
           "object-cover transition-opacity duration-300",
           imageLoading ? "opacity-0" : "opacity-100",
-          className
         )}
         fill={fill}
         height={height}
-        loading={loading}
+        loading={priority ? undefined : loading}
+        priority={priority}
         onError={handleError}
         onLoad={handleLoad}
         sizes={sizes}
         src={src}
         width={width}
-        // Data/blob URLs must be unoptimized for Next/Image
-        unoptimized={Boolean((src && (src.startsWith('data:') || src.startsWith('blob:'))))}
+        unoptimized={Boolean(
+          src && (src.startsWith("data:") || src.startsWith("blob:")),
+        )}
       />
-    </>
+    </div>
   );
 }
-
-
-
-

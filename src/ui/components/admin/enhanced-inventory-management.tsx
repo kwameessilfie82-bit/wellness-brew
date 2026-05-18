@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Minus, Loader2, Plus, Search, AlertTriangle, TrendingUp, TrendingDown, Package, Edit, Trash2, CheckSquare, Database } from "lucide-react";
 
 import { Button } from "@/ui/primitives/button";
@@ -104,9 +104,6 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isSavingStock, setIsSavingStock] = useState(false);
   const [updatingReserved, setUpdatingReserved] = useState<string | null>(null);
-  const [isSeeding, setIsSeeding] = useState(false);
-
-
   const addImageFile = async (file: File, isEdit = false) => {
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) {
@@ -145,121 +142,81 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
     }
   }, [isEditDialogOpen, editingProduct]);
 
-  // Fetch categories and products from API
-  const fetchCategories = async () => {
-    // Ensure we're in a browser environment
-    if (typeof window === 'undefined') {
-      // console.log('⚠️ Skipping fetchCategories - not in browser environment');
-      return;
-    }
-    
+  const fetchCategories = useCallback(async () => {
     try {
-      const response = await fetch('/api/admin/categories?forInventory=true');
+      const response = await fetch("/api/admin/categories?forInventory=true");
       if (response.ok) {
         const data = await response.json();
         setCategories(data.categories || []);
       }
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      console.error("Error fetching categories:", error);
     }
-  };
+  }, []);
 
-  // Load enhanced inventory with products
   const loadInventory = useCallback(async () => {
-    // Ensure we're in a browser environment
-    if (typeof window === 'undefined') {
-      // console.log('⚠️ Skipping loadInventory - not in browser environment');
-      return;
-    }
-    
     try {
       const params = new URLSearchParams();
-      // console.log('📊 Filter values:', { searchQuery, selectedCategory, selectedFilter });
-      
-      if (searchQuery && searchQuery.trim()) {
-        const trimmedQuery = searchQuery.trim();
-        // console.log('🔍 Adding search query:', trimmedQuery);
-        params.append('search', trimmedQuery);
+      params.set("minimal", "1");
+      params.set("limit", "200");
+
+      if (searchQuery.trim()) {
+        params.set("search", searchQuery.trim());
       }
-      if (selectedCategory && selectedCategory !== 'all') {
-        // console.log('🔍 Adding category filter:', selectedCategory);
-        params.append('categoryId', selectedCategory);
+      if (selectedCategory && selectedCategory !== "all") {
+        params.set("categoryId", selectedCategory);
       }
-      if (selectedFilter && selectedFilter !== 'all') {
-        // console.log('🔍 Adding status filter:', selectedFilter);
-        params.append('status', selectedFilter);
+      if (selectedFilter && selectedFilter !== "all") {
+        params.set("status", selectedFilter);
       }
-      
-      const baseUrl = '/api/admin/inventory?minimal=1';
-      const queryString = params.toString();
-      const url = queryString ? `${baseUrl}&${queryString}` : baseUrl;
-      // console.log('🔍 Fetching inventory from URL:', url);
-      // console.log('📊 URL components:', { baseUrl, queryString, finalUrl: url });
-      
-      // Use absolute URL to avoid any relative URL issues
-      const absoluteUrl = url.startsWith('/') ? url : `/${url}`;
-      // console.log('🔍 Using absolute URL:', absoluteUrl);
-      
-      const res = await fetch(absoluteUrl);
+
+      const res = await fetch(`/api/admin/inventory?${params.toString()}`);
       if (!res.ok) {
-        // console.error('❌ Failed to fetch inventory:', res.status, res.statusText);
         return;
       }
       const data = await res.json();
-      
-      // Set products (which now include inventory data)
-      // console.log('📦 Products data received:', data.products?.length || 0, 'products');
-      
-      // Debug product data for any malformed URLs
-      if (data.products) {
-        data.products.forEach((product: Product & { inventory?: Inventory }, index: number) => {
-          if (product.images) {
-            try {
-              JSON.parse(product.images);
-              // console.log(`📸 Product ${index} (${product.name}) images parsed successfully`);
-            } catch (error) {
-              console.error(`❌ Product ${index} (${product.name}) has malformed images data:`, product.images, error);
-            }
-          }
-        });
-      }
-      
+
       setProducts(data.products || []);
-      
-      // Extract inventory data from products
-      const inventoryData = data.products?.map((product: Product & { inventory?: Inventory }) => product.inventory).filter(Boolean) || [];
+
+      const inventoryData =
+        data.products
+          ?.map(
+            (product: Product & { inventory?: Inventory }) => product.inventory,
+          )
+          .filter(Boolean) || [];
       setInventory(inventoryData);
     } catch (error) {
-      console.error('❌ Error loading inventory:', error);
-      console.error('📊 Error details:', {
-        name: error instanceof Error ? error.name : 'Unknown',
-        message: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
-      });
+      console.error("Error loading inventory:", error);
     }
   }, [searchQuery, selectedCategory, selectedFilter]);
 
-  // Set mounted state
+  const refreshInventoryData = useCallback(async () => {
+    await Promise.all([fetchCategories(), loadInventory()]);
+  }, [fetchCategories, loadInventory]);
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  // Load data on component mount and when filters change
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     if (!isMounted) return;
-    fetchCategories();
-    loadInventory();
-  }, [isMounted, loadInventory]);
 
-  // Refresh inventory when categories change (polling mechanism)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchCategories();
-      loadInventory();
-    }, 5000); // Check every 5 seconds
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
 
-    return () => clearInterval(interval);
-  }, [fetchCategories, loadInventory]);
+    debounceRef.current = setTimeout(() => {
+      void refreshInventoryData();
+    }, searchQuery.trim() ? 300 : 0);
+
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, [isMounted, refreshInventoryData, searchQuery, selectedCategory, selectedFilter]);
 
   const getCategoryName = (categoryId: string) => {
     const category = categories.find(cat => cat.id === categoryId);
@@ -271,13 +228,8 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
     return inventory.find(inv => inv.productId === productId);
   };
 
-  // Filter products based on search and category
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         product.sku.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || product.categoryId === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  // Server applies search/category/status filters
+  const filteredProducts = products;
 
   // Sort so items needing finalization (reserved > 0) appear first; then by reserved desc
   const sortedProducts = [...filteredProducts].sort((a, b) => {
@@ -382,7 +334,7 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
           expiryDate: "", batchNumber: "", tags: "", seoTitle: "", seoDescription: "",
         });
         setNewProductImages([]);
-        loadInventory();
+        void refreshInventoryData();
       }
     } catch (error) {
       console.error('Error creating product:', error);
@@ -415,38 +367,12 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
         setIsEditDialogOpen(false);
         setEditingProduct(null);
         setEditProductImages([]);
-        loadInventory();
+        void refreshInventoryData();
       }
     } catch (error) {
       console.error('Error updating product:', error);
     } finally {
       setIsUpdating(false);
-    }
-  };
-
-  // Seed inventory with sample products
-  const handleSeedInventory = async () => {
-    if (!confirm('This will seed the inventory with all products from the invoice generator. Continue?')) return;
-    
-    try {
-      setIsSeeding(true);
-      const response = await fetch('/api/admin/inventory/seed', {
-        method: 'POST',
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        alert(`Successfully seeded ${data.inserted} products with inventory!`);
-        loadInventory();
-      } else {
-        const error = await response.json();
-        alert(`Failed to seed inventory: ${error.error || 'Unknown error'}`);
-      }
-    } catch (error) {
-      console.error('Error seeding inventory:', error);
-      alert('Failed to seed inventory. Please try again.');
-    } finally {
-      setIsSeeding(false);
     }
   };
 
@@ -467,7 +393,7 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
       });
 
       if (response.ok) {
-        loadInventory();
+        void refreshInventoryData();
       }
     } catch (error) {
       console.error('Error deleting product:', error);
@@ -499,7 +425,7 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
           reference: "",
           notes: "",
         });
-        loadInventory();
+        void refreshInventoryData();
       }
     } catch (error) {
       console.error('Error adjusting inventory:', error);
@@ -514,7 +440,7 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ finalizeReservations: true }),
       });
-      loadInventory();
+      void refreshInventoryData();
     } catch (error) {
       console.error('Error finalizing reservations:', error);
     }
@@ -552,7 +478,7 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
       });
       
       // Refresh the data
-      loadInventory();
+      void refreshInventoryData();
     } catch (error) {
       console.error('Error updating reserved quantity:', error);
       alert('Failed to update reserved quantity');
@@ -577,31 +503,7 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Inventory</h1>
-          <p className="text-muted-foreground">
-            Manage your product inventory, stock levels, and restocking
-          </p>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Button
-            variant="outline"
-            onClick={handleSeedInventory}
-            disabled={isSeeding}
-            className="w-full sm:w-auto"
-          >
-            {isSeeding ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Seeding...
-              </>
-            ) : (
-              <>
-                <Package className="mr-2 h-4 w-4" />
-                Seed Inventory
-              </>
-            )}
-          </Button>
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
               <Button className="w-full sm:w-auto">
@@ -1134,7 +1036,7 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
                   <TableRow key={product.id}>
                     <TableCell>
                       <div className="flex items-center space-x-3">
-                        <div className="h-10 w-10 rounded-md overflow-hidden">
+                        <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md">
                           <FallbackImage
                             src={(() => {
                               try {
@@ -1247,8 +1149,20 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => {
-                            setEditingProduct(product);
+                          onClick={async () => {
+                            try {
+                              const res = await fetch(
+                                `/api/admin/inventory/${product.id}`,
+                              );
+                              if (res.ok) {
+                                const data = await res.json();
+                                setEditingProduct(data.product ?? product);
+                              } else {
+                                setEditingProduct(product);
+                              }
+                            } catch {
+                              setEditingProduct(product);
+                            }
                             setIsEditDialogOpen(true);
                           }}
                         >
@@ -1416,7 +1330,7 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
                   });
                   setIsStockDialogOpen(false);
                   setSelectedProduct(null);
-                  loadInventory();
+                  void refreshInventoryData();
                 } catch (error) {
                   console.error('Error saving stock:', error);
                   alert('Failed to save stock. Please try again.');

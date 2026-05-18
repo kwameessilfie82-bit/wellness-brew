@@ -3,16 +3,31 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { LayoutDashboard, FolderOpen, Warehouse, PanelLeft, Users, FileText } from "lucide-react";
+import {
+  LayoutDashboard,
+  FolderOpen,
+  Warehouse,
+  PanelLeft,
+  Users,
+  FileText,
+  ShoppingBag,
+} from "lucide-react";
 
 import { cn } from "@/lib/cn";
 import { Button } from "@/ui/primitives/button";
-import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/ui/primitives/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/ui/primitives/sheet";
 import type { AdminUserWithDetails } from "@/db/schema";
 import { SEO_CONFIG } from "@/app";
 
 interface AdminSidebarProps {
   adminUser: AdminUserWithDetails;
+  mobileOnly?: boolean;
 }
 
 const navigationItems = [
@@ -23,7 +38,7 @@ const navigationItems = [
     permission: "canViewAnalytics" as const,
   },
   {
-    name: "Inventory",
+    name: "Catalog",
     href: "/admin/inventory",
     icon: Warehouse,
     permission: "canManageInventory" as const,
@@ -34,213 +49,160 @@ const navigationItems = [
     icon: FolderOpen,
     permission: "canManageCategories" as const,
   },
-  // {
-  //   name: "Orders",
-  //   href: "/admin/orders",
-  //   icon: ShoppingCart,
-  //   permission: "canManageOrders" as const,
-  // },
   {
-    name: "Invoice Generator",
-    href: "/admin/invoice-generator",
-    icon: FileText,
+    name: "Orders",
+    href: "/admin/orders",
+    icon: ShoppingBag,
     permission: "canManageOrders" as const,
   },
   {
-    name: "Users",
+    name: "Customers",
     href: "/admin/customers",
     icon: Users,
     permission: "canManageCustomers" as const,
   },
+  {
+    name: "Invoices",
+    href: "/admin/invoice-generator",
+    icon: FileText,
+    permission: "canManageOrders" as const,
+  },
 ];
 
-// Desktop Sidebar Component
-function DesktopSidebar({ adminUser, pathname, filteredNavigation }: {
+function NavLinks({
+  pathname,
+  items,
+  onNavigate,
+}: {
+  pathname: string;
+  items: typeof navigationItems;
+  onNavigate?: () => void;
+}) {
+  return (
+    <nav className="flex flex-1 flex-col gap-1 p-3">
+      {items.map((item) => {
+        const isActive =
+          pathname === item.href ||
+          (item.href !== "/admin" && pathname.startsWith(item.href));
+        return (
+          <Link
+            key={item.name}
+            href={item.href}
+            onClick={onNavigate}
+            className={cn(
+              "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all",
+              isActive
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            )}
+          >
+            <item.icon
+              className={cn(
+                "h-5 w-5 shrink-0",
+                isActive ? "text-primary-foreground" : "opacity-70",
+              )}
+            />
+            {item.name}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
+function SidebarContent({
+  adminUser,
+  pathname,
+  filteredNavigation,
+  onNavigate,
+}: {
   adminUser: AdminUserWithDetails;
   pathname: string;
   filteredNavigation: typeof navigationItems;
+  onNavigate?: () => void;
 }) {
   return (
-    <div className="hidden lg:flex lg:flex-col lg:w-64 min-h-screen bg-background border-r shadow-lg">
-      {/* Logo */}
-      <div className="flex items-center justify-center h-16 px-4 bg-background">
-        <h1 className="text-xl font-bold">{SEO_CONFIG.name} Management</h1>
-      </div>
-      
-      {/* User Info */}
-      <div className="p-4 border-b border-border">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-            <span className="text-sm font-medium text-primary">
-              {adminUser.user?.name?.charAt(0).toUpperCase() || 'A'}
-            </span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">
-              {adminUser.user?.name || 'Admin User'}
-            </p>
-            <p className="text-xs text-muted-foreground truncate">
-              {adminUser.role?.name?.replace('_', ' ').toUpperCase() || 'ADMIN'}
-            </p>
-          </div>
+  <div className="flex h-full flex-col">
+    <div className="border-b border-border/60 px-4 py-5">
+      <p className="font-serif text-lg font-bold text-brand">{SEO_CONFIG.name}</p>
+      <p className="text-xs text-muted-foreground">Store management</p>
+    </div>
+
+    <div className="border-b border-border/60 px-4 py-4">
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-subtle text-sm font-bold text-brand">
+          {adminUser.user?.name?.charAt(0).toUpperCase() || "A"}
         </div>
-      </div>
-      
-      {/* Navigation */}
-      <nav className="flex-1 px-2 py-4 space-y-1">
-        {filteredNavigation.map((item) => {
-          const isActive = pathname === item.href;
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={cn(
-                "group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors",
-                isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-              )}
-            >
-              <item.icon
-                className={cn(
-                  "mr-3 h-5 w-5 flex-shrink-0",
-                  isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-accent-foreground"
-                )}
-              />
-              {item.name}
-            </Link>
-          );
-        })}
-      </nav>
-      
-      {/* Footer */}
-      <div className="p-4 border-t border-border">
-        <Link href="/">
-          <Button variant="outline" size="sm" className="w-full">
-            Back to Store
-          </Button>
-        </Link>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium">{adminUser.user?.name || "Admin"}</p>
+          <p className="truncate text-xs capitalize text-muted-foreground">
+            {adminUser.role?.name?.replace("_", " ") ?? "admin"}
+          </p>
+        </div>
       </div>
     </div>
+
+    <NavLinks pathname={pathname} items={filteredNavigation} onNavigate={onNavigate} />
+
+    <div className="mt-auto border-t border-border/60 p-3">
+      <Link href="/" onClick={onNavigate}>
+        <Button variant="outline" size="sm" className="w-full rounded-xl">
+          Back to storefront
+        </Button>
+      </Link>
+    </div>
+  </div>
   );
 }
 
-// Mobile Sidebar Component
-function MobileSidebar({ adminUser, pathname, filteredNavigation }: {
-  adminUser: AdminUserWithDetails;
-  pathname: string;
-  filteredNavigation: typeof navigationItems;
-}) {
+export function AdminSidebar({ adminUser, mobileOnly = false }: AdminSidebarProps) {
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
-  return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="lg:hidden">
-          <PanelLeft className="h-5 w-5" />
-          <span className="sr-only">Open admin menu</span>
-        </Button>
-      </SheetTrigger>
-      <SheetContent side="left" className="w-64 p-0">
-        {/* A11y title for screen readers */}
-        <SheetHeader className="sr-only">
-          <SheetTitle>Admin menu</SheetTitle>
-        </SheetHeader>
-        <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="flex items-center h-16 px-4 bg-background">
-            <h1 className="text-lg font-bold">Inventory Management</h1>
-          </div>
-          
-          {/* User Info */}
-          <div className="p-4 border-b border-border">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <span className="text-sm font-medium text-primary">
-                  {adminUser.user?.name?.charAt(0).toUpperCase() || 'A'}
-                </span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">
-                  {adminUser.user?.name || 'Admin User'}
-                </p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {adminUser.role?.name?.replace('_', ' ').toUpperCase() || 'ADMIN'}
-                </p>
-              </div>
-            </div>
-          </div>
-          
-          {/* Navigation */}
-          <nav className="flex-1 px-2 py-4 space-y-1">
-            {filteredNavigation.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={cn(
-                    "group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors",
-                    isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                  )}
-                  onClick={() => setOpen(false)}
-                >
-                  <item.icon
-                    className={cn(
-                      "mr-3 h-5 w-5 flex-shrink-0",
-                      isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-accent-foreground"
-                    )}
-                  />
-                  {item.name}
-                </Link>
-              );
-            })}
-          </nav>
-          
-          {/* Footer */}
-          <div className="p-4 border-t border-border">
-            <Link href="/">
-              <Button variant="outline" size="sm" className="w-full" onClick={() => setOpen(false)}>
-                Back to Store
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </SheetContent>
-    </Sheet>
-  );
-}
-
-export function AdminSidebar({ adminUser }: AdminSidebarProps) {
-  const pathname = usePathname();
-
-  // Only render the admin sidebar on admin routes
   if (!pathname?.startsWith("/admin")) {
     return null;
   }
 
-  const hasPermission = (permission: keyof typeof adminUser.role.permissions) => {
-    return adminUser.role?.permissions?.[permission] === true;
-  };
+  const hasPermission = (permission: keyof typeof adminUser.role.permissions) =>
+    adminUser.role?.permissions?.[permission] === true;
 
   const filteredNavigation = navigationItems.filter((item) =>
     hasPermission(item.permission),
   );
 
+  if (mobileOnly) {
+    return (
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetTrigger asChild>
+          <Button variant="ghost" size="icon" className="lg:hidden">
+            <PanelLeft className="h-5 w-5" />
+            <span className="sr-only">Open admin menu</span>
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="left" className="w-72 p-0">
+          <SheetHeader className="sr-only">
+            <SheetTitle>Admin navigation</SheetTitle>
+          </SheetHeader>
+          <div className="flex h-full flex-col bg-card">
+            <SidebarContent
+              adminUser={adminUser}
+              pathname={pathname}
+              filteredNavigation={filteredNavigation}
+              onNavigate={() => setOpen(false)}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
   return (
-    <>
-      <DesktopSidebar 
-        adminUser={adminUser} 
-        pathname={pathname} 
-        filteredNavigation={filteredNavigation} 
+    <aside className="admin-sidebar hidden h-screen w-64 shrink-0 flex-col border-r border-border bg-card lg:flex">
+      <SidebarContent
+        adminUser={adminUser}
+        pathname={pathname}
+        filteredNavigation={filteredNavigation}
       />
-      <MobileSidebar 
-        adminUser={adminUser} 
-        pathname={pathname} 
-        filteredNavigation={filteredNavigation} 
-      />
-    </>
+    </aside>
   );
 }

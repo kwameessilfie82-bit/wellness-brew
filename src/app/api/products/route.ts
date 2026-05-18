@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { eq, and, ilike, desc, or, sql } from "drizzle-orm";
+
 import { db } from "@/db";
 import { productTable, categoryTable, inventoryTable } from "@/db/schema";
-import { eq, and, ilike, desc, or, sql } from "drizzle-orm";
+import { mapProductsResponse } from "@/lib/api/products";
 
 export async function GET(request: NextRequest) {
   try {
@@ -31,6 +33,7 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get("category");
     const search = searchParams.get("search");
     const slug = searchParams.get("slug");
+    const id = searchParams.get("id");
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "12");
     const offset = (page - 1) * limit;
@@ -60,11 +63,23 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
-      whereConditions.push(ilike(productTable.name, `%${search}%`));
+      const pattern = `%${search}%`;
+      whereConditions.push(
+        or(
+          ilike(productTable.name, pattern),
+          ilike(productTable.sku, pattern),
+          ilike(productTable.shortDescription, pattern),
+          ilike(productTable.description, pattern),
+        )!,
+      );
     }
 
     if (slug) {
       whereConditions.push(eq(productTable.slug, slug));
+    }
+
+    if (id) {
+      whereConditions.push(eq(productTable.id, id));
     }
 
     // Get products with category and inventory information
@@ -107,15 +122,26 @@ export async function GET(request: NextRequest) {
       .where(and(...whereConditions));
     const totalCount = Number(countResult[0]?.count || 0);
 
-    return NextResponse.json({ 
-      products,
-      pagination: {
-        page,
-        limit,
-        total: totalCount,
-        totalPages: Math.ceil(totalCount / limit)
-      }
-    });
+    const normalized = mapProductsResponse(
+      products as Record<string, unknown>[],
+    );
+
+    return NextResponse.json(
+      {
+        products: normalized,
+        pagination: {
+          page,
+          limit,
+          total: totalCount,
+          totalPages: Math.ceil(totalCount / limit) || 1,
+        },
+      },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60",
+        },
+      },
+    );
   } catch (error) {
     console.error("Error fetching products:", error);
     return NextResponse.json(

@@ -41,11 +41,15 @@ export function Header({ showAuth = true, adminUser }: HeaderProps) {
     if (!adminUser && user) {
       const fetchAdminUser = async () => {
         try {
-          const response = await fetch('/api/admin/status');
+          const response = await fetch("/api/admin/me");
           const data = await response.json();
-          
-          if (data.isAdmin && data.adminUser && data.adminUser.role) {
-            setCurrentAdminUser(data.adminUser);
+
+          if (data.isAdmin) {
+            setCurrentAdminUser(
+              data.adminUser ?? {
+                role: data.role,
+              },
+            );
           } else {
             setCurrentAdminUser(null);
           }
@@ -143,6 +147,7 @@ export function Header({ showAuth = true, adminUser }: HeaderProps) {
                     userEmail={user.email}
                     userImage={user.image}
                     userName={user.name}
+                    isAdmin={Boolean(currentAdminUser)}
                     adminRole={currentAdminUser?.role?.name}
                   />
                 ) : isPending ? (

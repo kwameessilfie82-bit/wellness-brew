@@ -1,14 +1,21 @@
 "use client";
 
-import { useState } from "react";
-import { Search, Filter, Eye, Package, Truck, CheckCircle, XCircle, Clock } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import {
+  CheckCircle,
+  Clock,
+  Loader2,
+  Package,
+  Search,
+  Truck,
+  XCircle,
+} from "lucide-react";
 
+import { formatPrice } from "@/lib/format";
 import { Button } from "@/ui/primitives/button";
 import { Input } from "@/ui/primitives/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/primitives/card";
-import { Badge, badgeVariants } from "@/ui/primitives/badge";
-import type { VariantProps } from "class-variance-authority";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/ui/primitives/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/ui/primitives/card";
+import { Badge } from "@/ui/primitives/badge";
 import {
   Select,
   SelectContent,
@@ -16,272 +23,193 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/ui/primitives/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/ui/primitives/table";
 import type { AdminUserWithDetails } from "@/db/schema";
 
-interface OrderManagementProps {
-  adminUser: AdminUserWithDetails;
-}
-
-type Order = {
+type OrderRow = {
   id: string;
+  orderNumber: string;
   customerName: string;
   customerEmail: string;
-  items: number;
-  total: number;
-  status: "pending" | "processing" | "shipped" | "completed" | "cancelled";
-  createdAt: Date;
-  updatedAt?: Date;
+  status: string;
+  total: string;
+  createdAt: string;
+  items: { quantity: number }[];
 };
 
-export function OrderManagement({ }: OrderManagementProps) {
-  const [orders, setOrders] = useState<Order[]>([]);
+export function OrderManagement({}: { adminUser: AdminUserWithDetails }) {
+  const [orders, setOrders] = useState<OrderRow[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  const filteredOrders = orders.filter(order => {
-    const matchesSearch = 
-      order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.customerEmail.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesStatus = statusFilter === "all" || order.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
+  const loadOrders = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (searchQuery.trim()) params.set("search", searchQuery.trim());
+      if (statusFilter !== "all") params.set("status", statusFilter);
+      const res = await fetch(`/api/admin/orders?${params.toString()}`);
+      const data = await res.json();
+      setOrders(data.orders ?? []);
+    } catch {
+      setOrders([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [searchQuery, statusFilter]);
 
-  const getStatusIcon = (status: string) => {
+  useEffect(() => {
+    const t = window.setTimeout(() => void loadOrders(), 300);
+    return () => window.clearTimeout(t);
+  }, [loadOrders]);
+
+  const updateStatus = async (orderId: string, status: string) => {
+    setUpdatingId(orderId);
+    try {
+      await fetch(`/api/admin/orders/${orderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      await loadOrders();
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const statusIcon = (status: string) => {
     switch (status) {
-      case "pending":
-        return <Clock className="h-4 w-4 text-yellow-600" />;
-      case "processing":
-        return <Package className="h-4 w-4 text-blue-600" />;
       case "shipped":
-        return <Truck className="h-4 w-4 text-purple-600" />;
+        return <Truck className="h-4 w-4" />;
       case "completed":
         return <CheckCircle className="h-4 w-4 text-green-600" />;
       case "cancelled":
-        return <XCircle className="h-4 w-4 text-red-600" />;
-      default:
-        return <Clock className="h-4 w-4 text-gray-600" />;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "pending":
-        return "secondary";
+        return <XCircle className="h-4 w-4 text-destructive" />;
       case "processing":
-        return "default";
-      case "shipped":
-        return "outline";
-      case "completed":
-        return "default";
-      case "cancelled":
-        return "destructive";
+        return <Package className="h-4 w-4" />;
       default:
-        return "secondary";
+        return <Clock className="h-4 w-4" />;
     }
-  };
-
-  const updateOrderStatus = (orderId: string, newStatus: Order["status"]) => {
-    setOrders((prev) =>
-      prev.map<Order>((order) =>
-        order.id === orderId
-          ? { ...order, status: newStatus, updatedAt: new Date() }
-          : order,
-      ),
-    );
   };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Orders</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage customer orders and fulfillment
-          </p>
-        </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{orders.length}</div>
-            <p className="text-xs text-muted-foreground">
-              All time orders
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">
-              {orders.filter(order => order.status === "pending").length}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Awaiting processing
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed Orders</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {orders.filter(order => order.status === "completed").length}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Successfully fulfilled
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              GHS {orders.reduce((total, order) => total + order.total, 0).toLocaleString()}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              From all orders
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Search and Filters */}
       <Card>
         <CardHeader>
-          <div className="flex items-center space-x-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search orders..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="processing">Processing</SelectItem>
-                <SelectItem value="shipped">Shipped</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button variant="outline" size="icon">
-              <Filter className="h-4 w-4" />
-            </Button>
-          </div>
+          <CardTitle className="text-lg">Filter orders</CardTitle>
         </CardHeader>
+        <CardContent className="flex flex-col gap-4 sm:flex-row">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search order #, name, email..."
+              className="pl-9 rounded-xl"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full sm:w-[200px] rounded-xl">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All statuses</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="processing">Processing</SelectItem>
+              <SelectItem value="shipped">Shipped</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
+            </SelectContent>
+          </Select>
+        </CardContent>
       </Card>
 
-      {/* Orders Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Orders ({filteredOrders.length})</CardTitle>
-          <CardDescription>
-            Manage and track customer orders
-          </CardDescription>
+          <CardTitle>Store orders</CardTitle>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Order ID</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Items</TableHead>
-                <TableHead>Total</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredOrders.map((order) => (
-                <TableRow key={order.id}>
-                  <TableCell>
-                    <div className="font-medium">{order.id}</div>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{order.customerName}</div>
-                      <div className="text-sm text-muted-foreground">{order.customerEmail}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-1">
-                      <Package className="h-4 w-4 text-muted-foreground" />
-                      <span>{order.items}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-medium">GHS {order.total.toFixed(2)}</div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      {getStatusIcon(order.status)}
-                      <Badge variant={getStatusColor(order.status) as VariantProps<typeof badgeVariants>["variant"]}>
-                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                      </Badge>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      {order.createdAt.toLocaleDateString()}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end space-x-2">
-                      <Button variant="ghost" size="icon">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Select
-                        value={order.status}
-                        onValueChange={(value) => updateOrderStatus(order.id, value as Order["status"])}
-                      >
-                        <SelectTrigger className="w-32">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="processing">Processing</SelectItem>
-                          <SelectItem value="shipped">Shipped</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
-                          <SelectItem value="cancelled">Cancelled</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+        <CardContent className="p-0 sm:p-6 sm:pt-0">
+          {loading ? (
+            <div className="flex justify-center py-16">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : orders.length === 0 ? (
+            <p className="py-12 text-center text-muted-foreground">
+              No orders yet. Orders appear here when customers checkout (requires database
+              migration — run <code className="text-xs">npx drizzle-kit push</code>).
+            </p>
+          ) : (
+            <div className="admin-table-wrap">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Order</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Items</TableHead>
+                    <TableHead>Total</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {orders.map((order) => (
+                    <TableRow key={order.id}>
+                      <TableCell className="font-mono text-sm font-medium">
+                        {order.orderNumber}
+                      </TableCell>
+                      <TableCell>
+                        <div>{order.customerName}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {order.customerEmail}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {order.items?.reduce((s, i) => s + i.quantity, 0) ?? 0}
+                      </TableCell>
+                      <TableCell>{formatPrice(order.total)}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="gap-1 capitalize">
+                          {statusIcon(order.status)}
+                          {order.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {new Date(order.createdAt).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Select
+                          value={order.status}
+                          onValueChange={(v) => void updateStatus(order.id, v)}
+                          disabled={updatingId === order.id}
+                        >
+                          <SelectTrigger className="ml-auto w-[140px] rounded-lg">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pending">Pending</SelectItem>
+                            <SelectItem value="processing">Processing</SelectItem>
+                            <SelectItem value="shipped">Shipped</SelectItem>
+                            <SelectItem value="completed">Completed</SelectItem>
+                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

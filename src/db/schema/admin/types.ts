@@ -7,6 +7,8 @@ import {
   inventoryTable,
   inventoryTransactionTable,
   productVariantTable,
+  storeOrderTable,
+  orderItemTable,
 } from "./tables";
 
 // Admin Role Types
@@ -36,6 +38,11 @@ export type NewInventoryTransaction = InferInsertModel<typeof inventoryTransacti
 // Product Variant Types
 export type ProductVariant = InferSelectModel<typeof productVariantTable>;
 export type NewProductVariant = InferInsertModel<typeof productVariantTable>;
+
+export type StoreOrder = InferSelectModel<typeof storeOrderTable>;
+export type NewStoreOrder = InferInsertModel<typeof storeOrderTable>;
+export type OrderItem = InferSelectModel<typeof orderItemTable>;
+export type NewOrderItem = InferInsertModel<typeof orderItemTable>;
 
 // Extended types with relations
 export interface CategoryWithProducts extends Category {

@@ -1,157 +1,234 @@
-// note: run `bun db:auth` to generate the `users.ts`
-// schema after making breaking changes to this file
-
-import { betterAuth } from "better-auth";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { twoFactor } from "better-auth/plugins";
-import { headers } from "next/headers";
+import { eq } from "drizzle-orm";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 
 import type { UserDbType } from "@/lib/auth-types";
 
-import { SYSTEM_CONFIG } from "@/app";
 import { db } from "@/db";
-import {
-  accountTable,
-  sessionTable,
-  twoFactorTable,
-  userTable,
-  verificationTable,
-} from "@/db/schema";
+import { adminUserTable, userTable } from "@/db/schema";
+import { createClient } from "@/lib/supabase/server";
 
-// GitHub provider removed
+function mapSupabaseMetadata(user: SupabaseUser) {
+  const metadata = user.user_metadata as Record<string, unknown>;
+  const fullName =
+    (metadata.full_name as string | undefined) ??
+    (metadata.name as string | undefined) ??
+    user.email?.split("@")[0] ??
+    "User";
 
-interface GoogleProfile {
-  [key: string]: unknown;
-  email?: string;
-  family_name?: string;
-  given_name?: string;
-}
-
-interface SocialProviderConfig {
-  [key: string]: unknown;
-  clientId: string;
-  clientSecret: string;
-  mapProfileToUser: (
-    profile: GoogleProfile,
-  ) => Record<string, unknown>;
-  redirectURI?: string;
-  scope: string[];
-}
-
-// GitHub provider disabled
-
-const hasGoogleCredentials =
-  process.env.AUTH_GOOGLE_ID &&
-  process.env.AUTH_GOOGLE_SECRET &&
-  process.env.AUTH_GOOGLE_ID.length > 0 &&
-  process.env.AUTH_GOOGLE_SECRET.length > 0;
-
-// Build social providers configuration
-const socialProviders: Record<string, SocialProviderConfig> = {};
-
-// GitHub social provider disabled
-
-if (hasGoogleCredentials) {
-  socialProviders.google = {
-    clientId: process.env.AUTH_GOOGLE_ID ?? "",
-    clientSecret: process.env.AUTH_GOOGLE_SECRET ?? "",
-    mapProfileToUser: (profile: GoogleProfile) => {
-      return {
-        age: null,
-        firstName: profile.given_name ?? "",
-        lastName: profile.family_name ?? "",
-      };
-    },
-    scope: ["openid", "email", "profile"],
+  return {
+    firstName:
+      (metadata.given_name as string | undefined) ??
+      (metadata.first_name as string | undefined) ??
+      null,
+    image:
+      (metadata.avatar_url as string | undefined) ??
+      (metadata.picture as string | undefined) ??
+      null,
+    lastName:
+      (metadata.family_name as string | undefined) ??
+      (metadata.last_name as string | undefined) ??
+      null,
+    name: fullName,
   };
 }
 
-// Paystack SDK is configured in dedicated payment services, not inside auth
+/**
+ * Re-links a Better Auth user row to the Supabase auth user id (same email).
+ * Order matters: create the new `user` row before updating FKs that reference it.
+ */
+async function migrateUserToSupabaseId(
+  oldUser: UserDbType,
+  supabaseUser: SupabaseUser,
+  userData: {
+    email: string;
+    emailVerified: boolean;
+    firstName: string | null;
+    id: string;
+    image: string | null;
+    lastName: string | null;
+    name: string;
+    updatedAt: Date;
+  },
+): Promise<UserDbType> {
+  const oldId = oldUser.id;
+  const newId = supabaseUser.id;
+  const now = userData.updatedAt;
 
-// Get the correct base URL for the auth server
-const getServerBaseURL = () => {
-  // Always use the www version in production to avoid CORS issues
-  if (process.env.NODE_ENV === "production") {
-    return "https://wellnessgroupgh.com";
+  const alreadyMigrated = await db.query.userTable.findFirst({
+    where: eq(userTable.id, newId),
+  });
+
+  if (alreadyMigrated) {
+    await db.transaction(async (tx) => {
+      await tx
+        .update(adminUserTable)
+        .set({ userId: newId, updatedAt: now })
+        .where(eq(adminUserTable.userId, oldId));
+
+      await tx
+        .update(adminUserTable)
+        .set({ createdBy: newId })
+        .where(eq(adminUserTable.createdBy, oldId));
+
+      await tx.delete(userTable).where(eq(userTable.id, oldId));
+    });
+
+    await db
+      .update(userTable)
+      .set({
+        ...userData,
+        age: alreadyMigrated.age,
+        twoFactorEnabled: alreadyMigrated.twoFactorEnabled,
+      })
+      .where(eq(userTable.id, newId));
+
+    return { ...alreadyMigrated, ...userData };
   }
-  return process.env.NEXT_SERVER_APP_URL || "http://localhost:3000";
-};
 
-export const auth = betterAuth({
-  account: {
-    accountLinking: {
-      allowDifferentEmails: false,
-      enabled: true,
-      trustedProviders: Object.keys(socialProviders),
-    },
-  },
-  baseURL: getServerBaseURL(),
+  await db.transaction(async (tx) => {
+    // Release unique email constraint on the legacy row
+    await tx
+      .update(userTable)
+      .set({
+        email: `migrated-${oldId}@archived.local`,
+        updatedAt: now,
+      })
+      .where(eq(userTable.id, oldId));
 
-  database: drizzleAdapter(db, {
-    provider: "pg",
-    schema: {
-      account: accountTable,
-      session: sessionTable,
-      twoFactor: twoFactorTable,
-      user: userTable,
-      verification: verificationTable,
-    },
-  }),
+    await tx.insert(userTable).values({
+      age: oldUser.age,
+      createdAt: oldUser.createdAt,
+      email: userData.email,
+      emailVerified: userData.emailVerified,
+      firstName: userData.firstName,
+      id: newId,
+      image: userData.image,
+      lastName: userData.lastName,
+      name: userData.name,
+      twoFactorEnabled: oldUser.twoFactorEnabled,
+      updatedAt: now,
+    });
 
-  emailAndPassword: {
-    enabled: true,
-    requireEmailVerification: false, // Disable email verification for now
-  },
+    await tx
+      .update(adminUserTable)
+      .set({ userId: newId, updatedAt: now })
+      .where(eq(adminUserTable.userId, oldId));
 
-  // Configure OAuth behavior
-  oauth: {
-    // Default redirect URL after successful login
-    defaultCallbackUrl: SYSTEM_CONFIG.redirectAfterSignIn,
-    // URL to redirect to on error
-    errorCallbackUrl: "/auth/error",
-    // Whether to link accounts with the same email
-    linkAccountsByEmail: true,
-  },
+    await tx
+      .update(adminUserTable)
+      .set({ createdBy: newId })
+      .where(eq(adminUserTable.createdBy, oldId));
 
-  plugins: [
-    twoFactor(),
-  ],
+    await tx.delete(userTable).where(eq(userTable.id, oldId));
+  });
 
-  secret: process.env.AUTH_SECRET,
+  return {
+    age: oldUser.age,
+    createdAt: oldUser.createdAt,
+    deliveryLandmark: oldUser.deliveryLandmark,
+    deliveryLatitude: oldUser.deliveryLatitude,
+    deliveryLocation: oldUser.deliveryLocation,
+    deliveryLongitude: oldUser.deliveryLongitude,
+    deliveryRegion: oldUser.deliveryRegion,
+    email: userData.email,
+    emailVerified: userData.emailVerified,
+    firstName: userData.firstName,
+    id: newId,
+    image: userData.image,
+    lastName: userData.lastName,
+    name: userData.name,
+    phone: oldUser.phone,
+    twoFactorEnabled: oldUser.twoFactorEnabled,
+    updatedAt: now,
+  };
+}
 
-  // Only include social providers if credentials are available
-  socialProviders,
+export async function syncUserFromSupabase(
+  supabaseUser: SupabaseUser,
+): Promise<UserDbType> {
+  const { firstName, image, lastName, name } = mapSupabaseMetadata(supabaseUser);
+  const now = new Date();
 
-  user: {
-    additionalFields: {
-      age: {
-        input: true,
-        required: false,
-        type: "number",
-      },
-      firstName: {
-        input: true,
-        required: false,
-        type: "string",
-      },
-      lastName: {
-        input: true,
-        required: false,
-        type: "string",
-      },
-    },
-  },
-});
+  const existing = await db.query.userTable.findFirst({
+    where: eq(userTable.id, supabaseUser.id),
+  });
+
+  const userData = {
+    email: supabaseUser.email!,
+    emailVerified: !!supabaseUser.email_confirmed_at,
+    firstName: firstName ?? existing?.firstName ?? null,
+    id: supabaseUser.id,
+    image: image ?? existing?.image ?? null,
+    lastName: lastName ?? existing?.lastName ?? null,
+    name,
+    updatedAt: now,
+  };
+
+  if (!existing && supabaseUser.email) {
+    const existingByEmail = await db.query.userTable.findFirst({
+      where: eq(userTable.email, supabaseUser.email),
+    });
+
+    if (existingByEmail && existingByEmail.id !== supabaseUser.id) {
+      return migrateUserToSupabaseId(existingByEmail, supabaseUser, userData);
+    }
+  }
+
+  if (existing) {
+    await db
+      .update(userTable)
+      .set({
+        ...userData,
+        age: existing.age,
+        twoFactorEnabled: existing.twoFactorEnabled,
+      })
+      .where(eq(userTable.id, supabaseUser.id));
+
+    return { ...existing, ...userData };
+  }
+
+  const newUser: UserDbType = {
+    age: null,
+    createdAt: new Date(supabaseUser.created_at),
+    deliveryLandmark: null,
+    deliveryLatitude: null,
+    deliveryLocation: null,
+    deliveryLongitude: null,
+    deliveryRegion: null,
+    phone: null,
+    ...userData,
+    twoFactorEnabled: false,
+  };
+
+  await db.insert(userTable).values(newUser);
+  return newUser;
+}
 
 export const getCurrentUser = async (): Promise<null | UserDbType> => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-  if (!session) {
+  const supabase = await createClient();
+  if (!supabase) {
     return null;
   }
-  return session.user as UserDbType;
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return null;
+  }
+
+  const existing = await db.query.userTable.findFirst({
+    where: eq(userTable.id, user.id),
+  });
+
+  // Avoid a DB write on every API request; sync runs on OAuth callback for new users.
+  if (existing) {
+    return existing;
+  }
+
+  return syncUserFromSupabase(user);
 };
 
 export const getCurrentUserOrRedirect = async (
@@ -161,22 +238,16 @@ export const getCurrentUserOrRedirect = async (
 ): Promise<null | UserDbType> => {
   const user = await getCurrentUser();
 
-  // if no user is found
   if (!user) {
-    // redirect to forbidden url unless explicitly ignored
     if (!ignoreForbidden) {
       redirect(forbiddenUrl);
     }
-    // if ignoring forbidden, return the null user immediately
-    // (don't proceed to okUrl check)
-    return user; // user is null here
+    return user;
   }
 
-  // if user is found and an okUrl is provided, redirect there
   if (okUrl) {
     redirect(okUrl);
   }
 
-  // if user is found and no okUrl is provided, return the user
-  return user; // user is UserDbType here
+  return user;
 };

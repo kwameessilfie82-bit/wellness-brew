@@ -3,6 +3,7 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
 import { DB_DEV_LOGGER } from "@/app";
+import { createPostgresOptions } from "@/db/postgres-config";
 
 import * as schema from "./schema";
 
@@ -20,7 +21,7 @@ const globalForDb = globalThis as unknown as {
   conn?: DbConnection;
 };
 export const conn: DbConnection =
-  globalForDb.conn ?? postgres(process.env.DATABASE_URL);
+  globalForDb.conn ?? postgres(process.env.DATABASE_URL, createPostgresOptions());
 if (process.env.NODE_ENV !== "production") {
   globalForDb.conn = conn;
 }

@@ -13,13 +13,26 @@ import { Navigation } from "@/ui/navigation"
 import { Heart, LogOut, Package, Settings, User } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useCurrentUser } from "@/lib/auth-client"
+import { useEffect } from "react"
+import { Loader2 } from "lucide-react"
 
 export default function AccountPage() {
   const router = useRouter()
+  const { user, isPending } = useCurrentUser()
 
-  const handleLogout = () => {
-    // In a real app, this would clear auth tokens
-    router.push("/")
+  useEffect(() => {
+    if (!isPending && !user) {
+      router.replace(`/auth/sign-in?next=${encodeURIComponent("/account")}`)
+    }
+  }, [isPending, user, router])
+
+  if (isPending || !user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
   }
 
   return (
@@ -41,7 +54,7 @@ export default function AccountPage() {
                     </div>
                     <CardTitle>Orders</CardTitle>
                   </div>
-                  <CardDescription>View your order history and track shipments</CardDescription>
+                  <CardDescription>View your order history and delivery status</CardDescription>
                 </CardHeader>
               </Card>
             </Link>
@@ -100,9 +113,11 @@ export default function AccountPage() {
                   <h3 className="font-semibold mb-1">Sign Out</h3>
                   <p className="text-sm text-muted-foreground">Log out of your account</p>
                 </div>
-                <Button variant="outline" onClick={handleLogout} className="bg-transparent">
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Logout
+                <Button variant="outline" asChild className="bg-transparent">
+                  <Link href="/auth/sign-out">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                  </Link>
                 </Button>
               </div>
             </CardContent>

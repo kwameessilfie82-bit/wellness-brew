@@ -2,17 +2,19 @@
 
 import Image from "next/image";
 // import { useRouter } from "next/navigation"; // Not used currently
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { SEO_CONFIG } from "@/app";
-import { signIn } from "@/lib/auth-client";
+import { signInWithGoogle } from "@/lib/auth-client";
 import { GoogleIcon } from "@/ui/components/icons/google";
 import { Button } from "@/ui/primitives/button";
 import { Card, CardContent } from "@/ui/primitives/card";
 import { Loader2 } from "lucide-react";
 
 export function SignInPageClient() {
-  // const router = useRouter(); // Not used currently
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next") || "/";
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -21,12 +23,25 @@ export function SignInPageClient() {
   // const [password, setPassword] = useState("");
   // const handleEmailLogin = async (e: React.FormEvent) => { /* ... */ };
 
-  const handleGoogleLogin = () => {
+  const handleGoogleLogin = async () => {
     setLoading(true);
     try {
-      void signIn.social({ provider: "google" });
+      await signInWithGoogle(
+        `/auth/callback?next=${encodeURIComponent(next)}`,
+      );
     } catch (err) {
-      setError("Failed to sign in with Google");
+      const message =
+        err instanceof Error ? err.message : "Failed to sign in with Google";
+      if (
+        message.includes("provider is not enabled") ||
+        message.includes("Unsupported provider")
+      ) {
+        setError(
+          "Google sign-in is not enabled in your Supabase project. In the Supabase dashboard go to Authentication → Providers, enable Google, and add your Google OAuth client ID and secret.",
+        );
+      } else {
+        setError(message);
+      }
       console.error(err);
       setLoading(false);
     }

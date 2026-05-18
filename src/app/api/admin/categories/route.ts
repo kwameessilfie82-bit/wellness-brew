@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { withAdminAuth } from "@/lib/admin-middleware";
 import { db } from "@/db";
-import { categoryTable, productTable } from "@/db/schema";
-import { sql } from "drizzle-orm";
-// (no additional operators needed)
+import { categoryTable } from "@/db/schema";
+import {
+  fetchAllCategoriesWithCounts,
+  fetchCategoriesForInventory,
+} from "@/lib/queries/categories";
 
 function slugify(input: string): string {
   return input
@@ -13,56 +16,46 @@ function slugify(input: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-// GET /api/admin/categories - Get all categories
 const getHandler = withAdminAuth(
   async (request: NextRequest) => {
     try {
-      // Check if this is for inventory filtering (only active categories)
-      const url = new URL(request.url);
-      const forInventory = url.searchParams.get('forInventory') === 'true';
-      
-      const categories = await db.query.categoryTable.findMany({
-        where: forInventory ? (categories, { eq }) => eq(categories.isActive, true) : undefined,
-        orderBy: (categories, { asc }) => [asc(categories.name)],
-      });
+      const forInventory =
+        new URL(request.url).searchParams.get("forInventory") === "true";
 
-      // product counts per category (count all products, not just active ones)
-      const counts = await db
-        .select({
-          categoryId: productTable.categoryId,
-          count: sql<number>`count(*)`,
-        })
-        .from(productTable)
-        .groupBy(productTable.categoryId);
+      const categories = forInventory
+        ? await fetchCategoriesForInventory()
+        : await fetchAllCategoriesWithCounts();
 
-      const categoryIdToCount = new Map<string, number>();
-      for (const row of counts) {
-        if (row.categoryId) categoryIdToCount.set(row.categoryId, Number(row.count));
-      }
-
-      const categoriesWithCounts = categories.map((c) => ({
-        ...c,
-        productCount: categoryIdToCount.get(c.id) ?? 0,
-      }));
-
-      return NextResponse.json({ categories: categoriesWithCounts });
+      return NextResponse.json(
+        { categories },
+        {
+          headers: forInventory
+            ? {
+                "Cache-Control":
+                  "private, max-age=60, stale-while-revalidate=120",
+              }
+            : undefined,
+        },
+      );
     } catch (error) {
       console.error("Error fetching categories:", error);
       return NextResponse.json(
         { error: "Failed to fetch categories" },
-        { status: 500 }
+        { status: 500 },
       );
     }
   },
-  "canManageCategories"
+  ["canManageCategories", "canManageInventory"],
 );
 
-export async function GET(request: NextRequest, context: { params: Promise<Record<string, never>> }) {
-  await context.params; // satisfy Next.js typed route signature
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<Record<string, never>> },
+) {
+  await context.params;
   return getHandler(request);
 }
 
-// POST /api/admin/categories - Create new category
 const postHandler = withAdminAuth(
   async (request: NextRequest, adminUser) => {
     try {
@@ -70,16 +63,15 @@ const postHandler = withAdminAuth(
       const { name, slug, description, image, isActive } = body;
 
       if (!name) {
-        return NextResponse.json(
-          { error: "Name is required" },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: "Name is required" }, { status: 400 });
       }
 
-      // Generate slug if missing, ensure uniqueness
-      const allExisting = await db.query.categoryTable.findMany();
+      const allExisting = await db.query.categoryTable.findMany({
+        columns: { slug: true },
+      });
       const existingSlugs = new Set(allExisting.map((c) => c.slug));
-      const baseSlug = slug && String(slug).trim().length > 0 ? slugify(slug) : slugify(name);
+      const baseSlug =
+        slug && String(slug).trim().length > 0 ? slugify(slug) : slugify(name);
       let uniqueSlug = baseSlug;
       let counter = 2;
       while (existingSlugs.has(uniqueSlug)) {
@@ -91,7 +83,7 @@ const postHandler = withAdminAuth(
         name,
         slug: uniqueSlug,
         description: description || "",
-        image: Array.isArray(image) ? JSON.stringify(image) : (image || ""),
+        image: Array.isArray(image) ? JSON.stringify(image) : image || "",
         isActive: isActive !== false,
         sortOrder: 0,
         createdAt: new Date(),
@@ -106,14 +98,17 @@ const postHandler = withAdminAuth(
       console.error("Error creating category:", error);
       return NextResponse.json(
         { error: "Failed to create category" },
-        { status: 500 }
+        { status: 500 },
       );
     }
   },
-  "canManageCategories"
+  "canManageCategories",
 );
 
-export async function POST(request: NextRequest, context: { params: Promise<Record<string, never>> }) {
-  await context.params; // satisfy typed route signature
+export async function POST(
+  request: NextRequest,
+  context: { params: Promise<Record<string, never>> },
+) {
+  await context.params;
   return postHandler(request);
 }

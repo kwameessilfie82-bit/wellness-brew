@@ -8,6 +8,7 @@ import { ArrowRight, Minus, Plus, ShoppingBag, X } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { formatPrice } from "@/lib/format"
 
 export default function CartPage() {
   const router = useRouter()
@@ -19,7 +20,9 @@ export default function CartPage() {
 
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-4xl md:text-5xl font-serif font-bold mb-8">Shopping Cart</h1>
+          <h1 className="mb-8 font-serif text-4xl font-bold text-heading md:text-5xl">
+            Shopping Cart
+          </h1>
 
           {items.length === 0 ? (
             <div className="text-center py-16">
@@ -58,7 +61,7 @@ export default function CartPage() {
                       >
                         {item.name}
                       </Link>
-                      <p className="text-lg font-bold mt-2">GHS {item.price.toFixed(2)}</p>
+                      <p className="text-lg font-bold mt-2">{formatPrice(item.price)}</p>
                       <div className="flex items-center gap-3 mt-4">
                         <Button
                           variant="outline"
@@ -81,7 +84,7 @@ export default function CartPage() {
                       <Button variant="ghost" size="icon" onClick={() => removeItem(item.id)}>
                         <X className="h-5 w-5" />
                       </Button>
-                      <p className="text-xl font-bold">GHS {(item.price * item.quantity).toFixed(2)}</p>
+                      <p className="text-xl font-bold">{formatPrice(item.price * item.quantity)}</p>
                     </div>
                   </div>
                 ))}
@@ -94,21 +97,17 @@ export default function CartPage() {
                   <div className="space-y-3 mb-6">
                     <div className="flex items-center justify-between">
                       <span className="text-muted-foreground">Subtotal</span>
-                      <span className="font-medium">GHS {totalPrice.toFixed(2)}</span>
+                      <span className="font-medium">{formatPrice(totalPrice)}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Shipping</span>
-                      <span className="font-medium">Calculated at checkout</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Tax</span>
-                      <span className="font-medium">Calculated at checkout</span>
+                      <span className="text-muted-foreground">Delivery</span>
+                      <span className="font-medium">At checkout</span>
                     </div>
                   </div>
                   <div className="border-t border-border pt-4 mb-6">
                     <div className="flex items-center justify-between text-xl font-bold">
                       <span>Total</span>
-                      <span>GHS {totalPrice.toFixed(2)}</span>
+                      <span>{formatPrice(totalPrice)}</span>
                     </div>
                   </div>
                   <Button size="lg" className="w-full mb-3" onClick={() => router.push("/checkout")}>

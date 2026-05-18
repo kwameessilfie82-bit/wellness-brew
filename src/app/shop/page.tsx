@@ -5,17 +5,7 @@ import { Navigation } from "@/ui/navigation"
 import { ProductCard } from "@/ui/product-card"
 import { useState, useEffect, Suspense, useCallback, useRef } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-
-interface Product {
-  id: string
-  name: string
-  price: number
-  images?: string[]
-  description?: string
-  shortDescription?: string
-  categoryName?: string
-  isFeatured?: boolean
-}
+import type { StoreProduct } from "@/lib/products/normalize"
 
 interface Pagination {
   page: number
@@ -29,7 +19,7 @@ function ShopPageContent() {
   const router = useRouter()
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get("category") || "all")
   const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "")
-  const [products, setProducts] = useState<Product[]>([])
+  const [products, setProducts] = useState<StoreProduct[]>([])
   const [categories, setCategories] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -57,31 +47,16 @@ function ShopPageContent() {
         const response = await fetch(`/api/products?${params.toString()}`)
         const data = await response.json()
       
-        // Parse images from JSON string to array
-      const productsWithParsedImages = (data.products || []).map((p: Product & { images?: string | string[] }) => ({
-          ...p,
-          images: (() => {
-            try {
-              if (typeof p.images === 'string') {
-                return JSON.parse(p.images);
-              }
-              return Array.isArray(p.images) ? p.images : [];
-            } catch {
-              return [];
-            }
-          })(),
-          price: typeof p.price === 'string' ? parseFloat(p.price) : p.price,
-        }))
+      const nextProducts = (data.products || []) as StoreProduct[]
 
       if (append) {
         setProducts(prev => {
-          // Filter out duplicates by checking if product ID already exists
           const existingIds = new Set(prev.map(p => p.id))
-          const newProducts = productsWithParsedImages.filter((p: Product) => !existingIds.has(p.id))
+          const newProducts = nextProducts.filter((p) => !existingIds.has(p.id))
           return [...prev, ...newProducts]
         })
       } else {
-        setProducts(productsWithParsedImages)
+        setProducts(nextProducts)
       }
 
       if (data.pagination) {
@@ -166,10 +141,17 @@ function ShopPageContent() {
 
   return (
     <>
-      <section className="py-12 md:py-16 border-b border-border">
-        <div className="section-container">
-          <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4">Our Collection</h1>
-          <p className="text-muted-foreground max-w-2xl">Carefully selected teas from around the world</p>
+      <section className="section-hero-bg py-14 md:py-20">
+        <div className="section-container animate-fade-in-up">
+          <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-brand">
+            Shop
+          </p>
+          <h1 className="mb-4 font-serif text-4xl font-bold text-heading md:text-5xl">
+            Our collection
+          </h1>
+          <p className="max-w-2xl text-muted-foreground">
+            Carefully selected wellness teas — shipped fresh to you
+          </p>
         </div>
       </section>
 
@@ -227,9 +209,9 @@ function ShopPageContent() {
                       id: product.id,
                       name: product.name,
                       price: product.price,
-                      image: product.images?.[0] || "/placeholder.svg",
-                      description: product.shortDescription || product.description,
-                      category: product.categoryName,
+                      image: product.image,
+                      description: product.shortDescription || product.description || undefined,
+                      category: product.categoryName || undefined,
                     }} 
                   />
                 ))}

@@ -1,60 +1,78 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import Link from "next/link"
-import { ShoppingCart, Star } from "lucide-react"
-import { useCart } from "@/lib/cart-context"
+import { ShoppingCart } from "lucide-react";
+import Link from "next/link";
+
+import { formatPrice } from "@/lib/format";
+import { useCart } from "@/lib/cart-context";
+import { cn } from "@/lib/cn";
+import { Button } from "@/ui/primitives/button";
+import { FallbackImage } from "@/ui/components/fallback-image";
 
 interface Product {
-  id: number | string
-  name: string
-  price: number
-  image?: string
-  description?: string
-  rating?: number
-  category?: string
+  id: number | string;
+  name: string;
+  price: number;
+  image?: string;
+  description?: string;
+  category?: string;
 }
 
 export function ProductCard({ product }: { product: Product }) {
-  const { addToCart } = useCart()
+  const { addToCart } = useCart();
 
   const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault()
-    addToCart(product)
-  }
+    e.preventDefault();
+    e.stopPropagation();
+    addToCart(product);
+  };
 
   return (
-    <Link href={`/shop/${product.id}`}>
-      <div className="group bg-card border border-border rounded-lg overflow-hidden hover:shadow-lg transition">
-        <div className="relative overflow-hidden bg-muted h-64">
-          <img
-            src={product.image || "/placeholder.svg"}
-            alt={product.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-          />
-        </div>
-        <div className="p-4">
-          <h3 className="font-semibold text-lg mb-1 line-clamp-2">{product.name}</h3>
-          <p className="text-sm text-muted-foreground mb-3">{product.description}</p>
-          <div className="flex items-center justify-between">
-            {product.rating && (
-              <div className="flex items-center gap-1">
-                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                <span className="text-sm font-medium">{product.rating}</span>
-              </div>
-            )}
-            <div className="text-lg font-bold">GHS {product.price}</div>
-          </div>
-          <button
-            onClick={handleAddToCart}
-            className="w-full mt-4 bg-primary text-primary-foreground py-2 rounded-lg hover:opacity-90 transition flex items-center justify-center gap-2"
-          >
-            <ShoppingCart className="w-4 h-4" />
-            Add
-          </button>
+    <article
+      className={cn(
+        "group flex h-full flex-col overflow-hidden rounded-2xl border border-border/80 bg-card product-card-hover",
+      )}
+    >
+      <Link
+        href={`/shop/${product.id}`}
+        className="relative block aspect-[4/5] overflow-hidden bg-muted"
+      >
+        <FallbackImage
+          src={product.image || "/placeholder.svg"}
+          alt={product.name}
+          fill
+          className="object-cover transition-transform duration-500 group-hover:scale-105"
+          sizes="(max-width: 768px) 100vw, 25vw"
+        />
+        {product.category ? (
+          <span className="absolute left-3 top-3 rounded-full bg-card/90 px-2.5 py-0.5 text-xs font-medium text-foreground backdrop-blur-sm">
+            {product.category}
+          </span>
+        ) : null}
+      </Link>
+
+      <div className="flex flex-1 flex-col p-4">
+        <Link href={`/shop/${product.id}`}>
+          <h3 className="mb-1 line-clamp-2 font-semibold leading-snug transition-colors group-hover:text-primary">
+            {product.name}
+          </h3>
+          {product.description ? (
+            <p className="mb-3 line-clamp-2 text-sm text-muted-foreground">
+              {product.description}
+            </p>
+          ) : null}
+        </Link>
+
+        <div className="mt-auto flex items-center justify-between gap-2 pt-2">
+          <p className="text-lg font-bold text-brand">{formatPrice(product.price)}</p>
+          <Button size="sm" className="rounded-full shadow-sm" onClick={handleAddToCart}>
+            <ShoppingCart className="h-4 w-4" />
+            <span className="sr-only">Add to cart</span>
+          </Button>
         </div>
       </div>
-    </Link>
-  )
+    </article>
+  );
 }

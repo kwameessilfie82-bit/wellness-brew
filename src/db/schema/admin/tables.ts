@@ -129,3 +129,40 @@ export const productVariantTable = pgTable("product_variant", {
   createdAt: timestamp("created_at").notNull(),
   updatedAt: timestamp("updated_at").notNull(),
 });
+
+export const storeOrderTable = pgTable("store_order", {
+  id: text("id").primaryKey(),
+  orderNumber: text("order_number").notNull().unique(),
+  userId: text("user_id").references(() => userTable.id, { onDelete: "set null" }),
+  status: text("status").notNull().default("pending"),
+  customerEmail: text("customer_email").notNull(),
+  customerName: text("customer_name").notNull(),
+  customerPhone: text("customer_phone"),
+  shippingAddress: text("shipping_address").notNull(),
+  shippingMethod: text("shipping_method"),
+  paymentMethod: text("payment_method"),
+  paymentReference: text("payment_reference"),
+  paymentStatus: text("payment_status").default("pending"),
+  subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
+  shipping: decimal("shipping", { precision: 10, scale: 2 }).notNull(),
+  tax: decimal("tax", { precision: 10, scale: 2 }).notNull(),
+  total: decimal("total", { precision: 10, scale: 2 }).notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull(),
+  updatedAt: timestamp("updated_at").notNull(),
+});
+
+export const orderItemTable = pgTable("order_item", {
+  id: text("id").primaryKey(),
+  orderId: text("order_id")
+    .notNull()
+    .references(() => storeOrderTable.id, { onDelete: "cascade" }),
+  productId: text("product_id").references(() => productTable.id, {
+    onDelete: "set null",
+  }),
+  productName: text("product_name").notNull(),
+  sku: text("sku"),
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  quantity: integer("quantity").notNull(),
+  image: text("image"),
+});

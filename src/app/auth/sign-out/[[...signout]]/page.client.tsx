@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 
-import { signOut } from "@/lib/auth-client";
+import { signOut as supabaseSignOut } from "@/lib/auth-client";
 import { cn } from "@/lib/cn";
 import { useMounted } from "@/lib/hooks/use-mounted";
 import { Button, buttonVariants } from "@/ui/primitives/button";
@@ -17,13 +17,8 @@ export function SignOutPageClient() {
   };
 
   const handleSignOut = async () => {
-    await signOut({
-      fetchOptions: {
-        onSuccess: () => {
-          router.push("/");
-        },
-      },
-    });
+    await supabaseSignOut();
+    router.push("/");
   };
 
   return (

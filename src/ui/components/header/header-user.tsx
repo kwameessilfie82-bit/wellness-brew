@@ -1,7 +1,8 @@
 import {
+  LayoutDashboard,
   LogOut,
   Moon,
-  Shield,
+  Package,
   Sun,
   UserIcon,
 } from "lucide-react";
@@ -26,7 +27,16 @@ interface HeaderUserDropdownProps {
   userEmail: string;
   userImage?: null | string;
   userName: string;
+  isAdmin?: boolean;
   adminRole?: string;
+}
+
+function roleBadgeLabel(role?: string) {
+  if (!role) return "Admin";
+  if (role === "manager") return "Owner";
+  if (role === "super_admin") return "Manager";
+  if (role === "admin") return "Admin";
+  return role.replace(/_/g, " ");
 }
 
 export function HeaderUserDropdown({
@@ -34,12 +44,12 @@ export function HeaderUserDropdown({
   userEmail,
   userImage,
   userName,
+  isAdmin = false,
   adminRole,
 }: HeaderUserDropdownProps) {
   const { setTheme, theme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
 
-  // Avoid hydration mismatch by rendering only on client-side
   React.useEffect(() => {
     requestAnimationFrame(() => setMounted(true));
   }, []);
@@ -92,45 +102,48 @@ export function HeaderUserDropdown({
           </Avatar>
           <div className="flex flex-col space-y-0.5">
             <p className="text-sm font-medium">{userName || "User"}</p>
-            <p
-              className={"max-w-[160px] truncate text-xs text-muted-foreground"}
-            >
+            <p className="max-w-[160px] truncate text-xs text-muted-foreground">
               {userEmail}
             </p>
-            {adminRole && (
-              <Badge variant="default" className="w-fit text-xs bg-primary text-primary-foreground">
-                {adminRole === 'super_admin' ? 'Manager' : 
-                 adminRole === 'admin' ? 'Admin' : 
-                 adminRole.replace('_', ' ').toUpperCase()}
+            {isAdmin ? (
+              <Badge
+                variant="default"
+                className="w-fit bg-primary text-xs text-primary-foreground"
+              >
+                {roleBadgeLabel(adminRole)}
               </Badge>
-            )}
+            ) : null}
           </div>
         </div>
         <DropdownMenuSeparator />
-        
-        {/* Always show Profile */}
-        <DropdownMenuItem asChild>
-          <Link className="cursor-pointer" href="/dashboard/profile">
-            <UserIcon className="mr-2 h-4 w-4" />
-            Profile
-          </Link>
-        </DropdownMenuItem>
-        
-        {/* Show dashboard link based on role */}
-        {adminRole && (
+
+        {isAdmin ? (
           <>
-            <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link className="cursor-pointer" href="/admin/inventory">
-                <Shield className="mr-2 h-4 w-4" />
+              <Link className="cursor-pointer font-medium" href="/admin">
+                <LayoutDashboard className="mr-2 h-4 w-4" />
                 Dashboard
               </Link>
             </DropdownMenuItem>
+            <DropdownMenuSeparator />
           </>
-        )}
-        
-        {/* Theme Toggle Section */}
-        {mounted && (
+        ) : null}
+
+        <DropdownMenuItem asChild>
+          <Link className="cursor-pointer" href="/account">
+            <UserIcon className="mr-2 h-4 w-4" />
+            My account
+          </Link>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem asChild>
+          <Link className="cursor-pointer" href="/account/orders">
+            <Package className="mr-2 h-4 w-4" />
+            My orders
+          </Link>
+        </DropdownMenuItem>
+
+        {mounted ? (
           <>
             <DropdownMenuSeparator />
             <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
@@ -181,19 +194,14 @@ export function HeaderUserDropdown({
               System
             </DropdownMenuItem>
           </>
-        )}
-        
+        ) : null}
+
         <DropdownMenuSeparator />
         <DropdownMenuItem
           asChild
           className={cn(
             "cursor-pointer",
-            isDashboard
-              ? "text-red-600"
-              : `
-                txt-destructive
-                focus:text-destrctive
-              `,
+            isDashboard ? "text-red-600" : "txt-destructive focus:text-destrctive",
           )}
         >
           <Link href="/auth/sign-out">

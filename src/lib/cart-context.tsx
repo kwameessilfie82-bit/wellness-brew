@@ -1,6 +1,9 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { toast } from "sonner";
+
+import { parsePrice } from "@/lib/format";
 
 interface CartItem {
   id: string;
@@ -67,24 +70,38 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   }, [items, mounted]);
 
   const addToCart = (product: ProductInput) => {
+    const productId = String(product.id);
+    let toastTitle = "Added to cart";
+    let toastDescription = product.name;
+
     setItems((prev) => {
-      const productId = String(product.id);
       const existing = prev.find((item) => item.id === productId);
       if (existing) {
-        return prev.map((item) => 
+        const nextQuantity = existing.quantity + 1;
+        toastTitle = "Cart updated";
+        toastDescription = `${product.name} · Qty ${nextQuantity}`;
+        return prev.map((item) =>
           item.id === productId
-            ? { ...item, quantity: item.quantity + 1 } 
-            : item
+            ? { ...item, quantity: nextQuantity }
+            : item,
         );
       }
+
       const newItem: CartItem = {
         id: productId,
         name: product.name,
-        price: product.price || product.customerPrice || product.retailPrice || 0,
+        price: parsePrice(
+          product.price ?? product.customerPrice ?? product.retailPrice ?? 0,
+        ),
         quantity: 1,
         image: product.image,
       };
       return [...prev, newItem];
+    });
+
+    toast.success(toastTitle, {
+      id: `cart-${productId}`,
+      description: toastDescription,
     });
   };
 

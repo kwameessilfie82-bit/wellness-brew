@@ -8,6 +8,8 @@ import {
   inventoryTable,
   inventoryTransactionTable,
   productVariantTable,
+  storeOrderTable,
+  orderItemTable,
 } from "./tables";
 
 // Admin role relations
@@ -86,6 +88,25 @@ export const inventoryTransactionRelations = relations(inventoryTransactionTable
 export const productVariantRelations = relations(productVariantTable, ({ one }) => ({
   product: one(productTable, {
     fields: [productVariantTable.productId],
+    references: [productTable.id],
+  }),
+}));
+
+export const storeOrderRelations = relations(storeOrderTable, ({ one, many }) => ({
+  user: one(userTable, {
+    fields: [storeOrderTable.userId],
+    references: [userTable.id],
+  }),
+  items: many(orderItemTable),
+}));
+
+export const orderItemRelations = relations(orderItemTable, ({ one }) => ({
+  order: one(storeOrderTable, {
+    fields: [orderItemTable.orderId],
+    references: [storeOrderTable.id],
+  }),
+  product: one(productTable, {
+    fields: [orderItemTable.productId],
     references: [productTable.id],
   }),
 }));

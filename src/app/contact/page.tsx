@@ -17,7 +17,7 @@ export default function ContactPage() {
         <div className="section-container">
           <div className="max-w-3xl mx-auto">
             <div className="text-center mb-12">
-              <h1 className="text-5xl md:text-6xl font-serif font-bold text-foreground mb-4">
+              <h1 className="mb-4 font-serif text-5xl font-bold text-heading md:text-6xl">
                 Get in Touch
               </h1>
               <p className="text-lg text-muted-foreground">

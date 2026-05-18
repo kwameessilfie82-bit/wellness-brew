@@ -53,7 +53,7 @@ export default function InvoiceGenerator() {
   const [discount, setDiscount] = useState(0)
   const [customDesignPrinting, setCustomDesignPrinting] = useState(0)
   const [deliveries, setDeliveries] = useState(0)
-  const [notes, setNotes] = useState("We appreciate your trust in leafyvibestea.")
+  const [notes, setNotes] = useState("We appreciate your trust in Wellness Brew.")
   const [latePaymentPolicy, setLatePaymentPolicy] = useState(
     "Payment is due within 90 days. Late payments may incur a 2% monthly interest charge.",
   )

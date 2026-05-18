@@ -10,7 +10,7 @@ export default function AboutPage() {
       <section className="py-20 md:py-32">
         <div className="section-container">
           <div className="max-w-3xl mx-auto text-center mb-16">
-            <h1 className="text-5xl md:text-6xl font-serif font-bold text-foreground mb-6">
+            <h1 className="mb-6 font-serif text-5xl font-bold text-heading md:text-6xl">
               About Wellness Brew
             </h1>
             <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
@@ -49,7 +49,7 @@ export default function AboutPage() {
 
           <div className="grid md:grid-cols-2 gap-12 mt-16">
             <div>
-              <h2 className="text-3xl font-serif font-bold mb-4">Our Story</h2>
+              <h2 className="mb-4 font-serif text-3xl font-bold text-heading">Our Story</h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
                 Founded with a vision to make premium wellness products accessible to everyone, Wellness Brew has been 
                 dedicated to sourcing the finest Rose of Sharon (Hibiscus) teas and herbal blends from around the world. 
@@ -62,7 +62,7 @@ export default function AboutPage() {
               </p>
             </div>
             <div>
-              <h2 className="text-3xl font-serif font-bold mb-4">Our Mission</h2>
+              <h2 className="mb-4 font-serif text-3xl font-bold text-heading">Our Mission</h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
                 We believe that wellness starts with what you consume. Our commitment is to provide you with 
                 natural, organic Rose of Sharon (Hibiscus) products that support your health journey. Every tea in our 

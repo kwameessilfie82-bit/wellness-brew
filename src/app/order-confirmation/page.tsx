@@ -9,6 +9,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { Suspense, useEffect, useState } from "react"
+import { formatPrice, parsePrice } from "@/lib/format"
 
 interface Order {
   id: string
@@ -34,7 +35,14 @@ function OrderConfirmationContent() {
       const orders = JSON.parse(localStorage.getItem("leafyvibestea-orders") || "[]")
       const foundOrder = orders.find((o: Order) => o.id === orderId)
       if (foundOrder) {
-        setOrder(foundOrder)
+        setOrder({
+          ...foundOrder,
+          total: parsePrice(foundOrder.total),
+          items: foundOrder.items.map((item: Order["items"][number]) => ({
+            ...item,
+            price: parsePrice(item.price),
+          })),
+        })
       }
     }
   }, [orderId])
@@ -124,16 +132,16 @@ function OrderConfirmationContent() {
                     <div className="flex-1">
                       <p className="font-medium">{item.name}</p>
                       <p className="text-sm text-muted-foreground">Quantity: {item.quantity}</p>
-                      <p className="text-sm font-medium mt-1">GHS {item.price.toFixed(2)}</p>
+                      <p className="text-sm font-medium mt-1">{formatPrice(item.price)}</p>
                     </div>
-                    <p className="font-medium">GHS {(item.price * item.quantity).toFixed(2)}</p>
+                    <p className="font-medium">{formatPrice(item.price * item.quantity)}</p>
                   </div>
                 ))}
               </div>
               <div className="border-t border-border mt-6 pt-4">
                 <div className="flex items-center justify-between text-xl font-bold">
                   <span>Total</span>
-                  <span>GHS {order.total.toFixed(2)}</span>
+                  <span>{formatPrice(order.total)}</span>
                 </div>
               </div>
             </CardContent>

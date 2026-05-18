@@ -9,3 +9,7 @@ export * from "./users/relations";
 export * from "./users/tables";
 // types
 export * from "./users/types";
+
+export * from "./uploads/relations";
+export * from "./uploads/tables";
+export * from "./uploads/types";

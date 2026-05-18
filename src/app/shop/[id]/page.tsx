@@ -1,205 +1,210 @@
-"use client"
+"use client";
 
-import { Badge } from "@/ui/primitives/badge"
-import { Button } from "@/ui/primitives/button"
-import { Footer } from "@/ui/footer"
-import { Navigation } from "@/ui/navigation"
-import { ProductCard } from "@/ui/product-card"
-import { ShoppingCart } from "lucide-react"
-import Image from "next/image"
-import Link from "next/link"
-import { useParams } from "next/navigation"
-import { useEffect, useState } from "react"
-import { useCart } from "@/lib/cart-context"
+import { Badge } from "@/ui/primitives/badge";
+import { Button } from "@/ui/primitives/button";
+import { Footer } from "@/ui/footer";
+import { Navigation } from "@/ui/navigation";
+import { ProductCard } from "@/ui/product-card";
+import { ShoppingCart, Loader2 } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
-interface Product {
-  id: string
-  name: string
-  price: number
-  images?: string[]
-  description?: string
-  shortDescription?: string
-  categoryName?: string
-  isFeatured?: boolean
-  quantityAvailable?: number
-}
+import { formatPrice } from "@/lib/format";
+import type { StoreProduct } from "@/lib/products/normalize";
+import { useCart } from "@/lib/cart-context";
+import { FallbackImage } from "@/ui/components/fallback-image";
 
 export default function ProductDetailPage() {
-  const params = useParams()
-  const id = params?.id as string
-  const { addToCart } = useCart()
-  const [product, setProduct] = useState<Product | null>(null)
-  const [relatedProducts, setRelatedProducts] = useState<Product[]>([])
-  const [loading, setLoading] = useState(true)
+  const params = useParams();
+  const id = params?.id as string;
+  const { addToCart } = useCart();
+  const [product, setProduct] = useState<StoreProduct | null>(null);
+  const [relatedProducts, setRelatedProducts] = useState<StoreProduct[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchProduct = async () => {
+    if (!id) return;
+
+    const load = async () => {
       try {
-        // Try to fetch by ID first
-        const response = await fetch(`/api/products`)
-        const data = await response.json()
-        const foundProduct = data.products?.find((p: Product) => p.id === id || p.id === String(id))
-        
-        if (foundProduct) {
-          setProduct(foundProduct)
-          // Fetch related products from same category
-          if (foundProduct.categoryName) {
-            const relatedResponse = await fetch(`/api/products?category=${foundProduct.categoryName}&limit=4`)
-            const relatedData = await relatedResponse.json()
-            setRelatedProducts(relatedData.products?.filter((p: Product) => p.id !== foundProduct.id) || [])
+        const response = await fetch(`/api/products?id=${encodeURIComponent(id)}`);
+        const data = await response.json();
+        const found = data.products?.[0] as StoreProduct | undefined;
+
+        if (found) {
+          setProduct(found);
+          if (found.categoryName) {
+            const relatedRes = await fetch(
+              `/api/products?category=${encodeURIComponent(found.categoryName)}&limit=4`,
+            );
+            const relatedData = await relatedRes.json();
+            setRelatedProducts(
+              (relatedData.products as StoreProduct[])?.filter(
+                (p) => p.id !== found.id,
+              ) ?? [],
+            );
           }
         }
       } catch (error) {
-        console.error("Error fetching product:", error)
+        console.error("Error fetching product:", error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    if (id) {
-      fetchProduct()
-    }
-  }, [id])
+    void load();
+  }, [id]);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
+      <div className="flex min-h-screen flex-col">
+        <Navigation />
+        <div className="flex flex-1 items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
       </div>
-    )
+    );
   }
 
   if (!product) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Product not found</h1>
+      <div className="flex min-h-screen flex-col">
+        <Navigation />
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 px-4">
+          <h1 className="text-2xl font-bold">Product not found</h1>
           <Link href="/shop">
             <Button>Back to Shop</Button>
           </Link>
         </div>
+        <Footer />
       </div>
-    )
+    );
   }
 
-  const handleAddToCart = () => {
-    addToCart({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      image: product.images?.[0],
-    })
-  }
+  const inStock = product.quantityAvailable > 0;
 
   return (
-    <div className="min-h-screen">
+    <div className="flex min-h-screen flex-col">
       <Navigation />
 
-      {/* Breadcrumb */}
-      <div className="section-container py-6">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Link href="/" className="hover:text-foreground">
-            Home
-          </Link>
-          <span>/</span>
-          <Link href="/shop" className="hover:text-foreground">
-            Shop
-          </Link>
-          {product.categoryName && (
-            <>
-              <span>/</span>
-              <Link href={`/shop?category=${product.categoryName}`} className="hover:text-foreground">
-                {product.categoryName}
-              </Link>
-            </>
-          )}
-          <span>/</span>
-          <span className="text-foreground">{product.name}</span>
-        </div>
+      <div className="section-container py-6 text-sm text-muted-foreground animate-fade-in-up">
+        <Link href="/" className="hover:text-foreground">
+          Home
+        </Link>
+        <span className="mx-2">/</span>
+        <Link href="/shop" className="hover:text-foreground">
+          Shop
+        </Link>
+        {product.categoryName ? (
+          <>
+            <span className="mx-2">/</span>
+            <Link
+              href={`/shop?category=${encodeURIComponent(product.categoryName)}`}
+              className="hover:text-foreground"
+            >
+              {product.categoryName}
+            </Link>
+          </>
+        ) : null}
+        <span className="mx-2">/</span>
+        <span className="text-foreground">{product.name}</span>
       </div>
 
-      {/* Product Details */}
-      <div className="section-container pb-12">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Product Image */}
-          <div className="relative aspect-square rounded-lg overflow-hidden bg-secondary/20">
-            <Image 
-              src={product.images?.[0] || "/placeholder.svg"} 
-              alt={product.name} 
-              fill 
-              className="object-cover" 
+      <div className="section-container pb-16">
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 animate-fade-in-up-delay-1">
+          <div className="relative aspect-square overflow-hidden rounded-2xl bg-muted shadow-lg">
+            <FallbackImage
+              src={product.image}
+              alt={product.name}
+              fill
+              className="object-cover"
+              sizes="(max-width: 1024px) 100vw, 50vw"
+              priority
             />
           </div>
 
-          {/* Product Info */}
-          <div className="space-y-6">
-            <div>
-              {product.categoryName && (
-                <p className="text-sm text-muted-foreground mb-2">{product.categoryName}</p>
-              )}
-              <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4">{product.name}</h1>
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                {product.description || product.shortDescription}
+          <div className="flex flex-col justify-center space-y-6">
+            {product.categoryName ? (
+              <p className="text-sm font-medium uppercase tracking-wider text-brand">
+                {product.categoryName}
               </p>
+            ) : null}
+            <h1 className="font-serif text-4xl font-bold leading-tight text-heading md:text-5xl">
+              {product.name}
+            </h1>
+            <p className="text-lg leading-relaxed text-muted-foreground">
+              {product.description || product.shortDescription}
+            </p>
+
+            <div className="flex flex-wrap items-center gap-4 border-y border-border py-6">
+              <p className="text-4xl font-bold text-brand">
+                {formatPrice(product.price)}
+              </p>
+              {product.originalPrice ? (
+                <p className="text-lg text-muted-foreground line-through">
+                  {formatPrice(product.originalPrice)}
+                </p>
+              ) : null}
+              <Badge variant={inStock ? "default" : "destructive"}>
+                {inStock
+                  ? `${product.quantityAvailable} in stock`
+                  : "Out of stock"}
+              </Badge>
             </div>
 
-            {/* Price and Stock */}
-            <div className="border-t border-b border-border py-6">
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-4xl font-bold">GHS {product.price.toFixed(2)}</p>
-                {product.quantityAvailable !== undefined && (
-                  <Badge variant={product.quantityAvailable > 0 ? "default" : "destructive"}>
-                    {product.quantityAvailable > 0 ? `${product.quantityAvailable} in stock` : "Out of stock"}
-                  </Badge>
-                )}
-              </div>
-            </div>
-
-            {/* Add to Cart */}
-            <div className="flex gap-3">
-              <Button 
-                onClick={handleAddToCart}
-                className="flex-1 h-12"
-                disabled={product.quantityAvailable !== undefined && product.quantityAvailable === 0}
-              >
-                <ShoppingCart className="h-5 w-5 mr-2" />
-                Add to Cart
-              </Button>
-            </div>
+            <Button
+              size="lg"
+              className="h-12 rounded-full text-base"
+              disabled={!inStock}
+              onClick={() =>
+                addToCart({
+                  id: product.id,
+                  name: product.name,
+                  price: product.price,
+                  image: product.image,
+                })
+              }
+            >
+              <ShoppingCart className="mr-2 h-5 w-5" />
+              {inStock ? "Add to Cart" : "Out of Stock"}
+            </Button>
           </div>
         </div>
 
-        {/* Related Products */}
-        {relatedProducts.length > 0 && (
-          <div className="mt-20">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-3xl font-serif font-bold">You May Also Like</h2>
-              {product.categoryName && (
-                <Link href={`/shop?category=${product.categoryName}`}>
-                  <Button variant="outline">View All {product.categoryName}</Button>
+        {relatedProducts.length > 0 ? (
+          <section className="mt-20 animate-fade-in-up-delay-2">
+            <div className="mb-8 flex items-center justify-between">
+              <h2 className="font-serif text-3xl font-bold text-heading">You May Also Like</h2>
+              {product.categoryName ? (
+                <Link href={`/shop?category=${encodeURIComponent(product.categoryName)}`}>
+                  <Button variant="outline" className="rounded-full">
+                    View all {product.categoryName}
+                  </Button>
                 </Link>
-              )}
+              ) : null}
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {relatedProducts.map((relatedProduct) => (
-                <ProductCard 
-                  key={relatedProduct.id} 
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {relatedProducts.map((related) => (
+                <ProductCard
+                  key={related.id}
                   product={{
-                    id: relatedProduct.id,
-                    name: relatedProduct.name,
-                    price: relatedProduct.price,
-                    image: relatedProduct.images?.[0],
-                    description: relatedProduct.shortDescription || relatedProduct.description,
-                    category: relatedProduct.categoryName,
-                  }} 
+                    id: related.id,
+                    name: related.name,
+                    price: related.price,
+                    image: related.image,
+                    description: related.shortDescription || related.description || undefined,
+                    category: related.categoryName || undefined,
+                  }}
                 />
               ))}
             </div>
-          </div>
-        )}
+          </section>
+        ) : null}
       </div>
 
       <Footer />
     </div>
-  )
+  );
 }

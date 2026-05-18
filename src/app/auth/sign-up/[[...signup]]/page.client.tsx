@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useState } from "react";
 
 import { SEO_CONFIG } from "@/app";
-import { signIn, useCurrentUser } from "@/lib/auth-client";
+import { signInWithGoogle, useCurrentUser } from "@/lib/auth-client";
 import { GoogleIcon } from "@/ui/components/icons/google";
 import { Button } from "@/ui/primitives/button";
 import { Card, CardContent } from "@/ui/primitives/card";
@@ -32,11 +32,11 @@ export function SignUpPageClient() {
       if (user) {
         (async () => {
           try {
-            const res = await fetch("/api/admin/status");
+            const res = await fetch("/api/admin/me");
             if (res.ok) {
               const data = await res.json();
-              if (data?.isAdmin && data?.adminUser?.role?.name) {
-                if (data.adminUser.role.name === "manager") {
+              if (data?.isAdmin && data?.role?.name) {
+                if (data.role.name === "manager") {
                   window.location.href = "/admin";
                 } else {
                   window.location.href = "/admin/inventory";
@@ -53,9 +53,20 @@ export function SignUpPageClient() {
         return;
       }
       // For new auth, let home route decide post-auth destination
-      void signIn.social({ provider: "google", callbackURL: "/" });
+      void signInWithGoogle("/auth/callback?next=/");
     } catch (err) {
-      setError("Failed to sign up with Google");
+      const message =
+        err instanceof Error ? err.message : "Failed to sign up with Google";
+      if (
+        message.includes("provider is not enabled") ||
+        message.includes("Unsupported provider")
+      ) {
+        setError(
+          "Google sign-in is not enabled in your Supabase project. Enable it under Authentication → Providers in the Supabase dashboard.",
+        );
+      } else {
+        setError(message);
+      }
       console.error(err);
       setLoading(false);
     }
