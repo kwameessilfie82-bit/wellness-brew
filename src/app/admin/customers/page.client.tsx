@@ -4,6 +4,7 @@ import type { ColumnDef, ColumnMeta, Column } from "@tanstack/react-table";
 import type React from "react";
 
 import { Hash, Mail, User as UserIcon, Calendar, Shield, CheckCircle, XCircle, Search, Trash2, Users, UserCog, UserCheck } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useMemo, useState, useCallback } from "react";
 
 import { ADMIN_CONFIG } from "@/app";
@@ -22,9 +23,15 @@ import type { AdminUserWithDetails } from "@/db/schema";
 interface CustomersPageClientProps {
   initialData: UserWithRole[];
   adminUser: AdminUserWithDetails | null;
+  authSyncEnabled: boolean;
 }
 
-const CustomersPageClient: React.FC<CustomersPageClientProps> = ({ initialData, adminUser }) => {
+const CustomersPageClient: React.FC<CustomersPageClientProps> = ({
+  initialData,
+  adminUser,
+  authSyncEnabled,
+}) => {
+  const router = useRouter();
   const [users, setUsers] = useState<UserWithRole[]>(initialData);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -95,7 +102,8 @@ const CustomersPageClient: React.FC<CustomersPageClientProps> = ({ initialData, 
         });
 
         if (response.ok) {
-          setUsers(prev => prev.filter(user => user.id !== userId));
+          setUsers((prev) => prev.filter((user) => user.id !== userId));
+          router.refresh();
         } else {
           const error = await response.json();
           console.error('Failed to delete user:', error);
@@ -106,7 +114,7 @@ const CustomersPageClient: React.FC<CustomersPageClientProps> = ({ initialData, 
         alert('Error deleting user. Please try again.');
       }
     }
-  }, [adminUser]);
+  }, [adminUser, router]);
 
   const columns = useMemo(
     (): ColumnDef<UserWithRole>[] => [
@@ -262,6 +270,18 @@ const CustomersPageClient: React.FC<CustomersPageClientProps> = ({ initialData, 
 
   return (
     <div className="space-y-6">
+      {!authSyncEnabled ? (
+        <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">
+          Add <code className="text-xs">SUPABASE_SERVICE_ROLE_KEY</code> to your{" "}
+          <code className="text-xs">.env</code> so this list stays in sync with Supabase
+          Authentication. Without it, deleting users in Auth or here can get out of step.
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          Synced with Supabase Authentication — same accounts customers use to sign in.
+        </p>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Users</h1>

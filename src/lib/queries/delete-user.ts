@@ -12,28 +12,14 @@ import {
 } from "@/db/schema";
 import { deleteSupabaseAuthUser } from "@/lib/supabase/admin";
 
-/**
- * Removes a user from Supabase Auth and the app database, including related data.
- */
-export async function deleteUserCompletely(userId: string) {
+/** Removes app DB rows for a user (orders, profile, admin link). Does not touch Supabase Auth. */
+export async function deleteAppUserDataOnly(userId: string) {
   const user = await db.query.userTable.findFirst({
     where: eq(userTable.id, userId),
   });
 
   if (!user) {
-    return { ok: false as const, error: "User not found", status: 404 };
-  }
-
-  const authResult = await deleteSupabaseAuthUser(userId);
-
-  if (!authResult.success) {
-    return {
-      ok: false as const,
-      error:
-        authResult.error ??
-        "Could not delete user from Supabase Auth. Check SUPABASE_SERVICE_ROLE_KEY.",
-      status: 500,
-    };
+    return;
   }
 
   await db.transaction(async (tx) => {
@@ -58,6 +44,41 @@ export async function deleteUserCompletely(userId: string) {
 
     await tx.delete(userTable).where(eq(userTable.id, userId));
   });
+}
+
+/**
+ * Removes a user from Supabase Auth and the app database (same id in both).
+ */
+export async function deleteUserCompletely(userId: string) {
+  const user = await db.query.userTable.findFirst({
+    where: eq(userTable.id, userId),
+  });
+
+  if (!user) {
+    const authResult = await deleteSupabaseAuthUser(userId);
+    if (!authResult.success && !authResult.notFound) {
+      return {
+        ok: false as const,
+        error: authResult.error ?? "User not found",
+        status: 404,
+      };
+    }
+    return { ok: true as const };
+  }
+
+  const authResult = await deleteSupabaseAuthUser(userId);
+
+  if (!authResult.success && !authResult.notFound) {
+    return {
+      ok: false as const,
+      error:
+        authResult.error ??
+        "Could not delete user from Supabase Auth. Check SUPABASE_SERVICE_ROLE_KEY.",
+      status: 500,
+    };
+  }
+
+  await deleteAppUserDataOnly(userId);
 
   return { ok: true as const };
 }

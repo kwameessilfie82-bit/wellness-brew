@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { withAdminAuth } from "@/lib/admin-middleware";
-import { deleteUserCompletely } from "@/lib/queries/delete-user";
+import { deleteUserCompletely } from "@/lib/queries/users";
 
 const deleteHandler = withAdminAuth(
   async (_request: NextRequest, adminUser, context?: { params: Record<string, string> }) => {
