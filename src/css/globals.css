@@ -219,6 +219,7 @@
     pointer-events: none;
     position: absolute;
     inset: 0;
+    z-index: 0;
     background:
       radial-gradient(
         ellipse 90% 70% at 85% 15%,
@@ -239,35 +240,44 @@
     pointer-events: none;
     position: absolute;
     inset: 0;
-    opacity: 0.35;
+    z-index: 1;
+    opacity: 0.75;
     background-size: 24px 24px;
+    /* Light: border is too faint on cream — muted-foreground reads clearly */
     background-image: radial-gradient(
       circle at 1px 1px,
-      color-mix(in oklab, var(--border) 70%, transparent) 1px,
+      color-mix(in oklab, var(--muted-foreground) 42%, transparent) 1px,
       transparent 0
     );
     mask-image: linear-gradient(
       to bottom,
       black 0%,
-      black 35%,
-      transparent 92%
+      black 68%,
+      rgba(0, 0, 0, 0.35) 82%,
+      transparent 100%
     );
     -webkit-mask-image: linear-gradient(
       to bottom,
       black 0%,
-      black 35%,
-      transparent 92%
+      black 68%,
+      rgba(0, 0, 0, 0.35) 82%,
+      transparent 100%
     );
   }
   .dark .hero-pattern {
-    opacity: 0.22;
+    opacity: 0.36;
+    background-image: radial-gradient(
+      circle at 1px 1px,
+      color-mix(in oklab, var(--muted-foreground) 32%, var(--border)) 1px,
+      transparent 0
+    );
   }
   .hero-bottom-blend {
     pointer-events: none;
     position: absolute;
     inset-inline: 0;
     bottom: 0;
-    z-index: 5;
+    z-index: 2;
     height: min(28vh, 220px);
     background: linear-gradient(
       to bottom,
