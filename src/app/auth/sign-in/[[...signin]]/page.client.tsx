@@ -33,9 +33,7 @@ export function SignInPageClient() {
       if (next === "/checkout" || next.startsWith("/checkout?")) {
         backupCartForCheckout(readCartFromStorage());
       }
-      await signInWithGoogle(
-        `/auth/callback?next=${encodeURIComponent(next)}`,
-      );
+      signInWithGoogle(`/auth/callback?next=${encodeURIComponent(next)}`);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to sign in with Google";

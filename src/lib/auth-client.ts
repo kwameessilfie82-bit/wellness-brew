@@ -122,10 +122,9 @@ export function signInWithGoogle(callbackPath = "/auth/callback") {
     params.set("next", callbackPath);
   }
 
-  const query = params.toString();
-  window.location.href = query
-    ? `/api/auth/google?${query}`
-    : "/api/auth/google";
+  params.set("origin", window.location.origin);
+
+  window.location.href = `/api/auth/google?${params.toString()}`;
 }
 
 export async function signOut() {

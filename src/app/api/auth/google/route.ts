@@ -1,16 +1,19 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
 
-import { getRequestOrigin } from "@/lib/app-url";
+import {
+  AUTH_NEXT_COOKIE,
+  getOAuthCallbackOrigin,
+} from "@/lib/auth-redirect";
 import { getSupabaseEnv } from "@/lib/supabase/env";
 
 /**
- * Starts Google OAuth on the server so `redirectTo` uses the real request host
- * (e.g. https://wellness-brew.vercel.app), not a stale build-time env value.
+ * Starts Google OAuth on the server.
  *
- * Supabase Dashboard → Authentication → URL Configuration must include:
- *   Site URL: https://wellness-brew.vercel.app
- *   Redirect URLs: https://wellness-brew.vercel.app/auth/callback
+ * Supabase Dashboard → Authentication → URL Configuration:
+ *   Site URL: https://wellness-brew.vercel.app  (NOT localhost)
+ *   Redirect URLs: https://wellness-brew.vercel.app/**
+ *                   http://localhost:3000/**
  */
 export async function GET(request: NextRequest) {
   const env = getSupabaseEnv();
@@ -23,8 +26,11 @@ export async function GET(request: NextRequest) {
   }
 
   const next = request.nextUrl.searchParams.get("next") ?? "/";
-  const origin = getRequestOrigin(request);
-  const redirectTo = `${origin}/auth/callback?next=${encodeURIComponent(next)}`;
+  const clientOrigin = request.nextUrl.searchParams.get("origin");
+  const origin = getOAuthCallbackOrigin(request, clientOrigin);
+
+  // Exact path only — query strings on redirectTo often fail Supabase allow-list checks.
+  const redirectTo = `${origin}/auth/callback`;
 
   let supabaseResponse = NextResponse.next({ request });
 
@@ -57,7 +63,7 @@ export async function GET(request: NextRequest) {
   });
 
   if (error || !data.url) {
-    console.error("OAuth start failed:", error?.message, { redirectTo });
+    console.error("OAuth start failed:", error?.message, { redirectTo, origin });
     return NextResponse.redirect(
       `${origin}/auth/sign-in?error=oauth_start_failed`,
     );
@@ -66,6 +72,15 @@ export async function GET(request: NextRequest) {
   const redirectResponse = NextResponse.redirect(data.url);
   supabaseResponse.cookies.getAll().forEach((cookie) => {
     redirectResponse.cookies.set(cookie);
+  });
+
+  const safeNext = next.startsWith("/") ? next : "/";
+  redirectResponse.cookies.set(AUTH_NEXT_COOKIE, safeNext, {
+    httpOnly: true,
+    maxAge: 600,
+    path: "/",
+    sameSite: "lax",
+    secure: origin.startsWith("https://"),
   });
 
   return redirectResponse;

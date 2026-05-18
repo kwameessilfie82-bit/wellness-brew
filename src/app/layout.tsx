@@ -1,5 +1,6 @@
 import "@/css/globals.css";
 import { CartProvider } from "@/lib/cart-context";
+import { OAuthLocalhostRecovery } from "@/ui/components/oauth-localhost-recovery";
 import { ThemeProvider } from "@/ui/components/theme-provider";
 import { Toaster } from "@/ui/primitives/sonner";
 import { Analytics } from "@vercel/analytics/next";
@@ -27,6 +28,7 @@ export default function RootLayout({
 			<body className={`${geist.variable} ${geistMono.variable} ${playfair.variable} font-sans antialiased`}>
 				<ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
 					<CartProvider>
+						<OAuthLocalhostRecovery />
 						{children}
 						<Toaster richColors closeButton position="top-center" />
 						<Analytics />
