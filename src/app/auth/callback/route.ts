@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 
+import { getRequestOrigin } from "@/lib/app-url";
 import { syncUserFromSupabase } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
+  const origin = getRequestOrigin(request);
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/";
 
@@ -32,17 +34,6 @@ export async function GET(request: Request) {
             `${origin}/auth/sign-in?error=user_sync_failed`,
           );
         }
-      }
-
-      const forwardedHost = request.headers.get("x-forwarded-host");
-      const isLocalEnv = process.env.NODE_ENV === "development";
-
-      if (isLocalEnv) {
-        return NextResponse.redirect(`${origin}${next}`);
-      }
-
-      if (forwardedHost) {
-        return NextResponse.redirect(`https://${forwardedHost}${next}`);
       }
 
       return NextResponse.redirect(`${origin}${next}`);

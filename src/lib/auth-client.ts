@@ -4,6 +4,7 @@ import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
+import { getOAuthRedirectOrigin } from "@/lib/app-url";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/client";
 
@@ -109,16 +110,9 @@ export const useCurrentUserOrRedirect = (
   };
 };
 
-function getRedirectOrigin() {
-  if (typeof window !== "undefined") {
-    return window.location.origin;
-  }
-  return process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-}
-
 export async function signInWithGoogle(callbackPath = "/auth/callback") {
   const supabase = createClient();
-  const origin = getRedirectOrigin();
+  const origin = getOAuthRedirectOrigin();
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     options: {
