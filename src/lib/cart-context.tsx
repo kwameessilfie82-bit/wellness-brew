@@ -1,17 +1,24 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useRef,
+  ReactNode,
+} from "react";
 import { toast } from "sonner";
 
 import { parsePrice } from "@/lib/format";
+import {
+  readCartFromStorage,
+  restoreCartAfterAuth,
+  writeCartToStorage,
+  type StoredCartItem,
+} from "@/lib/cart-storage";
 
-interface CartItem {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  image?: string;
-}
+interface CartItem extends StoredCartItem {}
 
 interface ProductInput {
   id: string | number;
@@ -24,14 +31,15 @@ interface ProductInput {
 
 interface CartContextType {
   items: CartItem[];
-  cart: CartItem[]; // Keep for backward compatibility
+  cart: CartItem[];
+  isHydrated: boolean;
   addToCart: (product: ProductInput) => void;
   removeFromCart: (id: string | number) => void;
-  removeItem: (id: string | number) => void; // Alias for removeFromCart
+  removeItem: (id: string | number) => void;
   updateQuantity: (id: string | number, quantity: number) => void;
   clearCart: () => void;
   total: number;
-  totalPrice: number; // Alias for total
+  totalPrice: number;
   totalItems: number;
 }
 
@@ -40,34 +48,31 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export const useCart = () => {
   const context = useContext(CartContext);
   if (!context) {
-    throw new Error('useCart must be used within a CartProvider');
+    throw new Error("useCart must be used within a CartProvider");
   }
   return context;
 };
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>([]);
-  const [mounted, setMounted] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
+  const hasRestoredRef = useRef(false);
 
-  // Load from localStorage on mount
   useEffect(() => {
-    const saved = localStorage.getItem("cart");
-    if (saved) {
-      try {
-        setItems(JSON.parse(saved));
-      } catch (e) {
-        console.error("Failed to load cart", e);
-      }
-    }
-    setMounted(true);
+    const restored = restoreCartAfterAuth();
+    const cart =
+      restored.length > 0 ? restored : readCartFromStorage();
+    setItems(cart);
+    hasRestoredRef.current = true;
+    setIsHydrated(true);
   }, []);
 
-  // Save to localStorage whenever cart changes
   useEffect(() => {
-    if (mounted) {
-      localStorage.setItem("cart", JSON.stringify(items));
+    if (!hasRestoredRef.current) {
+      return;
     }
-  }, [items, mounted]);
+    writeCartToStorage(items);
+  }, [items]);
 
   const addToCart = (product: ProductInput) => {
     const productId = String(product.id);
@@ -106,7 +111,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const removeFromCart = (id: string | number) => {
-    setItems((prev) => prev.filter((item) => item.id !== String(id) && item.id !== id));
+    setItems((prev) =>
+      prev.filter((item) => item.id !== String(id) && item.id !== id),
+    );
   };
 
   const updateQuantity = (id: string | number, quantity: number) => {
@@ -114,12 +121,12 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       removeFromCart(id);
       return;
     }
-    setItems((prev) => 
-      prev.map((item) => 
-        (item.id === String(id) || item.id === id) 
-          ? { ...item, quantity } 
-          : item
-      )
+    setItems((prev) =>
+      prev.map((item) =>
+        item.id === String(id) || item.id === id
+          ? { ...item, quantity }
+          : item,
+      ),
     );
   };
 
@@ -131,18 +138,19 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <CartContext.Provider 
-      value={{ 
-        items, 
-        cart: items, // Backward compatibility
-        addToCart, 
+    <CartContext.Provider
+      value={{
+        items,
+        cart: items,
+        isHydrated,
+        addToCart,
         removeFromCart,
-        removeItem: removeFromCart, // Alias
+        removeItem: removeFromCart,
         updateQuantity,
-        clearCart, 
+        clearCart,
         total,
-        totalPrice: total, // Alias
-        totalItems
+        totalPrice: total,
+        totalItems,
       }}
     >
       {children}

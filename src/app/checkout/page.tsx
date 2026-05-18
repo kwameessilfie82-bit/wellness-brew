@@ -14,6 +14,10 @@ import { Input } from "@/ui/primitives/input";
 import { Label } from "@/ui/primitives/label";
 import { RadioGroup, RadioGroupItem } from "@/ui/primitives/radio-group";
 import { useCart } from "@/lib/cart-context";
+import {
+  backupCartForCheckout,
+  clearCheckoutCartBackup,
+} from "@/lib/cart-storage";
 import { useCurrentUser, signIn } from "@/lib/auth-client";
 import { Footer } from "@/ui/footer";
 import { Navigation } from "@/ui/navigation";
@@ -41,7 +45,7 @@ const DELIVERY_FEE = 0;
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, totalPrice, clearCart } = useCart();
+  const { items, totalPrice, clearCart, isHydrated } = useCart();
   const { user, isPending } = useCurrentUser();
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"card" | "momo">("momo");
@@ -57,10 +61,13 @@ export default function CheckoutPage() {
   const total = totalPrice + DELIVERY_FEE;
 
   useEffect(() => {
+    if (!isHydrated) {
+      return;
+    }
     if (items.length === 0) {
       router.replace("/cart");
     }
-  }, [items.length, router]);
+  }, [isHydrated, items.length, router]);
 
   useEffect(() => {
     if (!user) return;
@@ -91,10 +98,12 @@ export default function CheckoutPage() {
     void loadProfile();
   }, [user]);
 
-  if (items.length === 0) {
+  if (!isHydrated || items.length === 0) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">Redirecting to cart…</p>
+        <p className="text-muted-foreground">
+          {!isHydrated ? "Loading your cart…" : "Redirecting to cart…"}
+        </p>
       </div>
     );
   }
@@ -102,6 +111,7 @@ export default function CheckoutPage() {
   const handleGoogleSignIn = async () => {
     setAuthLoading(true);
     try {
+      backupCartForCheckout(items);
       await signIn.social({ provider: "google", callbackURL: "/checkout" });
     } catch {
       toast.error("Could not start sign in");
@@ -151,6 +161,7 @@ export default function CheckoutPage() {
       }
 
       clearCart();
+      clearCheckoutCartBackup();
 
       if (data.authorizationUrl) {
         window.location.href = data.authorizationUrl;

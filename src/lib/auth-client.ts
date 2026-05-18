@@ -111,14 +111,7 @@ export const useCurrentUserOrRedirect = (
 
 function getRedirectOrigin() {
   if (typeof window !== "undefined") {
-    const origin = window.location.origin;
-    if (
-      origin.includes("wellnessgroupgh.com") ||
-      origin.includes("wellnessgroupgh")
-    ) {
-      return "https://wellnessgroupgh.com";
-    }
-    return origin;
+    return window.location.origin;
   }
   return process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 }
