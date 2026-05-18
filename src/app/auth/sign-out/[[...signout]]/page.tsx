@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { SignOutPageClient } from "@/app/auth/sign-out/[[...signout]]/page.client";
+import { getAppBaseUrl } from "@/lib/app-url";
 import { getCurrentUserOrRedirect } from "@/lib/auth";
 import {
   PageHeader,
@@ -11,9 +12,7 @@ import { Shell } from "@/ui/primitives/shell";
 
 export const metadata: Metadata = {
   description: "Sign out of your account",
-  metadataBase: new URL(
-    process.env.NEXT_SERVER_APP_URL || "http://localhost:3000" || "https://wellness-brew.vercel.app",
-  ),
+  metadataBase: new URL(getAppBaseUrl()),
   title: "Sign out",
 };
 

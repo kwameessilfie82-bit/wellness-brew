@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { getAppBaseUrl } from "@/lib/app-url";
 import { getCurrentUser } from "@/lib/auth";
 import { formatGhanaPhone } from "@/lib/ghana";
 import {
@@ -128,12 +129,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const origin =
-      request.headers.get("x-forwarded-host") ??
-      request.headers.get("host") ??
-      "localhost:3000";
-    const protocol = origin.includes("localhost") ? "http" : "https";
-    const baseUrl = `${protocol}://${origin}`;
+    const baseUrl = getAppBaseUrl(request);
 
     const paystack = await initializePaystackTransaction({
       email: user.email,

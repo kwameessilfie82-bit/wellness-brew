@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { getAppBaseUrl } from "@/lib/app-url";
 import { ProductDetailClient } from "@/ui/components/product-detail-client";
 
 /* -------------------------------------------------------------------------- */
@@ -29,7 +30,7 @@ interface Product {
 
 async function getProduct(slug: string): Promise<Product | null> {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000' || 'https://wellness-brew.vercel.app'}/api/products?slug=${slug}`, {
+    const response = await fetch(`${getAppBaseUrl()}/api/products?slug=${slug}`, {
       cache: 'no-store'
     });
     

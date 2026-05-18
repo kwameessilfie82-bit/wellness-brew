@@ -16,7 +16,21 @@ export function getConfiguredAppUrl(): string | undefined {
   return raw ? stripTrailingSlash(raw) : undefined;
 }
 
-/** Origin for server redirects (OAuth callback, emails, etc.). */
+/** Base URL for server-side fetches and redirects. */
+export function getAppBaseUrl(request?: Request): string {
+  if (request) {
+    return getRequestOrigin(request);
+  }
+
+  const configured = getConfiguredAppUrl();
+  if (configured) {
+    return configured;
+  }
+
+  return LOCALHOST_FALLBACK;
+}
+
+/** Origin from an incoming HTTP request (Vercel sets x-forwarded-host). */
 export function getRequestOrigin(request: Request): string {
   const forwardedHost = request.headers.get("x-forwarded-host");
   const forwardedProto =
@@ -24,7 +38,13 @@ export function getRequestOrigin(request: Request): string {
     "https";
 
   if (forwardedHost) {
-    return `${forwardedProto}://${forwardedHost}`;
+    return `${forwardedProto}://${forwardedHost.split(",")[0]?.trim()}`;
+  }
+
+  const host = request.headers.get("host");
+  if (host && !host.includes("localhost")) {
+    const proto = host.includes("localhost") ? "http" : "https";
+    return `${proto}://${host}`;
   }
 
   const configured = getConfiguredAppUrl();
@@ -35,25 +55,10 @@ export function getRequestOrigin(request: Request): string {
   return new URL(request.url).origin;
 }
 
-/**
- * Origin passed to Supabase as `redirectTo` during OAuth.
- * Prefer the live browser origin in production; never send users to localhost
- * from a deployed site even if env was built with a local URL.
- */
+/** @deprecated Use /api/auth/google — client OAuth kept for compatibility. */
 export function getOAuthRedirectOrigin(): string {
   if (typeof window !== "undefined") {
-    const live = window.location.origin;
-    const configured = getConfiguredAppUrl();
-
-    if (live.includes("localhost")) {
-      return live;
-    }
-
-    if (configured && !configured.includes("localhost")) {
-      return configured;
-    }
-
-    return live;
+    return window.location.origin;
   }
 
   return getConfiguredAppUrl() ?? LOCALHOST_FALLBACK;

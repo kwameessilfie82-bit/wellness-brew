@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+
+import { getAppBaseUrl } from "@/lib/app-url";
 import { withAdminAuth } from "@/lib/admin-middleware";
 import { db } from "@/db";
 import { categoryTable, inventoryTransactionTable, productTable } from "@/db/schema";
@@ -23,8 +25,7 @@ const getHandler = withAdminAuth(
         if (request.url.startsWith('http')) {
           url = new URL(request.url);
         } else {
-          const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000' || 'https://wellness-brew.vercel.app';
-          url = new URL(request.url, baseUrl);
+          url = new URL(request.url, getAppBaseUrl(request));
         }
         searchParams = url.searchParams;
       } catch (urlError) {

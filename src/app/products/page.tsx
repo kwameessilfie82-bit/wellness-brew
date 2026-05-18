@@ -1,3 +1,4 @@
+import { getAppBaseUrl } from "@/lib/app-url";
 import { ProductsPageClient } from "@/ui/components/products-page-client";
 
 async function getProductsData(searchParams: URLSearchParams) {
@@ -11,7 +12,7 @@ async function getProductsData(searchParams: URLSearchParams) {
     if (search) params.set("search", search);
     params.set("page", page);
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000' || 'https://wellness-brew.vercel.app'}/api/products?${params.toString()}`, {
+    const response = await fetch(`${getAppBaseUrl()}/api/products?${params.toString()}`, {
       cache: 'no-store'
     });
     

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { getAppBaseUrl } from "@/lib/app-url";
 import { withAdminAuth } from "@/lib/admin-middleware";
 import { db } from "@/db";
 import { inventoryTable, inventoryTransactionTable, productTable } from "@/db/schema";
@@ -14,7 +15,7 @@ function parseSearchParams(request: NextRequest) {
     request.url,
     request.url.startsWith("http")
       ? undefined
-      : process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000" || "https://wellness-brew.vercel.app",
+      : getAppBaseUrl(request),
   );
 
   return {

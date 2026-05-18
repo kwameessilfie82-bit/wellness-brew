@@ -4,7 +4,6 @@ import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
-import { getOAuthRedirectOrigin } from "@/lib/app-url";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/client";
 
@@ -110,28 +109,23 @@ export const useCurrentUserOrRedirect = (
   };
 };
 
-export async function signInWithGoogle(callbackPath = "/auth/callback") {
-  const supabase = createClient();
-  const origin = getOAuthRedirectOrigin();
+/** Redirect to server OAuth route so redirectTo matches the live site host. */
+export function signInWithGoogle(callbackPath = "/auth/callback") {
+  const params = new URLSearchParams();
 
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    options: {
-      queryParams: {
-        access_type: "offline",
-        prompt: "consent",
-      },
-      redirectTo: `${origin}${callbackPath}`,
-    },
-    provider: "google",
-  });
-
-  if (error) {
-    throw new Error(error.message);
+  const nextMatch = callbackPath.match(/[?&]next=([^&]+)/);
+  if (nextMatch?.[1]) {
+    params.set("next", decodeURIComponent(nextMatch[1]));
+  } else if (callbackPath.startsWith("/auth/callback")) {
+    params.set("next", "/");
+  } else {
+    params.set("next", callbackPath);
   }
 
-  if (data?.url) {
-    window.location.href = data.url;
-  }
+  const query = params.toString();
+  window.location.href = query
+    ? `/api/auth/google?${query}`
+    : "/api/auth/google";
 }
 
 export async function signOut() {

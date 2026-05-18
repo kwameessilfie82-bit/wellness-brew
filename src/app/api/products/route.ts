@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq, and, ilike, desc, or, sql } from "drizzle-orm";
 
+import { getAppBaseUrl } from "@/lib/app-url";
 import { db } from "@/db";
 import { productTable, categoryTable, inventoryTable } from "@/db/schema";
 import { mapProductsResponse } from "@/lib/api/products";
@@ -18,8 +19,7 @@ export async function GET(request: NextRequest) {
       if (request.url.startsWith('http')) {
         url = new URL(request.url);
       } else {
-        const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000' || 'https://wellness-brew.vercel.app';
-        url = new URL(request.url, baseUrl);
+        url = new URL(request.url, getAppBaseUrl(request));
       }
       searchParams = url.searchParams;
     } catch (urlError) {
