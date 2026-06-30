@@ -102,10 +102,25 @@ const putHandler = withAdminAuth(
         }
       }
 
-      // Create slug from name if name is being updated
+      // Create slug from name if name is being updated (kept unique across products)
       let slug = existingProduct.slug;
       if (name && name !== existingProduct.name) {
-        slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        const baseSlug =
+          name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') ||
+          'product';
+        const existingSlugRows = await db.query.productTable.findMany({
+          columns: { slug: true },
+        });
+        const existingSlugs = new Set(
+          existingSlugRows
+            .map((p) => p.slug)
+            .filter((s) => s !== existingProduct.slug),
+        );
+        slug = baseSlug;
+        let slugCounter = 2;
+        while (existingSlugs.has(slug)) {
+          slug = `${baseSlug}-${slugCounter++}`;
+        }
       }
 
       // Update product

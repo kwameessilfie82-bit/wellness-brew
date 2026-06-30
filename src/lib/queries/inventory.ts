@@ -19,7 +19,11 @@ import {
   productTable,
 } from "@/db/schema";
 
-/** Strip base64 blobs from list responses — thumbnails only for http(s) or site paths. */
+/**
+ * Keep only the first thumbnail for list responses. Uploaded images are stored
+ * inline as compressed base64 `data:` URLs, so those are passed through (the
+ * admin uploader caps them to ~400KB); http(s)/site paths are kept as-is.
+ */
 export function toListImageJson(imagesJson: string | null | undefined): string {
   if (!imagesJson) {
     return "[]";
@@ -34,7 +38,8 @@ export function toListImageJson(imagesJson: string | null | undefined): string {
       typeof first === "string" &&
       (first.startsWith("http://") ||
         first.startsWith("https://") ||
-        first.startsWith("/"))
+        first.startsWith("/") ||
+        first.startsWith("data:"))
     ) {
       return JSON.stringify([first]);
     }

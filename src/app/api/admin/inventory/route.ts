@@ -164,10 +164,20 @@ const postHandler = withAdminAuth(
           );
         }
 
-        const slug = name
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/(^-|-$)/g, "");
+        const baseSlug =
+          name
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/(^-|-$)/g, "") || "product";
+        const existingSlugRows = await db.query.productTable.findMany({
+          columns: { slug: true },
+        });
+        const existingSlugs = new Set(existingSlugRows.map((p) => p.slug));
+        let slug = baseSlug;
+        let slugCounter = 2;
+        while (existingSlugs.has(slug)) {
+          slug = `${baseSlug}-${slugCounter++}`;
+        }
 
         const newProduct = {
           id: `prod-${Date.now()}`,

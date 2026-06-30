@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { withAdminAuth } from "@/lib/admin-middleware";
+import { eq } from "drizzle-orm";
+
 import { db } from "@/db";
 import { categoryTable } from "@/db/schema";
 import {
@@ -64,6 +66,17 @@ const postHandler = withAdminAuth(
 
       if (!name) {
         return NextResponse.json({ error: "Name is required" }, { status: 400 });
+      }
+
+      const existingByName = await db.query.categoryTable.findFirst({
+        where: eq(categoryTable.name, name),
+        columns: { id: true },
+      });
+      if (existingByName) {
+        return NextResponse.json(
+          { error: "A category with this name already exists" },
+          { status: 409 },
+        );
       }
 
       const allExisting = await db.query.categoryTable.findMany({

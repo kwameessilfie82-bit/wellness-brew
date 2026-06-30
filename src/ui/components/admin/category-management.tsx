@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Search, Filter } from "lucide-react";
+import { Plus, Search } from "lucide-react";
+
+import { compressImageFile } from "@/lib/image-compress";
 
 import { Button } from "@/ui/primitives/button";
 import { Input } from "@/ui/primitives/input";
@@ -48,18 +50,22 @@ export function CategoryManagement({ }: CategoryManagementProps) {
 
   const addImageFile = async (file: File, isEdit = false) => {
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      alert("Image must be less than 2MB");
+    // Guard against absurd originals; anything reasonable is auto-compressed below.
+    if (file.size > 25 * 1024 * 1024) {
+      alert("Image is too large (max 25MB).");
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result as string;
-      const setFn = isEdit ? setEditCategoryImages : setNewCategoryImages;
+    const setFn = isEdit ? setEditCategoryImages : setNewCategoryImages;
+    try {
+      // Downscale + re-encode in the browser so the owner can upload any photo.
+      const dataUrl = await compressImageFile(file);
       // Single-image policy: always override with the latest
       setFn([dataUrl]);
-    };
-    reader.readAsDataURL(file);
+    } catch {
+      const reader = new FileReader();
+      reader.onload = () => setFn([reader.result as string]);
+      reader.readAsDataURL(file);
+    }
   };
 
   const removeImageAt = (index: number, isEdit = false) => {
@@ -333,7 +339,7 @@ export function CategoryManagement({ }: CategoryManagementProps) {
                     {newCategoryImages[0] && (newCategoryImages[0].startsWith('data:') || newCategoryImages[0].startsWith('blob:')) ? (
                       <img alt="New category image" className="h-full w-full object-cover" src={newCategoryImages[0]} />
                     ) : (
-                      <FallbackImage src={newCategoryImages[0] || "/placeholder.svg"} alt="New category image" className="h-full w-full object-cover" width={120} height={120} />
+                      <FallbackImage src={newCategoryImages[0] || "/placeholder.svg"} alt="New category image" className="object-cover" fill sizes="(max-width: 768px) 100vw, 400px" />
                     )}
                     {newCategoryImages.length > 0 && (
                       <Button
@@ -392,9 +398,6 @@ export function CategoryManagement({ }: CategoryManagementProps) {
                 />
               </div>
             </div>
-            <Button variant="outline" size="icon">
-              <Filter className="h-4 w-4" />
-            </Button>
           </div>
         </CardHeader>
       </Card>
@@ -564,7 +567,7 @@ export function CategoryManagement({ }: CategoryManagementProps) {
                     {editCategoryImages[0] && (editCategoryImages[0].startsWith('data:') || editCategoryImages[0].startsWith('blob:')) ? (
                       <img alt="Category image" className="h-full w-full object-cover" src={editCategoryImages[0]} />
                     ) : (
-                      <FallbackImage src={editCategoryImages[0] || "/placeholder.svg"} alt="Category image" className="h-full w-full object-cover" width={120} height={120} />
+                      <FallbackImage src={editCategoryImages[0] || "/placeholder.svg"} alt="Category image" className="object-cover" fill sizes="(max-width: 768px) 100vw, 400px" />
                     )}
                     {editCategoryImages.length > 0 && (
                       <Button

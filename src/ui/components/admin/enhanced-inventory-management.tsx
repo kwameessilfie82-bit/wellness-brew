@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Minus, Loader2, Plus, Search, AlertTriangle, TrendingUp, TrendingDown, Package, Edit, Trash2, CheckSquare, Database } from "lucide-react";
+import { Minus, Loader2, Plus, Search, AlertTriangle, TrendingUp, TrendingDown, Package, Edit, Trash2, CheckSquare } from "lucide-react";
 
 import { Button } from "@/ui/primitives/button";
 import { Input } from "@/ui/primitives/input";
@@ -27,6 +27,7 @@ import {
 import { Label } from "@/ui/primitives/label";
 import { Textarea } from "@/ui/primitives/textarea";
 import { FallbackImage } from "@/ui/components/fallback-image";
+import { compressImageFile } from "@/lib/image-compress";
 import type { AdminUserWithDetails, Inventory, Product, Category } from "@/db/schema";
 
 interface InventoryManagementProps {
@@ -43,7 +44,6 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
   const [selectedFilter, setSelectedFilter] = useState<string>("all");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isAdjustmentDialogOpen, setIsAdjustmentDialogOpen] = useState(false);
   const [isStockDialogOpen, setIsStockDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -65,14 +65,6 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
     // reorderQuantity removed from UI (kept here for potential future use)
     reorderQuantity: 50,
   });
-  const [adjustmentData, setAdjustmentData] = useState({
-    type: "adjustment",
-    quantity: 0,
-    reason: "adjustment",
-    reference: "",
-    notes: "",
-  });
-
   // New product form state
   const [newProduct, setNewProduct] = useState({
     name: "",
@@ -106,18 +98,22 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
   const [updatingReserved, setUpdatingReserved] = useState<string | null>(null);
   const addImageFile = async (file: File, isEdit = false) => {
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      alert("Image must be less than 2MB");
+    // Guard against absurd originals; anything reasonable is auto-compressed below.
+    if (file.size > 25 * 1024 * 1024) {
+      alert("Image is too large (max 25MB).");
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result as string;
-      const setFn = isEdit ? setEditProductImages : setNewProductImages;
+    const setFn = isEdit ? setEditProductImages : setNewProductImages;
+    try {
+      // Downscale + re-encode in the browser so the owner can upload any photo.
+      const dataUrl = await compressImageFile(file);
       // Single-image policy: always override with the latest
       setFn([dataUrl]);
-    };
-    reader.readAsDataURL(file);
+    } catch {
+      const reader = new FileReader();
+      reader.onload = () => setFn([reader.result as string]);
+      reader.readAsDataURL(file);
+    }
   };
 
   const removeImageAt = (index: number, isEdit = false) => {
@@ -400,38 +396,6 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
     }
   };
 
-  // Handle inventory adjustment
-  const handleInventoryAdjustment = async () => {
-    if (!selectedProduct) return;
-
-    try {
-      const response = await fetch('/api/admin/inventory', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'adjust-inventory',
-          productId: selectedProduct.id,
-          ...adjustmentData,
-        }),
-      });
-
-      if (response.ok) {
-        setIsAdjustmentDialogOpen(false);
-        setSelectedProduct(null);
-        setAdjustmentData({
-          type: "adjustment",
-          quantity: 0,
-          reason: "adjustment",
-          reference: "",
-          notes: "",
-        });
-        void refreshInventoryData();
-      }
-    } catch (error) {
-      console.error('Error adjusting inventory:', error);
-    }
-  };
-
   // Finalize: set reserved to 0 so available equals current stock
   const handleFinalizeReservations = async (productId: string) => {
     try {
@@ -630,7 +594,7 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
                     {newProductImages[0] && (newProductImages[0].startsWith('data:') || newProductImages[0].startsWith('blob:')) ? (
                       <img alt="New product image" className="h-full w-full object-cover" src={newProductImages[0]} />
                     ) : (
-                      <FallbackImage src={newProductImages[0] || "/placeholder.svg"} alt="New product image" className="h-full w-full object-cover" width={120} height={120} />
+                      <FallbackImage src={newProductImages[0] || "/placeholder.svg"} alt="New product image" className="object-cover" fill sizes="(max-width: 768px) 100vw, 600px" />
                     )}
                     {newProductImages.length > 0 && (
                       <Button
@@ -787,7 +751,7 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
                       {editProductImages[0] && (editProductImages[0].startsWith('data:') || editProductImages[0].startsWith('blob:')) ? (
                         <img alt="Product image" className="h-full w-full object-cover" src={editProductImages[0]} />
                       ) : (
-                        <FallbackImage src={editProductImages[0] || "/placeholder.svg"} alt="Product image" className="h-full w-full object-cover" width={120} height={120} />
+                        <FallbackImage src={editProductImages[0] || "/placeholder.svg"} alt="Product image" className="object-cover" fill sizes="(max-width: 768px) 100vw, 600px" />
                       )}
                       {editProductImages.length > 0 && (
                         <Button
@@ -1184,73 +1148,6 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
           </Table>
         </CardContent>
       </Card>
-
-      {/* Inventory Adjustment Dialog */}
-      <Dialog open={isAdjustmentDialogOpen} onOpenChange={setIsAdjustmentDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Adjust Inventory</DialogTitle>
-            <DialogDescription>
-              Adjust stock levels for {selectedProduct?.name}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="adjustment-type">Adjustment Type</Label>
-              <Select
-                value={adjustmentData.type}
-                onValueChange={(value) => setAdjustmentData({...adjustmentData, type: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="adjustment">Stock Adjustment</SelectItem>
-                  <SelectItem value="restock">Restock</SelectItem>
-                  <SelectItem value="sale">Sale</SelectItem>
-                  <SelectItem value="return">Return</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="quantity">Quantity</Label>
-              <Input
-                id="quantity"
-                type="number"
-                value={adjustmentData.quantity}
-                onChange={(e) => setAdjustmentData({...adjustmentData, quantity: parseInt(e.target.value) || 0})}
-                placeholder="Enter quantity"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="reason">Reason</Label>
-              <Input
-                id="reason"
-                value={adjustmentData.reason}
-                onChange={(e) => setAdjustmentData({...adjustmentData, reason: e.target.value})}
-                placeholder="Enter reason"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea
-                id="notes"
-                value={adjustmentData.notes}
-                onChange={(e) => setAdjustmentData({...adjustmentData, notes: e.target.value})}
-                placeholder="Enter notes"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAdjustmentDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleInventoryAdjustment}>
-              Adjust Inventory
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Stock Edit Dialog */}
       <Dialog open={isStockDialogOpen} onOpenChange={setIsStockDialogOpen}>
