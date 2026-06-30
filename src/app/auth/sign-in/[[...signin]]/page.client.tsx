@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { SEO_CONFIG } from "@/app";
-import { signInWithGoogle } from "@/lib/auth-client";
+import { signInWithEmail, signInWithGoogle } from "@/lib/auth-client";
 import {
   backupCartForCheckout,
   readCartFromStorage,
@@ -14,6 +14,10 @@ import {
 import { GoogleIcon } from "@/ui/components/icons/google";
 import { Button } from "@/ui/primitives/button";
 import { Card, CardContent } from "@/ui/primitives/card";
+import { Input } from "@/ui/primitives/input";
+import { Label } from "@/ui/primitives/label";
+import { PasswordInput } from "@/ui/primitives/password-input";
+import { Separator } from "@/ui/primitives/separator";
 import { Loader2 } from "lucide-react";
 
 export function SignInPageClient() {
@@ -22,10 +26,27 @@ export function SignInPageClient() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Email/password sign-in temporarily disabled for this project
-  // const [email, setEmail] = useState("");
-  // const [password, setPassword] = useState("");
-  // const handleEmailLogin = async (e: React.FormEvent) => { /* ... */ };
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [emailLoading, setEmailLoading] = useState(false);
+
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setEmailLoading(true);
+    try {
+      if (next === "/checkout" || next.startsWith("/checkout?")) {
+        backupCartForCheckout(readCartFromStorage());
+      }
+      await signInWithEmail(email, password);
+      window.location.href = next;
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to sign in with email",
+      );
+      setEmailLoading(false);
+    }
+  };
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -65,7 +86,7 @@ export function SignInPageClient() {
 
               <h1 className="text-2xl font-bold">Welcome back</h1>
               <p className="text-sm text-muted-foreground max-w-sm">
-                Sign in to continue to {SEO_CONFIG.fullName}. Only Google sign-in is enabled for now.
+                Sign in to continue to {SEO_CONFIG.fullName}.
               </p>
             </div>
 
@@ -75,34 +96,81 @@ export function SignInPageClient() {
               </div>
             )}
 
-            <div className="mt-6 grid gap-3">
+            <form className="mt-6 grid gap-4" onSubmit={handleEmailLogin}>
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="password">Password</Label>
+                <PasswordInput
+                  id="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                />
+              </div>
               <Button
+                type="submit"
                 size="lg"
-                className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90 border-primary"
-                disabled={loading}
-                onClick={handleGoogleLogin}
-                variant="default"
+                className="w-full"
+                disabled={emailLoading}
               >
-                {loading ? (
+                {emailLoading ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Connecting to Google...
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing in...
                   </>
                 ) : (
-                  <>
-                    <GoogleIcon className="h-5 w-5" />
-                    Continue with Google
-                  </>
+                  "Sign in"
                 )}
               </Button>
+            </form>
 
-              {/* Email/password form disabled */}
-              {/**
-              <form className="space-y-4 mt-4" onSubmit={handleEmailLogin}>...</form>
-              */}
+            <div className="my-6 flex items-center gap-3">
+              <Separator className="flex-1" />
+              <span className="text-xs text-muted-foreground">OR</span>
+              <Separator className="flex-1" />
             </div>
 
-            <div className="mt-8 text-center text-xs text-muted-foreground">
+            <Button
+              size="lg"
+              variant="outline"
+              className="w-full gap-2"
+              disabled={loading}
+              onClick={handleGoogleLogin}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Connecting to Google...
+                </>
+              ) : (
+                <>
+                  <GoogleIcon className="h-5 w-5" />
+                  Continue with Google
+                </>
+              )}
+            </Button>
+
+            <div className="mt-6 text-center text-sm text-muted-foreground">
+              Don&apos;t have an account?{" "}
+              <a href="/auth/sign-up" className="font-medium text-primary hover:underline">
+                Sign up
+              </a>
+            </div>
+
+            <div className="mt-4 text-center text-xs text-muted-foreground">
               By continuing, you agree to our terms and privacy policy.
             </div>
           </CardContent>

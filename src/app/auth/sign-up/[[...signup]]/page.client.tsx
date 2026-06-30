@@ -5,25 +5,52 @@ import Image from "next/image";
 import { useState } from "react";
 
 import { SEO_CONFIG } from "@/app";
-import { signInWithGoogle, useCurrentUser } from "@/lib/auth-client";
+import {
+  signInWithGoogle,
+  signUpWithEmail,
+  useCurrentUser,
+} from "@/lib/auth-client";
 import { GoogleIcon } from "@/ui/components/icons/google";
 import { Button } from "@/ui/primitives/button";
 import { Card, CardContent } from "@/ui/primitives/card";
-// import { Input } from "@/ui/primitives/input";
-// import { PasswordInput } from "@/ui/primitives/password-input";
-// import { Label } from "@/ui/primitives/label";
-// import { Separator } from "@/ui/primitives/separator";
+import { Input } from "@/ui/primitives/input";
+import { PasswordInput } from "@/ui/primitives/password-input";
+import { Label } from "@/ui/primitives/label";
+import { Separator } from "@/ui/primitives/separator";
 import { Loader2 } from "lucide-react";
 
 export function SignUpPageClient() {
   const { user } = useCurrentUser();
-  // Email/password sign-up disabled; we only show Google sign-up
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // const handleSubmit = (e: React.FormEvent) => { /* disabled */ };
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [emailLoading, setEmailLoading] = useState(false);
 
-  // GitHub sign up removed
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setEmailLoading(true);
+    try {
+      const { session } = await signUpWithEmail(email, password, name.trim());
+      // With email confirmations disabled (local), a session is returned immediately.
+      if (session) {
+        window.location.href = "/";
+      } else {
+        setError(
+          "Check your email to confirm your account before signing in.",
+        );
+        setEmailLoading(false);
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to sign up with email",
+      );
+      setEmailLoading(false);
+    }
+  };
 
   const handleGoogleSignUp = () => {
     setLoading(true);
@@ -122,7 +149,7 @@ export function SignUpPageClient() {
             `}
           >
             <h2 className="text-3xl font-bold">Create your account</h2>
-            <p className="text-sm text-muted-foreground">Sign up quickly with Google to continue.</p>
+            <p className="text-sm text-muted-foreground">Sign up with your email or Google to continue.</p>
           </div>
 
           <Card className="border-none shadow-sm">
@@ -130,11 +157,66 @@ export function SignUpPageClient() {
               {error && (
                 <div className="text-sm font-medium text-destructive mb-3">{error}</div>
               )}
+
+              <form className="grid gap-4" onSubmit={handleSubmit}>
+                <div className="grid gap-2">
+                  <Label htmlFor="name">Name</Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    autoComplete="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Jane Doe"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="password">Password</Label>
+                  <PasswordInput
+                    id="password"
+                    autoComplete="new-password"
+                    required
+                    minLength={6}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="At least 6 characters"
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={emailLoading}>
+                  {emailLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating account...
+                    </>
+                  ) : (
+                    "Create account"
+                  )}
+                </Button>
+              </form>
+
+              <div className="my-6 flex items-center gap-3">
+                <Separator className="flex-1" />
+                <span className="text-xs text-muted-foreground">OR</span>
+                <Separator className="flex-1" />
+              </div>
+
               <Button
-                className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90 border-primary"
+                className="w-full gap-2"
                 disabled={loading}
                 onClick={handleGoogleSignUp}
-                variant="default"
+                variant="outline"
               >
                 {loading ? (
                   <>
@@ -148,6 +230,13 @@ export function SignUpPageClient() {
                   </>
                 )}
               </Button>
+
+              <div className="mt-6 text-center text-sm text-muted-foreground">
+                Already have an account?{" "}
+                <a href="/auth/sign-in" className="font-medium text-primary hover:underline">
+                  Sign in
+                </a>
+              </div>
             </CardContent>
           </Card>
         </div>

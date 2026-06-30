@@ -108,4 +108,62 @@ bun dev
 - **WhatsApp**: Sends a comprehensive text version with all invoice details
 - **Email**: Opens your email client with a formatted invoice message
 
+## Local development (full stack)
+
+This app is a full e-commerce store backed by **Postgres + Supabase Auth**. Use the Supabase CLI
+(Docker) to run the entire stack locally — no cloud account needed.
+
+### Prerequisites
+- Docker Desktop running
+- Node.js 18+
+
+### One-time setup
+1. Start the local Supabase stack (first run pulls Docker images):
+   ```bash
+   npm run db:start
+   ```
+2. Print the local credentials and copy them into `.env.local`:
+   ```bash
+   npm run db:status
+   ```
+   Create `.env.local` (see the LOCAL DEVELOPMENT block in `.env.example`):
+   ```env
+   DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
+   NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon key from db:status>
+   SUPABASE_SERVICE_ROLE_KEY=<service_role key from db:status>
+   NEXT_PUBLIC_APP_URL=http://localhost:3000
+   NEXT_SERVER_APP_URL=http://localhost:3000
+   OWNER_EMAILS=you@example.com
+   ```
+   Leave `PAYSTACK_SECRET_KEY` unset locally — checkout is mocked (orders are auto-marked paid).
+3. Push the schema and seed admin roles:
+   ```bash
+   npm run db:setup
+   ```
+
+### Run
+```bash
+npm run dev
+```
+Then:
+1. Open http://localhost:3000 and **sign up** with the email you put in `OWNER_EMAILS`
+   (email confirmation is disabled locally, so you're signed in immediately).
+2. Promote yourself to manager (first user only):
+   ```bash
+   curl -X POST http://localhost:3000/api/admin/roles/bootstrap --cookie "<your browser cookies>"
+   ```
+   or just visit `/admin` after signing in — or use the in-app bootstrap.
+3. Go to `/admin/seed` to seed categories and the product catalog/inventory.
+
+### Useful scripts
+- `npm run db:start` / `npm run db:stop` — start/stop the Supabase stack
+- `npm run db:status` — print local URLs + keys + Studio link
+- `npm run db:setup` — push Drizzle schema + seed admin roles
+- `npm run db:push` — push schema only
+- `npm run db:reset` — reset the local database
+
+> Google OAuth and real Paystack remain configured for production; they are intentionally bypassed
+> locally (email/password auth + mocked checkout) so the full loop runs offline.
+
 ## Project Structure

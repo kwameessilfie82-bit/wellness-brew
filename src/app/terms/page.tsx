@@ -20,7 +20,7 @@ export default function TermsPage() {
               <section>
                 <h2 className="text-2xl font-serif font-bold text-foreground mb-4">1. Acceptance of Terms</h2>
                 <p className="leading-relaxed">
-                  By accessing and using the LeafyVibesTea website, you accept and agree to be bound by the terms and 
+                  By accessing and using the Wellness Brew website, you accept and agree to be bound by the terms and 
                   provision of this agreement. If you do not agree to abide by the above, please do not use this service.
                 </p>
               </section>
