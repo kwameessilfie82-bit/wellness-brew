@@ -20,16 +20,14 @@ export default async function AdminOverviewPage() {
   }
 
   // Fetch dashboard summary counts
-  const [categories, inventoryItems, adminUsers] = await Promise.all([
+  const [categories, inventoryItems] = await Promise.all([
     db.query.categoryTable.findMany(),
     db.query.inventoryTable.findMany(),
-    db.query.adminUserTable.findMany(),
   ]);
 
   const stats = [
     { label: "Inventory Items", value: inventoryItems.length, href: "/admin/inventory" },
     { label: "Categories", value: categories.length, href: "/admin/categories" },
-    { label: "Admin Users", value: adminUsers.length, href: "/admin/customers" },
   ];
 
   return (
@@ -42,7 +40,7 @@ export default async function AdminOverviewPage() {
       </div>
 
       {/* Stat Cards - Mobile Optimized */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4">
         {stats.map((s) => (
           <Card key={s.label} className="group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-primary/30 bg-gradient-to-br from-background to-background/80">
             <CardContent className="p-4">
