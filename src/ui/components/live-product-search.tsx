@@ -171,6 +171,10 @@ export function LiveProductSearch({
                         fill
                         className="object-cover"
                         sizes="48px"
+                        unoptimized={
+                          (product.image || "").startsWith("/api/") ||
+                          (product.image || "").startsWith("data:")
+                        }
                       />
                     </div>
                     <div className="min-w-0 flex-1">

@@ -9,7 +9,6 @@ import Link from "next/link";
 import { useState } from "react";
 import { useCurrentUser } from "@/lib/auth-client";
 import { Skeleton } from "@/ui/primitives/skeleton";
-import { ThemeToggle } from "@/ui/components/theme-toggle";
 import { NavigationUserInfo } from "@/ui/components/navigation-user-info";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
@@ -66,8 +65,6 @@ export function Navigation() {
           >
             <Search className="h-5 w-5" />
           </Button>
-
-          <ThemeToggle />
 
           <Button
             variant="ghost"
