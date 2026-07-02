@@ -47,13 +47,11 @@ const getHandler = withAdminAuth(async (request) => {
     });
 
     if (minimal) {
+      // Admin inventory must always be fresh — a stale HTTP cache here made
+      // renamed/edited products appear to "not update" after saving.
       return NextResponse.json(
         { products, pagination },
-        {
-          headers: {
-            "Cache-Control": "private, max-age=10, stale-while-revalidate=30",
-          },
-        },
+        { headers: { "Cache-Control": "no-store" } },
       );
     }
 

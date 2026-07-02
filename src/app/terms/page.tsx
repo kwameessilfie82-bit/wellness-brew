@@ -28,7 +28,7 @@ export default function TermsPage() {
               <section>
                 <h2 className="text-2xl font-serif font-bold text-foreground mb-4">2. Use License</h2>
                 <p className="leading-relaxed mb-3">
-                  Permission is granted to temporarily access the materials on LeafyVibesTea's website for personal, 
+                  Permission is granted to temporarily access the materials on Wellness Brew's website for personal,
                   non-commercial transitory viewing only. This is the grant of a license, not a transfer of title, and under this license you may not:
                 </p>
                 <ul className="list-disc pl-6 space-y-2">

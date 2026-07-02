@@ -21,7 +21,7 @@ export function InvoicePreview({ data }: InvoicePreviewProps) {
           {/* Logo and Seller Info (Left) */}
           <div className="flex items-start gap-4">
             <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
-              <Image src="/leafyvibestea.png" alt="leafyvibestea logo" width={60} height={60} /> 
+              <Image src="/leafyvibestea.png" alt="Wellness Brew logo" width={60} height={60} />
             </div>
             <div className="text-sm text-muted-foreground space-y-1">
               <p>{data.seller.address}</p>

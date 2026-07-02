@@ -720,11 +720,11 @@ export default function InvoiceGenerator() {
           {/* Logo and Title Section */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
             <div className="w-12 h-12 lg:w-12 lg:h-12 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
-              <Image src="/leafyvibestea.png" alt="leafyvibestea logo" width={110} height={110} className="object-cover" />
+              <Image src="/leafyvibestea.png" alt="Wellness Brew logo" width={110} height={110} className="object-cover" />
             </div>
             <div className="min-w-0 flex-1">
               <h1 className="text-2xl sm:text-3xl font-bold text-foreground leading-tight">
-                leafyvibestea
+                Wellness Brew
               </h1>
               <p className="text-sm text-muted-foreground mt-1">
                 Professional invoice management for your healthy and tasty teas

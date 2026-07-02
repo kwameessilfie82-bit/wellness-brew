@@ -1,7 +1,6 @@
 "use client";
 
 import { AlertTriangle, Package, PackageCheck, PackageX } from "lucide-react";
-import { useEffect, useState } from "react";
 
 import { cn } from "@/lib/cn";
 
@@ -12,34 +11,8 @@ type Stats = {
   outOfStockItems: number;
 };
 
-export function InventoryStatsBar() {
-  const [stats, setStats] = useState<Stats | null>(null);
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await fetch("/api/admin/inventory?limit=1");
-        if (!res.ok) return;
-        const data = await res.json();
-        if (data.stats) {
-          setStats(data.stats);
-        }
-      } catch {
-        /* ignore */
-      }
-    };
-    void load();
-  }, []);
-
-  if (!stats) {
-    return (
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="admin-stat-card animate-pulse h-24" />
-        ))}
-      </div>
-    );
-  }
+export function InventoryStatsBar({ initialStats }: { initialStats: Stats }) {
+  const stats = initialStats;
 
   const cards = [
     {

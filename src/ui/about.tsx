@@ -10,7 +10,7 @@ export function About() {
             <div className="absolute inset-0 bg-primary/5 rounded-3xl" />
             <Image
               src="/traditional-tea-ceremony-with-natural-herbs-and-bo.jpg"
-              alt="About leafyvibestea"
+              alt="About Wellness Brew"
               fill
               className="object-cover rounded-3xl"
             />

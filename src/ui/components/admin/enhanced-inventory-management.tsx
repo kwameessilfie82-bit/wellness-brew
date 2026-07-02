@@ -32,13 +32,19 @@ import type { AdminUserWithDetails, Inventory, Product, Category } from "@/db/sc
 
 interface InventoryManagementProps {
   adminUser: AdminUserWithDetails;
+  initialProducts: Product[];
+  initialInventory: Inventory[];
+  initialCategories: Category[];
 }
 
-export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
-  const [isMounted, setIsMounted] = useState(false);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [inventory, setInventory] = useState<Inventory[]>([]);
+export function EnhancedInventoryManagement({
+  initialProducts,
+  initialInventory,
+  initialCategories,
+}: InventoryManagementProps) {
+  const [categories, setCategories] = useState<Category[]>(initialCategories);
+  const [products, setProducts] = useState<Product[]>(initialProducts);
+  const [inventory, setInventory] = useState<Inventory[]>(initialInventory);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedFilter, setSelectedFilter] = useState<string>("all");
@@ -166,7 +172,9 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
         params.set("status", selectedFilter);
       }
 
-      const res = await fetch(`/api/admin/inventory?${params.toString()}`);
+      const res = await fetch(`/api/admin/inventory?${params.toString()}`, {
+        cache: "no-store",
+      });
       if (!res.ok) {
         return;
       }
@@ -190,21 +198,23 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
     await Promise.all([fetchCategories(), loadInventory()]);
   }, [fetchCategories, loadInventory]);
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const didMountRef = useRef(false);
 
   useEffect(() => {
-    if (!isMounted) return;
+    // The server already provided the initial list for the default filters,
+    // so skip the first run and only refetch when a filter/search changes.
+    if (!didMountRef.current) {
+      didMountRef.current = true;
+      return;
+    }
 
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
     }
 
     debounceRef.current = setTimeout(() => {
-      void refreshInventoryData();
+      void loadInventory();
     }, searchQuery.trim() ? 300 : 0);
 
     return () => {
@@ -212,7 +222,7 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
         clearTimeout(debounceRef.current);
       }
     };
-  }, [isMounted, refreshInventoryData, searchQuery, selectedCategory, selectedFilter]);
+  }, [loadInventory, searchQuery, selectedCategory, selectedFilter]);
 
   const getCategoryName = (categoryId: string) => {
     const category = categories.find(cat => cat.id === categoryId);
@@ -363,6 +373,11 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
         setIsEditDialogOpen(false);
         setEditingProduct(null);
         setEditProductImages([]);
+        // Clear an active search so a renamed product isn't hidden by a stale
+        // term that no longer matches its new name.
+        if (searchQuery.trim()) {
+          setSearchQuery("");
+        }
         void refreshInventoryData();
       }
     } catch (error) {
@@ -450,18 +465,6 @@ export function EnhancedInventoryManagement({ }: InventoryManagementProps) {
       setUpdatingReserved(null);
     }
   };
-
-  // Don't render until mounted to avoid SSR issues
-  if (!isMounted) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading inventory...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">

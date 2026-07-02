@@ -78,12 +78,12 @@ export default function HomePage() {
 
             <div className="relative h-[380px] animate-fade-in-up-delay-2 md:h-[520px]">
               <div className="absolute -inset-4 rounded-3xl bg-gradient-to-br from-primary/20 to-accent/20 blur-2xl" />
-              <div className="relative h-full overflow-hidden rounded-3xl border border-border/60 shadow-2xl">
+              <div className="relative h-full overflow-hidden rounded-3xl border border-border/60 bg-white shadow-2xl">
                 <Image
-                  src="/rose of sharon.png"
-                  alt="Rose of Sharon wellness tea"
+                  src="/hero_image.webp"
+                  alt="Wellness Brew Teas — pure, organic wellness teas"
                   fill
-                  className="object-cover"
+                  className="object-contain"
                   priority
                 />
               </div>

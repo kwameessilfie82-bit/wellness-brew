@@ -6,7 +6,7 @@ export function Footer() {
       <div className="section-container py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           <div>
-            <h3 className="mb-4 font-serif text-lg font-bold text-brand">LeafyVibesTea</h3>
+            <h3 className="mb-4 font-serif text-lg font-bold text-brand">Wellness Brew</h3>
             <p className="text-muted-foreground text-sm">Premium wellness teas for your daily ritual</p>
           </div>
           <div>
@@ -50,7 +50,7 @@ export function Footer() {
           </div>
         </div>
         <div className="border-t border-border pt-8 text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} LeafyVibesTea. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Wellness Brew. All rights reserved.</p>
         </div>
       </div>
     </footer>
