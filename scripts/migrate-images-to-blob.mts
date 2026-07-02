@@ -1,9 +1,10 @@
 /**
- * One-time: move inline base64 product images into Vercel Blob and replace the
- * stored value with the public Blob URL. Leaves /public and http(s) paths as-is.
+ * One-time: move inline base64 product images into the PRIVATE Vercel Blob
+ * store, downscale them, and replace the stored value with the /api/media proxy
+ * path. Leaves /public, http(s), and existing /api/media entries as-is.
  *
  * Target DB comes ONLY from an explicit DATABASE_URL (no .env auto-load).
- * Requires BLOB_READ_WRITE_TOKEN (a PUBLIC store).
+ * Requires BLOB_READ_WRITE_TOKEN.
  *
  * Usage:
  *   DATABASE_URL=postgresql://... BLOB_READ_WRITE_TOKEN=vercel_blob_rw_... \
@@ -11,6 +12,7 @@
  */
 import postgres from "postgres";
 import { put } from "@vercel/blob";
+import sharp from "sharp";
 
 const url = process.env.DATABASE_URL;
 const token = process.env.BLOB_READ_WRITE_TOKEN;
@@ -19,7 +21,7 @@ if (!url) {
   process.exit(1);
 }
 if (!token) {
-  console.error("Set BLOB_READ_WRITE_TOKEN (public store).");
+  console.error("Set BLOB_READ_WRITE_TOKEN.");
   process.exit(1);
 }
 
@@ -31,11 +33,8 @@ const sql = postgres(url, {
   ssl: isLocal ? false : "require",
 });
 
-function extFromDataUrl(dataUrl: string): { buffer: Buffer; contentType: string } {
-  const m = dataUrl.match(/^data:([^;]+);base64,(.*)$/s);
-  if (!m) throw new Error("not a base64 data URL");
-  return { buffer: Buffer.from(m[2], "base64"), contentType: m[1] };
-}
+const toProxyUrl = (blobUrl: string) =>
+  `/api/media?u=${Buffer.from(blobUrl, "utf8").toString("base64url")}`;
 
 try {
   const rows = await sql<{ id: string; images: string }[]>`
@@ -51,27 +50,37 @@ try {
     } catch {
       continue;
     }
-    if (!Array.isArray(arr) || typeof arr[0] !== "string" || !arr[0].startsWith("data:")) {
-      continue;
-    }
+    const first = Array.isArray(arr) ? arr[0] : null;
+    if (typeof first !== "string" || !first.startsWith("data:")) continue;
+
+    const m = first.match(/^data:([^;]+);base64,(.*)$/s);
+    if (!m) continue;
+
     try {
-      const { buffer, contentType } = extFromDataUrl(arr[0]);
-      const ext = contentType.split("/")[1]?.split("+")[0] || "webp";
-      const blob = await put(`products/${row.id}.${ext}`, buffer, {
-        access: "public",
+      const input = Buffer.from(m[2], "base64");
+      // Downscale + re-encode so the stored object is small and fast.
+      const webp = await sharp(input)
+        .resize({ width: 1000, withoutEnlargement: true })
+        .webp({ quality: 80 })
+        .toBuffer();
+
+      const blob = await put(`products/${row.id}.webp`, webp, {
+        access: "private",
         addRandomSuffix: true,
-        contentType,
+        contentType: "image/webp",
         token,
-        cacheControlMaxAge: 60 * 60 * 24 * 365,
       });
-      await sql`UPDATE product SET images = ${JSON.stringify([blob.url])} WHERE id = ${row.id}`;
+      const proxy = toProxyUrl(blob.url);
+      await sql`UPDATE product SET images = ${JSON.stringify([proxy])} WHERE id = ${row.id}`;
       migrated++;
-      console.log(`  ${row.id} -> ${blob.url}`);
+      console.log(
+        `  ${row.id}: ${(input.length / 1e6).toFixed(2)}MB -> ${(webp.length / 1e3).toFixed(0)}KB -> ${proxy.slice(0, 40)}…`,
+      );
     } catch (e) {
       console.error(`  failed ${row.id}:`, e instanceof Error ? e.message : e);
     }
   }
-  console.log(`Migrated ${migrated} image(s) to Blob.`);
+  console.log(`Migrated ${migrated} image(s) to private Blob.`);
 } catch (err) {
   console.error("Migration failed:", err instanceof Error ? err.message : err);
   process.exit(1);

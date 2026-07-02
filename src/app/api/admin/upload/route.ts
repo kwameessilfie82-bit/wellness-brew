@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { put } from "@vercel/blob";
 
 import { withAdminAuth } from "@/lib/admin-middleware";
+import { toProxyUrl } from "@/lib/blob-url";
 
 // POST /api/admin/upload — store a product image in Vercel Blob and return its
 // public URL. The client compresses before uploading, so objects stay small.
@@ -23,13 +24,13 @@ const postHandler = withAdminAuth(async (request: NextRequest) => {
     const safeName = rawName.replace(/[^a-zA-Z0-9._-]/g, "-").slice(0, 60);
 
     const blob = await put(`products/${safeName}`, file, {
-      access: "public",
+      access: "private",
       addRandomSuffix: true,
       contentType: file.type || "image/webp",
-      cacheControlMaxAge: 60 * 60 * 24 * 365,
     });
 
-    return NextResponse.json({ url: blob.url });
+    // Store the public proxy path (the private blob URL isn't directly fetchable).
+    return NextResponse.json({ url: toProxyUrl(blob.url) });
   } catch (error) {
     console.error("Image upload failed:", error);
     return NextResponse.json({ error: "Upload failed" }, { status: 500 });

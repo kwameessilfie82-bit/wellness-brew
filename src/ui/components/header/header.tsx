@@ -17,7 +17,6 @@ const NotificationsWidget = dynamic(
   () => import("../notifications/notifications-widget").then((m) => m.NotificationsWidget),
   { ssr: false, loading: () => null },
 );
-import { ThemeToggle } from "../theme-toggle";
 import { HeaderUserDropdown } from "./header-user";
 // import { DynamicCategoryNavigation } from "./dynamic-category-navigation";
 import { DynamicMobileCategories } from "./dynamic-mobile-categories";
@@ -126,17 +125,6 @@ export function Header({ showAuth = true, adminUser }: HeaderProps) {
               <Skeleton className="h-9 w-9 rounded-full" />
             ) : (
               <NotificationsWidget />
-            )}
-
-            {/* Theme toggle - show for non-logged-in users */}
-            {showAuth && !user && (
-              <>
-                {isPending ? (
-                  <Skeleton className="h-9 w-9 rounded-full" />
-                ) : (
-                  <ThemeToggle />
-                )}
-              </>
             )}
 
             {showAuth && (
