@@ -172,3 +172,45 @@ export const orderItemTable = pgTable("order_item", {
   quantity: integer("quantity").notNull(),
   image: text("image"),
 });
+
+// Invoices saved from the admin invoice generator — the source of truth for
+// dashboard sales analytics. Line items snapshot name/price/category so the
+// figures survive a later product rename or deletion.
+export const invoiceTable = pgTable("invoice", {
+  id: text("id").primaryKey(),
+  invoiceNumber: text("invoice_number").notNull(),
+  invoiceDate: timestamp("invoice_date").notNull(),
+  clientName: text("client_name"),
+  clientPhone: text("client_phone"),
+  clientEmail: text("client_email"),
+  clientAddress: text("client_address"),
+  subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
+  taxRate: decimal("tax_rate", { precision: 6, scale: 2 }).notNull().default("0"),
+  taxAmount: decimal("tax_amount", { precision: 10, scale: 2 }).notNull().default("0"),
+  discount: decimal("discount", { precision: 10, scale: 2 }).notNull().default("0"),
+  customDesignPrinting: decimal("custom_design_printing", { precision: 10, scale: 2 })
+    .notNull()
+    .default("0"),
+  deliveries: decimal("deliveries", { precision: 10, scale: 2 }).notNull().default("0"),
+  total: decimal("total", { precision: 10, scale: 2 }).notNull(),
+  createdBy: text("created_by").references(() => adminUserTable.id, {
+    onDelete: "set null",
+  }),
+  createdAt: timestamp("created_at").notNull(),
+});
+
+export const invoiceItemTable = pgTable("invoice_item", {
+  id: text("id").primaryKey(),
+  invoiceId: text("invoice_id")
+    .notNull()
+    .references(() => invoiceTable.id, { onDelete: "cascade" }),
+  productId: text("product_id").references(() => productTable.id, {
+    onDelete: "set null",
+  }),
+  categoryId: text("category_id"),
+  productName: text("product_name").notNull(),
+  priceType: text("price_type").notNull().default("customer"),
+  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
+  quantity: integer("quantity").notNull(),
+  lineTotal: decimal("line_total", { precision: 10, scale: 2 }).notNull(),
+});

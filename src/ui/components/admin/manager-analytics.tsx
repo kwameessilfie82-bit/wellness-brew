@@ -137,7 +137,7 @@ export function ManagerAnalytics() {
         </CardContent>
         <CardFooter>
           <div className="text-sm flex items-center gap-2">
-            Total revenue {new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" }).format(data.totals.revenue)}
+            Total revenue {new Intl.NumberFormat(undefined, { style: "currency", currency: "GHS" }).format(data.totals.revenue)}
             <TrendingUp className="h-4 w-4" />
           </div>
         </CardFooter>

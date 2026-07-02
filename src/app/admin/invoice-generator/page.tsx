@@ -15,7 +15,7 @@ import {
   calculateTax,
   calculateTotal,
 } from "@/lib/invoice-utils"
-import { Download, Share2, Loader2 } from "lucide-react"
+import { Download, Share2, Loader2, Save } from "lucide-react"
 import Image from "next/image"
 
 export default function InvoiceGenerator() {
@@ -53,6 +53,7 @@ export default function InvoiceGenerator() {
 
   const [shareDialogOpen, setShareDialogOpen] = useState(false)
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
 
   const [seller, setSeller] = useState<SellerInfo>({
     businessName: "Wellness Brew",
@@ -187,6 +188,50 @@ export default function InvoiceGenerator() {
     notes,
     latePaymentPolicy,
     showLatePaymentPolicy,
+  }
+
+  const handleSaveInvoice = async () => {
+    if (invoiceItems.length === 0) {
+      alert("Add at least one item before saving.")
+      return
+    }
+    try {
+      setIsSaving(true)
+      const res = await fetch("/api/admin/invoices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          invoiceNumber: invoiceData.invoiceNumber,
+          invoiceDate: invoiceData.invoiceDate,
+          client: invoiceData.client,
+          subtotal: invoiceData.subtotal,
+          taxRate: invoiceData.taxRate,
+          taxAmount: invoiceData.taxAmount,
+          discount: invoiceData.discount,
+          customDesignPrinting: invoiceData.customDesignPrinting,
+          deliveries: invoiceData.deliveries,
+          total: invoiceData.total,
+          items: invoiceItems.map((it) => ({
+            productId: it.id,
+            name: it.name,
+            priceType: it.selectedPriceType,
+            unitPrice: it.currentPrice,
+            quantity: it.quantity,
+            lineTotal: it.lineTotal,
+          })),
+        }),
+      })
+      if (res.ok) {
+        alert("Invoice saved — it now feeds the dashboard analytics.")
+      } else {
+        const e = await res.json().catch(() => ({}))
+        alert(e.error || "Failed to save invoice.")
+      }
+    } catch {
+      alert("Failed to save invoice.")
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const handleDownloadPDF = async () => {
@@ -754,10 +799,20 @@ export default function InvoiceGenerator() {
           
           {/* Action Buttons - Mobile Responsive */}
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            <Button 
-              onClick={() => setShareDialogOpen(true)} 
-              size="lg" 
-              variant="outline" 
+            <Button
+              onClick={handleSaveInvoice}
+              size="lg"
+              variant="outline"
+              className="gap-2 w-full sm:w-auto"
+              disabled={isSaving}
+            >
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              {isSaving ? "Saving..." : "Save invoice"}
+            </Button>
+            <Button
+              onClick={() => setShareDialogOpen(true)}
+              size="lg"
+              variant="outline"
               className="gap-2 w-full sm:w-auto"
             >
               <Share2 className="h-4 w-4" />
