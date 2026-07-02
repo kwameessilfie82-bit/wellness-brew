@@ -56,6 +56,12 @@ export const productTable = pgTable("product", {
     .references(() => categoryTable.id, { onDelete: "cascade" }),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   originalPrice: decimal("original_price", { precision: 10, scale: 2 }),
+  // Invoice pricing tiers (shared source of truth with the invoice generator).
+  customerPrice: decimal("customer_price", { precision: 10, scale: 2 }),
+  retailPrice: decimal("retail_price", { precision: 10, scale: 2 }),
+  wholesalePrice: decimal("wholesale_price", { precision: 10, scale: 2 }),
+  wholesalePrice2: decimal("wholesale_price2", { precision: 10, scale: 2 }),
+  distributorPrice: decimal("distributor_price", { precision: 10, scale: 2 }),
   sku: text("sku").notNull().unique(),
   barcode: text("barcode"),
   images: text("images").notNull().default('[]'), // JSON array of image URLs

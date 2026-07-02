@@ -80,6 +80,11 @@ export function EnhancedInventoryManagement({
     categoryId: "",
     price: "",
     originalPrice: "",
+    customerPrice: "",
+    retailPrice: "",
+    wholesalePrice: "",
+    wholesalePrice2: "",
+    distributorPrice: "",
     sku: "",
     barcode: "",
     images: "",
@@ -335,6 +340,8 @@ export function EnhancedInventoryManagement({
         setNewProduct({
           name: "", slug: "", description: "", shortDescription: "",
           categoryId: "", price: "", originalPrice: "", sku: "",
+          customerPrice: "", retailPrice: "", wholesalePrice: "",
+          wholesalePrice2: "", distributorPrice: "",
           barcode: "", images: "", isActive: true, isFeatured: false,
           requiresPrescription: false, weight: "", manufacturer: "",
           expiryDate: "", batchNumber: "", tags: "", seoTitle: "", seoDescription: "",
@@ -566,6 +573,61 @@ export function EnhancedInventoryManagement({
                 </div>
               </div>
               <div className="space-y-2">
+                <Label>Invoice pricing tiers</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="customerPrice">Customer price</Label>
+                    <Input
+                      id="customerPrice"
+                      type="number"
+                      value={newProduct.customerPrice}
+                      onChange={(e) => setNewProduct({...newProduct, customerPrice: e.target.value})}
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="retailPrice">Retail price</Label>
+                    <Input
+                      id="retailPrice"
+                      type="number"
+                      value={newProduct.retailPrice}
+                      onChange={(e) => setNewProduct({...newProduct, retailPrice: e.target.value})}
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="wholesalePrice">Wholesale price</Label>
+                    <Input
+                      id="wholesalePrice"
+                      type="number"
+                      value={newProduct.wholesalePrice}
+                      onChange={(e) => setNewProduct({...newProduct, wholesalePrice: e.target.value})}
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="wholesalePrice2">Wholesale price 2</Label>
+                    <Input
+                      id="wholesalePrice2"
+                      type="number"
+                      value={newProduct.wholesalePrice2}
+                      onChange={(e) => setNewProduct({...newProduct, wholesalePrice2: e.target.value})}
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="distributorPrice">Distributor price</Label>
+                    <Input
+                      id="distributorPrice"
+                      type="number"
+                      value={newProduct.distributorPrice}
+                      onChange={(e) => setNewProduct({...newProduct, distributorPrice: e.target.value})}
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="description">
                   Description <span className="text-destructive">*</span>
                 </Label>
@@ -712,6 +774,61 @@ export function EnhancedInventoryManagement({
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Invoice pricing tiers</Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-customerPrice">Customer price</Label>
+                      <Input
+                        id="edit-customerPrice"
+                        type="number"
+                        value={editingProduct.customerPrice ?? ""}
+                        onChange={(e) => setEditingProduct({...editingProduct, customerPrice: e.target.value})}
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-retailPrice">Retail price</Label>
+                      <Input
+                        id="edit-retailPrice"
+                        type="number"
+                        value={editingProduct.retailPrice ?? ""}
+                        onChange={(e) => setEditingProduct({...editingProduct, retailPrice: e.target.value})}
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-wholesalePrice">Wholesale price</Label>
+                      <Input
+                        id="edit-wholesalePrice"
+                        type="number"
+                        value={editingProduct.wholesalePrice ?? ""}
+                        onChange={(e) => setEditingProduct({...editingProduct, wholesalePrice: e.target.value})}
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-wholesalePrice2">Wholesale price 2</Label>
+                      <Input
+                        id="edit-wholesalePrice2"
+                        type="number"
+                        value={editingProduct.wholesalePrice2 ?? ""}
+                        onChange={(e) => setEditingProduct({...editingProduct, wholesalePrice2: e.target.value})}
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-distributorPrice">Distributor price</Label>
+                      <Input
+                        id="edit-distributorPrice"
+                        type="number"
+                        value={editingProduct.distributorPrice ?? ""}
+                        onChange={(e) => setEditingProduct({...editingProduct, distributorPrice: e.target.value})}
+                        placeholder="0.00"
+                      />
+                    </div>
                   </div>
                 </div>
                 <div className="space-y-2">

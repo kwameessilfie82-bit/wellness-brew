@@ -1,13 +1,12 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { ProductCatalog } from "@/ui/components/invoice/product-catalog"
 import { InvoicePreview } from "@/ui/components/invoice/invoice-preview"
 import { InvoiceForm } from "@/ui/components/invoice/invoice-form"
 import { ShareInvoiceDialog } from "@/ui/components/invoice/share-invoice-dialog"
 import { Button } from "@/ui/primitives/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/primitives/tabs"
-import { sampleProducts } from "@/lib/sample-products"
 import type { InvoiceData, InvoiceItem, Product, SellerInfo, ClientInfo, PaymentMethod } from "@/lib/types"
 import {
   generateInvoiceNumber,
@@ -20,8 +19,29 @@ import { Download, Share2, Loader2 } from "lucide-react"
 import Image from "next/image"
 
 export default function InvoiceGenerator() {
-  const [products, setProducts] = useState<Product[]>(sampleProducts)
+  const [products, setProducts] = useState<Product[]>([])
   const [selectedItems, setSelectedItems] = useState<Map<string, { quantity: number; priceType: 'customer' | 'retail' | 'wholesale' | 'wholesale2' | 'distributor' }>>(new Map())
+
+  // Products come from live inventory so invoices always reflect the latest
+  // names and prices managed on the Inventory page.
+  useEffect(() => {
+    let active = true
+    ;(async () => {
+      try {
+        const res = await fetch("/api/admin/invoice-products", { cache: "no-store" })
+        if (!res.ok) return
+        const data = await res.json()
+        if (active && Array.isArray(data.products)) {
+          setProducts(data.products as Product[])
+        }
+      } catch (err) {
+        console.error("Failed to load invoice products:", err)
+      }
+    })()
+    return () => {
+      active = false
+    }
+  }, [])
   const [invoiceNumber] = useState(generateInvoiceNumber())
   const [invoiceDate] = useState(new Date().toISOString().split("T")[0])
   const [dueDate, setDueDate] = useState(() => {
