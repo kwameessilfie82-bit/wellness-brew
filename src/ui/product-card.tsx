@@ -2,11 +2,12 @@
 
 import type React from "react";
 
-import { ShoppingCart } from "lucide-react";
+import { Heart, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 
 import { formatPrice } from "@/lib/format";
 import { useCart } from "@/lib/cart-context";
+import { useWishlist } from "@/lib/wishlist-context";
 import { cn } from "@/lib/cn";
 import { Button } from "@/ui/primitives/button";
 import { FallbackImage } from "@/ui/components/fallback-image";
@@ -22,11 +23,23 @@ interface Product {
 
 export function ProductCard({ product }: { product: Product }) {
   const { addToCart } = useCart();
+  const { toggleWishlist, isInWishlist } = useWishlist();
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     addToCart(product);
+  };
+
+  const handleToggleWishlist = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleWishlist({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.image,
+    });
   };
 
   return (
@@ -51,6 +64,21 @@ export function ProductCard({ product }: { product: Product }) {
             {product.category}
           </span>
         ) : null}
+        <button
+          type="button"
+          onClick={handleToggleWishlist}
+          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-card/90 text-foreground backdrop-blur-sm transition-colors hover:bg-card"
+        >
+          <Heart
+            className={cn(
+              "h-4 w-4",
+              isInWishlist(product.id) ? "fill-current text-red-500" : "text-foreground",
+            )}
+          />
+          <span className="sr-only">
+            {isInWishlist(product.id) ? "Remove from wishlist" : "Add to wishlist"}
+          </span>
+        </button>
       </Link>
 
       <div className="flex flex-1 flex-col p-4">
