@@ -127,11 +127,12 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Product Image */}
           <div className="relative aspect-square rounded-lg overflow-hidden bg-secondary/20">
-            <Image 
-              src={images[0] || "/placeholder.svg"} 
-              alt={product.name} 
-              fill 
-              className="object-cover" 
+            <Image
+              src={images[0] || "/placeholder.svg"}
+              alt={product.name}
+              fill
+              className="object-cover"
+              unoptimized={String(images[0] || "").startsWith("/api/") || String(images[0] || "").startsWith("data:")}
             />
           </div>
 

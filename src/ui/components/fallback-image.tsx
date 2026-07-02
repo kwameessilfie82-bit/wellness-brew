@@ -29,6 +29,7 @@ export function FallbackImage({
   width,
   height,
   priority,
+  unoptimized,
 }: FallbackImageProps) {
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
@@ -109,7 +110,14 @@ export function FallbackImage({
         src={src}
         width={width}
         unoptimized={Boolean(
-          src && (src.startsWith("data:") || src.startsWith("blob:")),
+          unoptimized ||
+            (src &&
+              (src.startsWith("data:") ||
+                src.startsWith("blob:") ||
+                // Private-blob images are served pre-sized + CDN-cached via the
+                // /api/media proxy; Next's optimizer 400s on the query-string
+                // URL, so skip it and load the proxy image directly.
+                src.startsWith("/api/"))),
         )}
       />
     </div>

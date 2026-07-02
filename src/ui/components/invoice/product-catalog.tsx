@@ -167,6 +167,7 @@ export function ProductCatalog({
                     fill
                     sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                     className="object-cover"
+                    unoptimized={product.image.startsWith("/api/") || product.image.startsWith("data:")}
                     onError={() => {
                       setImageErrors(prev => new Set(prev).add(product.id))
                     }}
