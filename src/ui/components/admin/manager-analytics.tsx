@@ -50,6 +50,18 @@ const colors = [
   "var(--chart-6)",
 ];
 
+// Readable, theme-aware tooltip so labels don't blend into the background.
+const tooltipStyle = {
+  contentStyle: {
+    backgroundColor: "var(--popover)",
+    border: "1px solid var(--border)",
+    borderRadius: "8px",
+    color: "var(--popover-foreground)",
+  },
+  labelStyle: { color: "var(--popover-foreground)", fontWeight: 600 },
+  itemStyle: { color: "var(--popover-foreground)" },
+} as const;
+
 export function ManagerAnalytics() {
   const [data, setData] = useState<SalesAnalyticsResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -130,7 +142,7 @@ export function ManagerAnalytics() {
               <CartesianGrid vertical={false} />
               <XAxis dataKey="day" tickLine={false} axisLine={false} tickMargin={8} />
               <YAxis tickLine={false} axisLine={false} />
-              <RechartsTooltip formatter={(v: number | string) => new Intl.NumberFormat().format(Number(v))} />
+              <RechartsTooltip {...tooltipStyle} formatter={(v: number | string) => new Intl.NumberFormat().format(Number(v))} />
               <Area type="natural" dataKey="revenue" stroke="var(--chart-1)" fill="var(--chart-1)" fillOpacity={0.3} />
             </AreaChart>
           </ResponsiveContainer>
@@ -155,7 +167,7 @@ export function ManagerAnalytics() {
               <CartesianGrid vertical={false} />
               <XAxis dataKey="day" tickLine={false} axisLine={false} tickMargin={8} />
               <YAxis tickLine={false} axisLine={false} />
-              <RechartsTooltip />
+              <RechartsTooltip {...tooltipStyle} />
               <Line type="monotone" dataKey="units" stroke="var(--chart-2)" strokeWidth={2} dot={false} />
             </LineChart>
           </ResponsiveContainer>
@@ -174,7 +186,7 @@ export function ManagerAnalytics() {
               <CartesianGrid vertical={false} />
               <XAxis dataKey="name" tickLine={false} axisLine={false} interval={0} tickMargin={8} />
               <YAxis tickLine={false} axisLine={false} />
-              <RechartsTooltip formatter={(v: number | string) => new Intl.NumberFormat().format(Number(v))} />
+              <RechartsTooltip {...tooltipStyle} formatter={(v: number | string) => new Intl.NumberFormat().format(Number(v))} />
               <Bar dataKey="revenue" fill="var(--chart-3)" />
             </BarChart>
           </ResponsiveContainer>
@@ -195,7 +207,7 @@ export function ManagerAnalytics() {
                   <Cell key={i} fill={colors[i % colors.length]} />
                 ))}
               </Pie>
-              <RechartsTooltip />
+              <RechartsTooltip {...tooltipStyle} />
             </PieChart>
           </ResponsiveContainer>
         </CardContent>
@@ -214,7 +226,7 @@ export function ManagerAnalytics() {
               <PolarAngleAxis dataKey="name" />
               <Radar name="Units" dataKey="units" stroke="var(--chart-4)" fill="var(--chart-4)" fillOpacity={0.3} />
               <Radar name="Revenue" dataKey="revenue" stroke="var(--chart-5)" fill="var(--chart-5)" fillOpacity={0.3} />
-              <RechartsTooltip />
+              <RechartsTooltip {...tooltipStyle} />
             </RadarChart>
           </ResponsiveContainer>
         </CardContent>
@@ -230,7 +242,7 @@ export function ManagerAnalytics() {
           <ResponsiveContainer width="100%" height="100%">
             <RadialBarChart innerRadius="40%" outerRadius="100%" data={[{ name: "Top", value: topProducts[0]?.revenue || 0 }, { name: "Others", value: Math.max(0, (data.totals.revenue - (topProducts[0]?.revenue || 0))) }]}> 
               <RadialBar dataKey="value" fill="var(--chart-6)" />
-              <RechartsTooltip />
+              <RechartsTooltip {...tooltipStyle} />
             </RadialBarChart>
           </ResponsiveContainer>
         </CardContent>

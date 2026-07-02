@@ -13,6 +13,7 @@ import type { Product } from "@/lib/types"
 
 interface ProductCatalogProps {
   products: Product[]
+  isLoading?: boolean
   selectedItems: Map<string, { quantity: number; priceType: 'customer' | 'retail' | 'wholesale' | 'wholesale2' | 'distributor' }>
   onAddItem: (product: Product, priceType: 'customer' | 'retail' | 'wholesale' | 'wholesale2' | 'distributor') => void
   onRemoveItem: (productId: string) => void
@@ -20,13 +21,14 @@ interface ProductCatalogProps {
   onAddProduct: (product: Product) => void
 }
 
-export function ProductCatalog({ 
-  products, 
-  selectedItems, 
-  onAddItem, 
-  onRemoveItem, 
+export function ProductCatalog({
+  products,
+  isLoading = false,
+  selectedItems,
+  onAddItem,
+  onRemoveItem,
   onPriceTypeChange,
-  onAddProduct 
+  onAddProduct
 }: ProductCatalogProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [filterPriceType, setFilterPriceType] = useState<'all' | 'customer' | 'retail' | 'wholesale' | 'wholesale2' | 'distributor'>('all')
@@ -104,9 +106,15 @@ export function ProductCatalog({
         {/* Search Results Summary */}
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>
-            {filteredProducts.length} of {products.length} products
-            {searchTerm && ` matching "${searchTerm}"`}
-            {filterPriceType !== 'all' && ` with ${filterPriceType} pricing`}
+            {isLoading ? (
+              "Loading products…"
+            ) : (
+              <>
+                {filteredProducts.length} of {products.length} products
+                {searchTerm && ` matching "${searchTerm}"`}
+                {filterPriceType !== 'all' && ` with ${filterPriceType} pricing`}
+              </>
+            )}
           </span>
           {(searchTerm || filterPriceType !== 'all') && (
             <Button variant="ghost" size="sm" onClick={clearSearch}>
@@ -115,6 +123,22 @@ export function ProductCatalog({
           )}
         </div>
       </div>
+
+      {/* Loading skeletons */}
+      {isLoading && products.length === 0 && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i} className="overflow-hidden">
+              <div className="aspect-square animate-pulse bg-muted" />
+              <CardContent className="p-4 space-y-3">
+                <div className="h-5 w-2/3 animate-pulse rounded bg-muted" />
+                <div className="h-4 w-1/2 animate-pulse rounded bg-muted" />
+                <div className="h-9 w-full animate-pulse rounded bg-muted" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Products Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -228,12 +252,18 @@ export function ProductCatalog({
       </div>
 
       {/* No Results Message */}
-      {filteredProducts.length === 0 && (
+      {!isLoading && filteredProducts.length === 0 && (
         <div className="text-center py-8">
-          <p className="text-muted-foreground">No products found matching your search criteria.</p>
-          <Button variant="outline" onClick={clearSearch} className="mt-2">
-            Clear filters
-          </Button>
+          <p className="text-muted-foreground">
+            {products.length === 0
+              ? "No products yet. Add products in Inventory to invoice them."
+              : "No products found matching your search criteria."}
+          </p>
+          {products.length > 0 && (
+            <Button variant="outline" onClick={clearSearch} className="mt-2">
+              Clear filters
+            </Button>
+          )}
         </div>
       )}
 

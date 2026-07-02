@@ -22,10 +22,10 @@ export function AdminTopBar({ adminUser }: AdminTopBarProps) {
         </span>
       </div>
       <div className="flex items-center gap-2">
-        <ThemeToggle />
         <span className="hidden max-w-[140px] truncate text-xs text-muted-foreground md:inline">
           {adminUser.user?.name ?? adminUser.user?.email}
         </span>
+        <ThemeToggle />
         <Button variant="outline" size="sm" asChild className="gap-1.5 rounded-full">
           <Link href="/" target="_blank" rel="noopener noreferrer">
             <Store className="h-3.5 w-3.5" />

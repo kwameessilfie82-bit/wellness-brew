@@ -105,6 +105,7 @@ export function EnhancedInventoryManagement({
   const [editProductImages, setEditProductImages] = useState<string[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isSavingStock, setIsSavingStock] = useState(false);
   const [updatingReserved, setUpdatingReserved] = useState<string | null>(null);
   const addImageFile = async (file: File, isEdit = false) => {
@@ -116,14 +117,36 @@ export function EnhancedInventoryManagement({
     }
     const setFn = isEdit ? setEditProductImages : setNewProductImages;
     try {
-      // Downscale + re-encode in the browser so the owner can upload any photo.
+      setIsUploadingImage(true);
+      // Downscale + re-encode in the browser so uploaded objects stay small.
       const dataUrl = await compressImageFile(file);
-      // Single-image policy: always override with the latest
+      // Upload to Vercel Blob and store the returned URL (keeps the DB row tiny).
+      try {
+        const blob = await (await fetch(dataUrl)).blob();
+        const form = new FormData();
+        const base = file.name.replace(/\.[^.]+$/, "") || "product";
+        form.append("file", blob, `${base}.webp`);
+        form.append("filename", `${base}.webp`);
+        const res = await fetch("/api/admin/upload", {
+          method: "POST",
+          body: form,
+        });
+        if (res.ok) {
+          const { url } = await res.json();
+          setFn([url]);
+          return;
+        }
+      } catch {
+        /* fall through to inline data URL below */
+      }
+      // Fallback: keep the compressed data URL if the upload failed.
       setFn([dataUrl]);
     } catch {
       const reader = new FileReader();
       reader.onload = () => setFn([reader.result as string]);
       reader.readAsDataURL(file);
+    } finally {
+      setIsUploadingImage(false);
     }
   };
 
@@ -679,7 +702,7 @@ export function EnhancedInventoryManagement({
               <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleCreateProduct} disabled={isCreating} aria-busy={isCreating}>
+              <Button onClick={handleCreateProduct} disabled={isCreating || isUploadingImage} aria-busy={isCreating}>
                 {isCreating ? (
                   <span className="inline-flex items-center gap-2 text-primary-foreground">
                     <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -892,7 +915,7 @@ export function EnhancedInventoryManagement({
               <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleUpdateProduct} disabled={isUpdating} aria-busy={isUpdating}>
+              <Button onClick={handleUpdateProduct} disabled={isUpdating || isUploadingImage} aria-busy={isUpdating}>
                 {isUpdating ? (
                   <span className="inline-flex items-center gap-2 text-primary-foreground">
                     <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -923,7 +946,7 @@ export function EnhancedInventoryManagement({
           </CardContent>
         </Card>
         
-        <Card className="group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-green-300 bg-gradient-to-br from-background to-green-50/20">
+        <Card className="group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-primary/30 bg-gradient-to-br from-background to-background/80">
           <CardContent className="p-4">
             <div className="flex flex-col items-center text-center space-y-3">
               <div className="text-2xl sm:text-3xl font-bold text-green-600 group-hover:scale-110 transition-transform duration-300">
@@ -937,7 +960,7 @@ export function EnhancedInventoryManagement({
           </CardContent>
         </Card>
         
-        <Card className="group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-yellow-300 bg-gradient-to-br from-background to-yellow-50/20">
+        <Card className="group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-primary/30 bg-gradient-to-br from-background to-background/80">
           <CardContent className="p-4">
             <div className="flex flex-col items-center text-center space-y-3">
               <div className="text-2xl sm:text-3xl font-bold text-yellow-600 group-hover:scale-110 transition-transform duration-300">
@@ -951,7 +974,7 @@ export function EnhancedInventoryManagement({
           </CardContent>
         </Card>
         
-        <Card className="group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-red-300 bg-gradient-to-br from-background to-red-50/20">
+        <Card className="group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-primary/30 bg-gradient-to-br from-background to-background/80">
           <CardContent className="p-4">
             <div className="flex flex-col items-center text-center space-y-3">
               <div className="text-2xl sm:text-3xl font-bold text-red-600 group-hover:scale-110 transition-transform duration-300">

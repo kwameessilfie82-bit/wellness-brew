@@ -14,8 +14,11 @@ function firstImage(imagesJson: string | null): string {
   if (!imagesJson) return "/placeholder.svg";
   try {
     const arr = JSON.parse(imagesJson);
-    if (Array.isArray(arr) && typeof arr[0] === "string" && arr[0]) {
-      return arr[0];
+    const first = Array.isArray(arr) ? arr[0] : null;
+    // Never ship inline base64 in the catalog payload — it bloats the response
+    // and slows first load. Those images live in Blob after migration.
+    if (typeof first === "string" && first && !first.startsWith("data:")) {
+      return first;
     }
   } catch {
     /* ignore */

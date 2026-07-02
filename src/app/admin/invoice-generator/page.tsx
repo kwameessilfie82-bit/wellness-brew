@@ -20,6 +20,7 @@ import Image from "next/image"
 
 export default function InvoiceGenerator() {
   const [products, setProducts] = useState<Product[]>([])
+  const [loadingProducts, setLoadingProducts] = useState(true)
   const [selectedItems, setSelectedItems] = useState<Map<string, { quantity: number; priceType: 'customer' | 'retail' | 'wholesale' | 'wholesale2' | 'distributor' }>>(new Map())
 
   // Products come from live inventory so invoices always reflect the latest
@@ -36,6 +37,8 @@ export default function InvoiceGenerator() {
         }
       } catch (err) {
         console.error("Failed to load invoice products:", err)
+      } finally {
+        if (active) setLoadingProducts(false)
       }
     })()
     return () => {
@@ -850,6 +853,7 @@ export default function InvoiceGenerator() {
         
             <ProductCatalog
               products={products}
+              isLoading={loadingProducts}
               selectedItems={selectedItems}
               onAddItem={handleAddItem}
               onRemoveItem={handleRemoveItem}
