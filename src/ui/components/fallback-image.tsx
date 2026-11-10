@@ -31,8 +31,12 @@ export function FallbackImage({
   priority,
   unoptimized,
 }: FallbackImageProps) {
-  const [imageError, setImageError] = useState(false);
-  const [imageLoading, setImageLoading] = useState(true);
+  // Tracked per src: a failed/loaded state must not stick when the src changes
+  // (e.g. the admin preview going from the placeholder to a freshly uploaded image).
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
+  const imageError = Boolean(src) && failedSrc === src;
+  const imageLoading = loadedSrc !== src;
 
   const isValidSrc = (() => {
     if (!src) return false;
@@ -54,12 +58,12 @@ export function FallbackImage({
   })();
 
   const handleError = () => {
-    setImageError(true);
-    setImageLoading(false);
+    setFailedSrc(src ?? null);
+    setLoadedSrc(src ?? null);
   };
 
   const handleLoad = () => {
-    setImageLoading(false);
+    setLoadedSrc(src ?? null);
   };
 
   if (!src || !isValidSrc || imageError) {

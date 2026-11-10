@@ -124,6 +124,8 @@ export function EnhancedInventoryManagement({
       setIsUploadingImage(true);
       // Downscale + re-encode in the browser so uploaded objects stay small.
       const dataUrl = await compressImageFile(file);
+      // Show the picked image right away; swapped for the stored URL once uploaded.
+      setFn([dataUrl]);
       // Upload to Vercel Blob and store the returned URL (keeps the DB row tiny).
       try {
         const blob = await (await fetch(dataUrl)).blob();
