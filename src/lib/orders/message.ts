@@ -29,7 +29,15 @@ function dropEmptyLines(text: string, emptyKeys: string[]): string {
     .join("\n");
 }
 
-export type MessageItem = { name: string; quantity: number; unitPrice: string; lineTotal: string };
+/** fillTemplate, but lines whose placeholders are all-empty (e.g. "Gift: {gift}") are removed. */
+export function fillTemplateCompact(template: string, vars: MessageVars): string {
+  const emptyKeys = Object.entries(vars)
+    .filter(([, v]) => v === "" || v === null || v === undefined)
+    .map(([k]) => k);
+  return fillTemplate(dropEmptyLines(template, emptyKeys), vars);
+}
+
+export type MessageItem ={ name: string; quantity: number; unitPrice: string; lineTotal: string };
 
 export function formatItemLines(items: MessageItem[]): string[] {
   return items.map((i) => `• ${i.quantity} × ${i.name} (${i.unitPrice}) = ${i.lineTotal}`);

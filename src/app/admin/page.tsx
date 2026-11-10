@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { isAdmin } from "@/lib/admin-auth";
+import { orderTabCounts } from "@/lib/orders/server/staff-queries";
 import { Card, CardContent } from "@/ui/primitives/card";
 import { Button } from "@/ui/primitives/button";
 import { ManagerAnalytics } from "@/ui/components/admin/manager-analytics";
@@ -20,12 +21,14 @@ export default async function AdminOverviewPage() {
   }
 
   // Fetch dashboard summary counts
-  const [categories, inventoryItems] = await Promise.all([
+  const [categories, inventoryItems, orderCounts] = await Promise.all([
     db.query.categoryTable.findMany(),
     db.query.inventoryTable.findMany(),
+    orderTabCounts(),
   ]);
 
   const stats = [
+    { label: "Orders needing action", value: orderCounts.needs_action, href: "/admin/orders?tab=needs_action" },
     { label: "Inventory Items", value: inventoryItems.length, href: "/admin/inventory" },
     { label: "Categories", value: categories.length, href: "/admin/categories" },
   ];

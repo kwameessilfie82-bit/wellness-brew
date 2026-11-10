@@ -20,6 +20,7 @@ import {
   type PaymentStatus,
   STOCK_HELD,
 } from "../status";
+import { syncOrderInvoice } from "./invoices";
 
 export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 export type Actor =
@@ -173,13 +174,17 @@ export async function transitionLocked(
     .set({
       ...patch,
       status: finalStatus,
-      attentionReason: null,
+      attentionReason: patch.attentionReason ?? null,
       version: order.version + 1,
       updatedAt: new Date(),
     })
     .where(and(eq(storeOrderTable.id, order.id), eq(storeOrderTable.version, order.version)))
     .returning({ version: storeOrderTable.version });
   if (!updated) return { ok: false, code: "conflict", error: "This order was changed by someone else. Refresh and try again." };
+
+  if (wasHeld || STOCK_HELD.includes(finalStatus)) {
+    await syncOrderInvoice(tx, order.id, actor.type === "staff" ? actor.id : null);
+  }
 
   await addEvent(tx, order.id, actor, {
     type: opts.undo ? "undo" : "status_change",

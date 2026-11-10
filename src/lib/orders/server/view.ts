@@ -9,7 +9,7 @@ import { parsePrice } from "@/lib/format";
 import { getPublicSettings, getSettings } from "@/lib/settings/get";
 import { fillBrand } from "@/lib/settings/schemas";
 
-import { buildOrderMessage, fillTemplate, type MessageItem, type MessageVars } from "../message";
+import { buildOrderMessage, fillTemplateCompact, type MessageItem, type MessageVars } from "../message";
 import { formatMoney } from "../money";
 import { formatLocalPhone } from "../phone";
 import type { PaymentMethod } from "../status";
@@ -153,5 +153,5 @@ export async function staffMessage(
 ): Promise<string> {
   const vars = await templateVars(order, items, extra);
   const { brand } = await getPublicSettings();
-  return fillBrand(fillTemplate(template, vars), brand.name);
+  return fillBrand(fillTemplateCompact(template, vars), brand.name);
 }

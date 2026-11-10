@@ -26,6 +26,7 @@ import {
   type PaymentMethod,
   STOCK_HELD,
 } from "@/lib/orders/status";
+import { expireStaleOrders } from "@/lib/orders/server/housekeeping";
 import { getPublicSettings, getSettings } from "@/lib/settings/get";
 import { Footer } from "@/ui/footer";
 import { Navigation } from "@/ui/navigation";
@@ -58,8 +59,13 @@ const EVENT_LABELS: Record<string, string> = {
 
 export default async function OrderPage({ params, searchParams }: Props) {
   const [{ token }, { new: isNew }] = await Promise.all([params, searchParams]);
-  const data = await getOrderByToken(token);
+  let data = await getOrderByToken(token);
   if (!data) notFound();
+  // Lazy expiry: don't wait for the daily cron to show an expired order as expired.
+  if (data.order.status === "awaiting_customer" && data.order.expiresAt && data.order.expiresAt < new Date()) {
+    await expireStaleOrders();
+    data = (await getOrderByToken(token)) ?? data;
+  }
   const { order, items, events } = data;
   const status: OrderStatus = isOrderStatus(order.status) ? order.status : "received";
   const fulfilment: Fulfilment = order.fulfilment === "pickup" ? "pickup" : "delivery";

@@ -35,6 +35,7 @@ import {
   move,
   useSection,
 } from "./fields";
+import { DeliverySection, OrderingSection, WhatsappSection } from "./ordering-sections";
 
 /* ───────────────────────── sections ───────────────────────── */
 
@@ -525,6 +526,15 @@ export function SettingsClient({
         </TabsContent>
         <TabsContent value="payments" forceMount className={PANEL}>
           <PaymentsSection initial={initial.payments} />
+        </TabsContent>
+        <TabsContent value="ordering" forceMount className={PANEL}>
+          <OrderingSection initial={initial.ordering} />
+        </TabsContent>
+        <TabsContent value="delivery" forceMount className={PANEL}>
+          <DeliverySection initial={initial.delivery} />
+        </TabsContent>
+        <TabsContent value="whatsapp" forceMount className={PANEL}>
+          <WhatsappSection initial={initial.whatsapp} brandName={initial.brand.name} />
         </TabsContent>
         <TabsContent value="history">
           <HistoryPanel history={history} />
