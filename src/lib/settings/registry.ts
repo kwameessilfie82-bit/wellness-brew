@@ -6,8 +6,12 @@ import "server-only";
  * client bundle. Client code imports ./schemas instead.
  */
 import {
+  aboutSchema,
   brandSchema,
+  claimsSchema,
+  complianceSchema,
   contactSchema,
+  homepageSchema,
   locationsSchema,
   paymentsSchema,
   PUBLIC_DEFAULTS,
@@ -16,12 +20,58 @@ import {
   socialSchema,
 } from "./schemas";
 
+const banned = (phrase: string, reason: string, suggestion = "") => ({
+  id: `bp-${phrase.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+  phrase,
+  reason,
+  suggestion,
+});
+const MEDICAL = "Medical claim. Food products can't claim to treat or prevent illness.";
+
+/** Starter list; the owner edits it in Settings → Claims. */
+const DEFAULT_BANNED_PHRASES = [
+  banned("heal", MEDICAL, "comforting, soothing to sip"),
+  banned("cure", MEDICAL),
+  banned("remedy", MEDICAL),
+  banned("medicinal", MEDICAL, "traditional ingredient"),
+  banned("prevent disease", MEDICAL),
+  banned("cancer", MEDICAL),
+  banned("diabetes", MEDICAL),
+  banned("blood pressure", MEDICAL),
+  banned("hypertension", MEDICAL),
+  banned("cholesterol", MEDICAL),
+  banned("blood sugar", MEDICAL),
+  banned("detox", "Unsubstantiated physiological claim.", "refreshing"),
+  banned("cleanse", "Unsubstantiated physiological claim.", "refreshing"),
+  banned("weight loss", "Weight claims need approval and evidence."),
+  banned("lose weight", "Weight claims need approval and evidence."),
+  banned("fat burning", "Weight claims need approval and evidence."),
+  banned("boost immunity", "Immune claims need approval and evidence."),
+  banned("immune", "Immune claims need approval and evidence."),
+  banned("anti-inflammatory", "Needs evidence and approval."),
+  banned("antioxidant", "Needs evidence and approval; add to the claim register first."),
+  banned("organic", "Only with a current organic certificate.", "carefully sourced"),
+  banned("100% natural", "Absolute claim that must be provable for every ingredient.", "made with hibiscus, herbs and spices"),
+  banned("all natural", "Absolute claim that must be provable for every ingredient."),
+  banned("chemical-free", "Misleading: everything is made of chemicals."),
+  banned("rose of sharon", "Rose of Sharon is Hibiscus syriacus, a different plant from roselle (Hibiscus sabdariffa).", "hibiscus, roselle"),
+  banned("miracle", "Exaggerated claim."),
+  banned("clinically proven", "Needs published clinical evidence."),
+  banned("doctor recommended", "Needs documented endorsement."),
+  banned("FDA approved", "Only with a registration number; say \"FDA registered\" and show the number."),
+  banned("guaranteed results", "Exaggerated claim."),
+];
+
 export const SETTINGS_SCHEMAS = {
   brand: brandSchema,
   contact: contactSchema,
   locations: locationsSchema,
   social: socialSchema,
+  compliance: complianceSchema,
   payments: paymentsSchema,
+  homepage: homepageSchema,
+  about: aboutSchema,
+  claims: claimsSchema,
 } as const;
 
 export const SETTINGS_SECTIONS = Object.keys(SETTINGS_SCHEMAS) as SettingsSection[];
@@ -49,6 +99,65 @@ export const SETTINGS_DEFAULTS: SettingsMap = {
     invoiceNotes: "We appreciate your trust in Wellness Brew.",
     latePaymentPolicy:
       "Payment is due within 90 days. Late payments may incur a 2% monthly interest charge.",
+  },
+  homepage: {
+    badge: "Premium hibiscus tea blends",
+    titleLead: "Sip your way to",
+    titleHighlight: "a better daily ritual",
+    subtitle:
+      "Handcrafted blends of hibiscus, herbs and spices, made with care and delivered to your door.",
+    primaryCtaLabel: "Shop the collection",
+    primaryCtaHref: "/shop",
+    secondaryCtaLabel: "Our story",
+    secondaryCtaHref: "/about",
+    heroImageUrl: "/hero_image.webp",
+    heroImageAlt: "{brand} hibiscus tea blends",
+    featuredEyebrow: "Curated for you",
+    featuredTitle: "Featured blends",
+    featuredSubtitle: "Customer favourites for your daily ritual",
+    valueProps: [
+      {
+        id: "vp-quality",
+        icon: "award",
+        title: "Premium quality",
+        text: "Sourced from trusted growers and blended with care",
+      },
+      {
+        id: "vp-delivery",
+        icon: "truck",
+        title: "Delivery or pickup",
+        text: "Order on WhatsApp and we'll arrange delivery across Ghana or pickup",
+      },
+      {
+        id: "vp-ingredients",
+        icon: "leaf",
+        title: "Simple ingredients",
+        text: "Hibiscus, herbs and spices. Every ingredient is listed on the pack",
+      },
+    ],
+    closingTitle: "Ready to brew?",
+    closingText: "Make {brand} part of your daily ritual.",
+    closingCtaLabel: "Shop now",
+    closingCtaHref: "/shop",
+  },
+  about: {
+    title: "About {brand}",
+    intro:
+      "We make hibiscus tea blends for everyday enjoyment, using roselle (Hibiscus sabdariffa), the flower behind Ghana's much-loved sobolo, paired with herbs and spices.",
+    storyTitle: "Our story",
+    story:
+      "{brand} started with a simple idea: great-tasting hibiscus tea should be easy to find and easy to enjoy.\n\nWe blend dried roselle with ingredients like ginger, cloves, lemongrass, mint, cinnamon and prekese, then pack them in tea bags, pouches and gift tins.",
+    missionTitle: "Our mission",
+    mission:
+      "To make a cup of hibiscus tea part of your day, brewed hot or iced, shared with friends or given as a gift.\n\nOur teas are food products, not medicines. If you are pregnant, breastfeeding, taking medication or managing a health condition, please speak to your doctor before drinking hibiscus tea.",
+    images: [
+      { id: "img-hibiscus", url: "/hibiscus.png", alt: "Dried hibiscus flowers" },
+      { id: "img-tea", url: "/hibiscus 3.png", alt: "A cup of hibiscus tea" },
+    ],
+  },
+  claims: {
+    bannedPhrases: DEFAULT_BANNED_PHRASES,
+    register: [],
   },
 };
 

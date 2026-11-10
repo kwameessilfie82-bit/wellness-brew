@@ -54,18 +54,15 @@ export async function getSettings<K extends SettingsSection>(section: K): Promis
 const cachedPublic = unstable_cache(
   async (): Promise<PublicSettings> => {
     const raw = await readRaw(PUBLIC_SECTIONS);
-    return {
-      brand: resolveSection("brand", raw.get("brand")),
-      contact: resolveSection("contact", raw.get("contact")),
-      locations: resolveSection("locations", raw.get("locations")),
-      social: resolveSection("social", raw.get("social")),
-    };
+    return Object.fromEntries(
+      PUBLIC_SECTIONS.map((k) => [k, resolveSection(k, raw.get(k))]),
+    ) as PublicSettings;
   },
-  ["site-settings", "public"],
+  ["site-settings", "public", "v2"],
   { tags: [...PUBLIC_SECTIONS.map(settingsTag), SETTINGS_ALL_TAG] },
 );
 
-/** Brand, contact, locations and social, in one query, for the root layout. */
+/** All public sections in one query, for the root layout. */
 export async function getPublicSettings(): Promise<PublicSettings> {
   try {
     return await cachedPublic();

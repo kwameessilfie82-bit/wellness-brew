@@ -1,105 +1,84 @@
-import { getPublicSettings } from "@/lib/settings/get"
-import { Navigation } from "@/ui/navigation"
-import { Footer } from "@/ui/footer"
-import Image from "next/image"
+import Image from "next/image";
+
+import { getPublicSettings, getSettings } from "@/lib/settings/get";
+import { fillBrand, isUnoptimizedImage, paragraphs } from "@/lib/settings/schemas";
+import { Footer } from "@/ui/footer";
+import { Navigation } from "@/ui/navigation";
+
+export async function generateMetadata() {
+  const [{ brand }, about] = await Promise.all([getPublicSettings(), getSettings("about")]);
+  return { title: fillBrand(about.title, brand.name) };
+}
 
 export default async function AboutPage() {
-  const { brand } = await getPublicSettings()
+  const [{ brand }, about] = await Promise.all([getPublicSettings(), getSettings("about")]);
+  const f = (text: string) => fillBrand(text, brand.name);
+  const blocks = [
+    { key: "story", title: about.storyTitle, body: about.story },
+    { key: "mission", title: about.missionTitle, body: about.mission },
+  ].filter((b) => b.body.trim());
+  const imageGrid =
+    about.images.length === 1
+      ? "mx-auto mb-16 max-w-xl"
+      : about.images.length === 2 || about.images.length === 4
+        ? "mb-16 grid gap-6 sm:grid-cols-2"
+        : "mb-16 grid gap-6 sm:grid-cols-2 md:grid-cols-3";
+
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex min-h-screen flex-col">
       <Navigation />
 
       <section className="py-20 md:py-32">
         <div className="section-container">
-          <div className="max-w-3xl mx-auto text-center mb-16">
-            <h1 className="mb-6 font-serif text-5xl font-bold text-heading md:text-6xl">
-              About {brand.name}
-            </h1>
-            <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-              We are passionate about bringing you the finest selection of premium Rose of Sharon (Hibiscus) teas and wellness products. 
-              Our mission is to help you achieve optimal health and wellness through natural, carefully sourced ingredients.
-            </p>
+          <div className="mx-auto mb-16 max-w-3xl text-center">
+            <h1 className="mb-6 font-serif text-5xl font-bold text-heading md:text-6xl">{f(about.title)}</h1>
+            {paragraphs(about.intro).map((p, i) => (
+              <p key={i} className="mb-4 text-lg leading-relaxed text-muted-foreground">
+                {f(p)}
+              </p>
+            ))}
           </div>
 
-          {/* Hibiscus Images Section */}
-          <div className="grid md:grid-cols-3 gap-6 mb-16">
-            <div className="relative h-64 rounded-lg overflow-hidden bg-secondary/20 flex items-center justify-center">
-              <Image
-                src="/hibiscus.png"
-                alt="Hibiscus flower"
-                fill
-                className="object-contain p-2"
-              />
+          {about.images.length > 0 ? (
+            <div className={imageGrid}>
+              {about.images.map((img) => (
+                <div
+                  key={img.id}
+                  className="relative flex h-64 items-center justify-center overflow-hidden rounded-lg bg-secondary/20"
+                >
+                  <Image
+                    src={img.url}
+                    alt={f(img.alt)}
+                    fill
+                    sizes="(max-width: 640px) 100vw, 33vw"
+                    className="object-contain p-2"
+                    unoptimized={isUnoptimizedImage(img.url)}
+                  />
+                </div>
+              ))}
             </div>
-            <div className="relative h-64 rounded-lg overflow-hidden bg-secondary/20 flex items-center justify-center">
-              <Image
-                src="/rose of sharon.png"
-                alt="Rose of Sharon flower"
-                fill
-                className="object-contain p-2"
-              />
-            </div>
-            <div className="relative h-64 rounded-lg overflow-hidden bg-secondary/20 flex items-center justify-center">
-              <Image
-                src="/hibiscus 3.png"
-                alt="Hibiscus tea"
-                fill
-                className="object-contain p-2"
-              />
-            </div>
-          </div>
+          ) : null}
 
-          <div className="grid md:grid-cols-2 gap-12 mt-16">
-            <div>
-              <h2 className="mb-4 font-serif text-3xl font-bold text-heading">Our Story</h2>
-              <p className="text-muted-foreground leading-relaxed mb-4">
-                Founded with a vision to make premium wellness products accessible to everyone, {brand.name} has been 
-                dedicated to sourcing the finest Rose of Sharon (Hibiscus) teas and herbal blends from around the world. 
-                Each product is carefully selected for its quality, purity, and health benefits.
-              </p>
-              <p className="text-muted-foreground leading-relaxed">
-                The Rose of Sharon, also known as Hibiscus, has been treasured for centuries for its healing properties 
-                and beautiful appearance. We honor this sacred flower by creating premium tea blends that capture its essence 
-                and wellness benefits.
-              </p>
+          {blocks.length > 0 ? (
+            <div className={blocks.length === 2 ? "grid gap-12 md:grid-cols-2" : "mx-auto max-w-3xl"}>
+              {blocks.map((b) => (
+                <div key={b.key}>
+                  {b.title ? (
+                    <h2 className="mb-4 font-serif text-3xl font-bold text-heading">{f(b.title)}</h2>
+                  ) : null}
+                  {paragraphs(b.body).map((p, i) => (
+                    <p key={i} className="mb-4 leading-relaxed text-muted-foreground">
+                      {f(p)}
+                    </p>
+                  ))}
+                </div>
+              ))}
             </div>
-            <div>
-              <h2 className="mb-4 font-serif text-3xl font-bold text-heading">Our Mission</h2>
-              <p className="text-muted-foreground leading-relaxed mb-4">
-                We believe that wellness starts with what you consume. Our commitment is to provide you with 
-                natural, organic Rose of Sharon (Hibiscus) products that support your health journey. Every tea in our 
-                collection is chosen for its unique properties and benefits.
-              </p>
-              <p className="text-muted-foreground leading-relaxed">
-                Inspired by the beauty and healing power of the Rose of Sharon, we craft each blend with care, ensuring 
-                that every cup brings you closer to wellness and peace.
-              </p>
-            </div>
-          </div>
-
-          {/* Additional Hibiscus Images */}
-          <div className="grid md:grid-cols-2 gap-6 mt-16">
-            <div className="relative h-80 rounded-lg overflow-hidden bg-secondary/20 flex items-center justify-center">
-              <Image
-                src="/rose of sharon 1.png"
-                alt="Rose of Sharon flower"
-                fill
-                className="object-contain p-4"
-              />
-            </div>
-            <div className="relative h-80 rounded-lg overflow-hidden bg-secondary/20 flex items-center justify-center">
-              <Image
-                src="/rose of sharon 2.png"
-                alt="Rose of Sharon flower"
-                fill
-                className="object-contain p-4"
-              />
-            </div>
-          </div>
+          ) : null}
         </div>
       </section>
 
       <Footer />
     </div>
-  )
+  );
 }

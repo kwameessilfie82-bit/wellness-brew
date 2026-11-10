@@ -29,7 +29,8 @@ const PLATFORM_NAMES: Record<string, string> = {
 }
 
 export function Footer() {
-  const { brand, contact, social } = useSiteSettings()
+  const { brand, contact, social, compliance } = useSiteSettings()
+  const registrations = compliance.registrations.filter((r) => r.status === "approved" && r.number)
   const footerSocial = social.items.filter((s) => s.showInFooter)
   return (
     <footer className="bg-card border-t border-border mt-20">
@@ -115,6 +116,14 @@ export function Footer() {
           </div>
         </div>
         <div className="border-t border-border pt-8 text-center text-sm text-muted-foreground">
+          {compliance.showDisclaimerInFooter && compliance.disclaimer ? (
+            <p className="mx-auto mb-3 max-w-3xl text-xs leading-relaxed">{compliance.disclaimer}</p>
+          ) : null}
+          {registrations.length > 0 ? (
+            <p className="mb-3 text-xs">
+              {registrations.map((r) => `${r.label}: ${r.number}`).join(" · ")}
+            </p>
+          ) : null}
           <p>&copy; {new Date().getFullYear()} {brand.name}. All rights reserved.</p>
         </div>
       </div>

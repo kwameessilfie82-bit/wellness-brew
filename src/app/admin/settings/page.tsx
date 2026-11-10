@@ -8,7 +8,12 @@ import { SettingsClient } from "./settings-client";
 
 export const metadata = { title: "Settings" };
 
-export default async function SettingsPage() {
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>;
+}) {
+  const { tab } = await searchParams;
   const adminUser = await isAdmin();
   if (!adminUser) redirect("/auth/sign-in?redirect=/admin/settings");
   if (!hasPermission(adminUser, "canManageSettings")) redirect("/admin");
@@ -18,5 +23,5 @@ export default async function SettingsPage() {
     getSettingHistory(),
   ]);
 
-  return <SettingsClient initial={settings} history={history} />;
+  return <SettingsClient initial={settings} history={history} initialTab={tab} />;
 }

@@ -15,11 +15,13 @@ import { formatPrice } from "@/lib/format";
 import type { StoreProduct } from "@/lib/products/normalize";
 import { useCart } from "@/lib/cart-context";
 import { FallbackImage } from "@/ui/components/fallback-image";
+import { useSiteSettings } from "@/lib/settings/site-settings-context";
 
 export default function ProductDetailPage() {
   const params = useParams();
   const id = params?.id as string;
   const { addToCart } = useCart();
+  const { compliance } = useSiteSettings();
   const [product, setProduct] = useState<StoreProduct | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<StoreProduct[]>([]);
   const [loading, setLoading] = useState(true);
@@ -170,6 +172,9 @@ export default function ProductDetailPage() {
               <ShoppingCart className="mr-2 h-5 w-5" />
               {inStock ? "Add to Cart" : "Out of Stock"}
             </Button>
+            {compliance.showDisclaimerOnProducts && compliance.disclaimer ? (
+              <p className="text-xs leading-relaxed text-muted-foreground">{compliance.disclaimer}</p>
+            ) : null}
           </div>
         </div>
 

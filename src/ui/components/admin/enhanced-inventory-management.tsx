@@ -29,18 +29,22 @@ import { Textarea } from "@/ui/primitives/textarea";
 import { FallbackImage } from "@/ui/components/fallback-image";
 import { compressImageFile } from "@/lib/image-compress";
 import type { AdminUserWithDetails, Inventory, Product, Category } from "@/db/schema";
+import type { BannedPhrase } from "@/lib/settings/schemas";
+import { ClaimWarnings } from "@/ui/components/admin/claim-warnings";
 
 interface InventoryManagementProps {
   adminUser: AdminUserWithDetails;
   initialProducts: Product[];
   initialInventory: Inventory[];
   initialCategories: Category[];
+  bannedPhrases?: BannedPhrase[];
 }
 
 export function EnhancedInventoryManagement({
   initialProducts,
   initialInventory,
   initialCategories,
+  bannedPhrases,
 }: InventoryManagementProps) {
   const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [products, setProducts] = useState<Product[]>(initialProducts);
@@ -528,6 +532,7 @@ export function EnhancedInventoryManagement({
                     placeholder="Enter product name"
                     required
                   />
+                  <ClaimWarnings text={newProduct.name} bannedPhrases={bannedPhrases} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="sku">SKU</Label>
@@ -661,6 +666,7 @@ export function EnhancedInventoryManagement({
                   placeholder="Enter product description"
                   required
                 />
+                <ClaimWarnings text={newProduct.description} bannedPhrases={bannedPhrases} />
               </div>
               {/* Images: upload from device only */}
               <div className="space-y-2">
@@ -738,6 +744,7 @@ export function EnhancedInventoryManagement({
                       onChange={(e) => setEditingProduct({...editingProduct, name: e.target.value})}
                       placeholder="Enter product name"
                     />
+                    <ClaimWarnings text={editingProduct.name} bannedPhrases={bannedPhrases} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="edit-sku">SKU</Label>
@@ -862,6 +869,7 @@ export function EnhancedInventoryManagement({
                     onChange={(e) => setEditingProduct({...editingProduct, description: e.target.value})}
                     placeholder="Enter product description"
                   />
+                  <ClaimWarnings text={editingProduct.description || ""} bannedPhrases={bannedPhrases} />
                 </div>
                 {/* Edit Images: upload from device only */}
                 <div className="space-y-2">

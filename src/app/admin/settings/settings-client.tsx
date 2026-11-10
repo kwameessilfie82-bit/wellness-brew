@@ -1,260 +1,50 @@
 "use client";
 
-import { ArrowDown, ArrowUp, History, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useMemo, useState, useTransition } from "react";
+import { History, Plus, RotateCcw } from "lucide-react";
+import { useTransition } from "react";
 import { toast } from "sonner";
 
 import {
   LOCATION_TYPES,
   SOCIAL_PLATFORMS,
+  type BannedPhrase,
   type SettingsMap,
   type SettingsSection,
 } from "@/lib/settings/schemas";
 import { Button } from "@/ui/primitives/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/primitives/card";
 import { Input } from "@/ui/primitives/input";
-import { Label } from "@/ui/primitives/label";
 import { NativeSelect, NativeSelectOption } from "@/ui/primitives/native-select";
-import { Switch } from "@/ui/primitives/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/primitives/tabs";
-import { Textarea } from "@/ui/primitives/textarea";
 
-import { revertSettingChange, saveSettings, type SettingHistoryEntry } from "./actions";
-
-const SECTION_LABELS: Record<SettingsSection, string> = {
-  brand: "Brand",
-  contact: "Contact",
-  locations: "Locations",
-  social: "Social",
-  payments: "Payments & invoices",
-};
-
-type Errors = Record<string, string>;
-
-/* ───────────────────────── shared field helpers ───────────────────────── */
-
-function Field({
-  label,
-  hint,
-  error,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  error?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <Label>{label}</Label>
-      {children}
-      {error ? (
-        <p className="text-xs text-destructive">{error}</p>
-      ) : hint ? (
-        <p className="text-xs text-muted-foreground">{hint}</p>
-      ) : null}
-    </div>
-  );
-}
-
-function TextField({
-  label,
-  value,
-  onChange,
-  error,
-  hint,
-  placeholder,
-  multiline,
-  type = "text",
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  error?: string;
-  hint?: string;
-  placeholder?: string;
-  multiline?: boolean;
-  type?: string;
-}) {
-  return (
-    <Field label={label} hint={hint} error={error}>
-      {multiline ? (
-        <Textarea
-          value={value}
-          placeholder={placeholder}
-          onChange={(e) => onChange(e.target.value)}
-          aria-invalid={!!error}
-          rows={3}
-        />
-      ) : (
-        <Input
-          type={type}
-          value={value}
-          placeholder={placeholder}
-          onChange={(e) => onChange(e.target.value)}
-          aria-invalid={!!error}
-        />
-      )}
-    </Field>
-  );
-}
-
-function ToggleField({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  return (
-    <label className="flex items-center gap-2 text-sm">
-      <Switch checked={checked} onCheckedChange={onChange} />
-      {label}
-    </label>
-  );
-}
-
-function ListControls({
-  index,
-  length,
-  onMove,
-  onRemove,
-}: {
-  index: number;
-  length: number;
-  onMove: (from: number, to: number) => void;
-  onRemove: (index: number) => void;
-}) {
-  return (
-    <div className="flex gap-1">
-      <Button
-        type="button"
-        size="icon"
-        variant="ghost"
-        disabled={index === 0}
-        onClick={() => onMove(index, index - 1)}
-        aria-label="Move up"
-      >
-        <ArrowUp className="h-4 w-4" />
-      </Button>
-      <Button
-        type="button"
-        size="icon"
-        variant="ghost"
-        disabled={index === length - 1}
-        onClick={() => onMove(index, index + 1)}
-        aria-label="Move down"
-      >
-        <ArrowDown className="h-4 w-4" />
-      </Button>
-      <Button
-        type="button"
-        size="icon"
-        variant="ghost"
-        onClick={() => onRemove(index)}
-        aria-label="Remove"
-      >
-        <Trash2 className="h-4 w-4 text-destructive" />
-      </Button>
-    </div>
-  );
-}
-
-function move<T>(arr: T[], from: number, to: number): T[] {
-  const next = [...arr];
-  const [item] = next.splice(from, 1);
-  next.splice(to, 0, item);
-  return next;
-}
-
-/* ───────────────────────── section state hook ───────────────────────── */
-
-function useSection<K extends SettingsSection>(section: K, initial: SettingsMap[K]) {
-  const router = useRouter();
-  const [saved, setSaved] = useState(initial);
-  const [value, setValue] = useState(initial);
-  const [errors, setErrors] = useState<Errors>({});
-  const [pending, startTransition] = useTransition();
-  const dirty = useMemo(() => JSON.stringify(saved) !== JSON.stringify(value), [saved, value]);
-
-  const set = <F extends keyof SettingsMap[K]>(field: F, v: SettingsMap[K][F]) =>
-    setValue((prev) => ({ ...prev, [field]: v }));
-
-  const save = () =>
-    startTransition(async () => {
-      const res = await saveSettings(section, value);
-      if (res.ok) {
-        setSaved(value);
-        setErrors({});
-        toast.success(`${SECTION_LABELS[section]} saved. Live on the site now.`);
-        router.refresh();
-      } else {
-        setErrors(res.fieldErrors ?? {});
-        toast.error(res.error);
-      }
-    });
-
-  const reset = () => {
-    setValue(saved);
-    setErrors({});
-  };
-
-  return { value, setValue, set, errors, save, reset, dirty, pending };
-}
-
-function SaveBar({
-  dirty,
-  pending,
-  onSave,
-  onReset,
-}: {
-  dirty: boolean;
-  pending: boolean;
-  onSave: () => void;
-  onReset: () => void;
-}) {
-  return (
-    <div className="sticky bottom-0 z-10 -mx-6 mt-6 flex items-center justify-end gap-2 border-t bg-card/95 px-6 py-3 backdrop-blur">
-      {dirty && <span className="mr-auto text-sm text-muted-foreground">Unsaved changes</span>}
-      <Button type="button" variant="outline" disabled={!dirty || pending} onClick={onReset}>
-        Discard
-      </Button>
-      <Button type="button" disabled={!dirty || pending} onClick={onSave}>
-        <Save className="mr-2 h-4 w-4" />
-        {pending ? "Saving…" : "Save"}
-      </Button>
-    </div>
-  );
-}
-
-function SectionCard({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-      <CardContent>{children}</CardContent>
-    </Card>
-  );
-}
-
-const grid = "grid gap-4 sm:grid-cols-2";
+import { revertSettingChange, type SettingHistoryEntry } from "./actions";
+import {
+  AboutSection,
+  ClaimsSection,
+  ComplianceSection,
+  HomepageSection,
+} from "./content-sections";
+import {
+  Field,
+  ListControls,
+  SECTION_LABELS,
+  SaveBar,
+  SectionCard,
+  TextField,
+  ToggleField,
+  grid,
+  move,
+  useSection,
+} from "./fields";
 
 /* ───────────────────────── sections ───────────────────────── */
 
-function BrandSection({ initial }: { initial: SettingsMap["brand"] }) {
+function BrandSection({
+  initial,
+  bannedPhrases,
+}: {
+  initial: SettingsMap["brand"];
+  bannedPhrases: BannedPhrase[];
+}) {
   const s = useSection("brand", initial);
   const v = s.value;
   return (
@@ -271,13 +61,20 @@ function BrandSection({ initial }: { initial: SettingsMap["brand"] }) {
           onChange={(x) => s.set("legalName", x)}
           error={s.errors.legalName}
         />
-        <TextField label="Tagline" value={v.tagline} onChange={(x) => s.set("tagline", x)} error={s.errors.tagline} />
+        <TextField
+          label="Tagline"
+          value={v.tagline}
+          onChange={(x) => s.set("tagline", x)}
+          error={s.errors.tagline}
+          bannedPhrases={bannedPhrases}
+        />
         <TextField
           label="Core promise"
           hint="One sentence on why customers choose you."
           value={v.promise}
           onChange={(x) => s.set("promise", x)}
           error={s.errors.promise}
+          bannedPhrases={bannedPhrases}
         />
         <div className="sm:col-span-2">
           <TextField
@@ -287,6 +84,7 @@ function BrandSection({ initial }: { initial: SettingsMap["brand"] }) {
             value={v.description}
             onChange={(x) => s.set("description", x)}
             error={s.errors.description}
+            bannedPhrases={bannedPhrases}
           />
         </div>
         <TextField
@@ -665,13 +463,22 @@ function HistoryPanel({ history }: { history: SettingHistoryEntry[] }) {
 
 /* ───────────────────────── page ───────────────────────── */
 
+const TAB_VALUES = [...Object.keys(SECTION_LABELS), "history"];
+
+const PANEL = "data-[state=inactive]:hidden";
+
 export function SettingsClient({
   initial,
   history,
+  initialTab,
 }: {
   initial: SettingsMap;
   history: SettingHistoryEntry[];
+  initialTab?: string;
 }) {
+  const tab = initialTab && TAB_VALUES.includes(initialTab) ? initialTab : "brand";
+  // Copy warnings use the SAVED banned list.
+  const banned = initial.claims.bannedPhrases;
   return (
     <div className="space-y-6">
       <div>
@@ -680,7 +487,7 @@ export function SettingsClient({
           Business details used across the website and invoices. Changes go live as soon as you save.
         </p>
       </div>
-      <Tabs defaultValue="brand">
+      <Tabs defaultValue={tab}>
         <TabsList className="flex h-auto flex-wrap justify-start">
           {(Object.keys(SECTION_LABELS) as SettingsSection[]).map((k) => (
             <TabsTrigger key={k} value={k}>
@@ -692,19 +499,31 @@ export function SettingsClient({
           </TabsTrigger>
         </TabsList>
         {/* forceMount keeps unsaved edits when switching tabs */}
-        <TabsContent value="brand" forceMount className="data-[state=inactive]:hidden">
-          <BrandSection initial={initial.brand} />
+        <TabsContent value="brand" forceMount className={PANEL}>
+          <BrandSection initial={initial.brand} bannedPhrases={banned} />
         </TabsContent>
-        <TabsContent value="contact" forceMount className="data-[state=inactive]:hidden">
+        <TabsContent value="contact" forceMount className={PANEL}>
           <ContactSection initial={initial.contact} />
         </TabsContent>
-        <TabsContent value="locations" forceMount className="data-[state=inactive]:hidden">
+        <TabsContent value="locations" forceMount className={PANEL}>
           <LocationsSection initial={initial.locations} />
         </TabsContent>
-        <TabsContent value="social" forceMount className="data-[state=inactive]:hidden">
+        <TabsContent value="social" forceMount className={PANEL}>
           <SocialSection initial={initial.social} />
         </TabsContent>
-        <TabsContent value="payments" forceMount className="data-[state=inactive]:hidden">
+        <TabsContent value="homepage" forceMount className={PANEL}>
+          <HomepageSection initial={initial.homepage} bannedPhrases={banned} />
+        </TabsContent>
+        <TabsContent value="about" forceMount className={PANEL}>
+          <AboutSection initial={initial.about} bannedPhrases={banned} />
+        </TabsContent>
+        <TabsContent value="compliance" forceMount className={PANEL}>
+          <ComplianceSection initial={initial.compliance} />
+        </TabsContent>
+        <TabsContent value="claims" forceMount className={PANEL}>
+          <ClaimsSection initial={initial.claims} />
+        </TabsContent>
+        <TabsContent value="payments" forceMount className={PANEL}>
           <PaymentsSection initial={initial.payments} />
         </TabsContent>
         <TabsContent value="history">

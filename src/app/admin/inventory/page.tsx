@@ -4,6 +4,7 @@ import { isAdmin } from "@/lib/admin-auth";
 import { EnhancedInventoryManagement } from "@/ui/components/admin/enhanced-inventory-management";
 import { AdminPageHeader } from "@/ui/components/admin/admin-page-header";
 import { InventoryStatsBar } from "@/ui/components/admin/inventory-stats-bar";
+import { getSettings } from "@/lib/settings/get";
 import { fetchCategoriesForInventory } from "@/lib/queries/categories";
 import { fetchInventoryList, fetchInventoryStats } from "@/lib/queries/inventory";
 import type { Category, Inventory, Product } from "@/db/schema";
@@ -25,10 +26,11 @@ export default async function InventoryPage() {
 
   // Fetch the first screen of data on the server so products render on first
   // paint instead of after a client-side mount → fetch waterfall.
-  const [{ products }, stats, categories] = await Promise.all([
+  const [{ products }, stats, categories, claims] = await Promise.all([
     fetchInventoryList({ page: 1, limit: 200 }),
     fetchInventoryStats(),
     fetchCategoriesForInventory(),
+    getSettings("claims"),
   ]);
 
   const initialInventory = products
@@ -50,6 +52,7 @@ export default async function InventoryPage() {
           initialProducts={products as unknown as Product[]}
           initialInventory={initialInventory as unknown as Inventory[]}
           initialCategories={categories as unknown as Category[]}
+          bannedPhrases={claims.bannedPhrases}
         />
       </div>
     </div>
