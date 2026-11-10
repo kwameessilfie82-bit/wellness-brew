@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
 import { Copy, Download, ExternalLink, MessageCircle, Phone } from "lucide-react";
 import Link from "next/link";
@@ -165,6 +165,15 @@ function Card({ title, children, className }: { title: string; children: React.R
   );
 }
 
+async function writeClipboard(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function copyText(text: string, label = "Copied") {
   try {
     await navigator.clipboard.writeText(text);
@@ -180,6 +189,16 @@ export function OrderDetail(props: Props) {
   const { order, items, events, otherOrders, staff, products, templateLabels, customerLink } = props;
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  // Which button started the running action: only that one shows as busy; the
+  // rest stay blocked (no double submits) but don't fade, so it's clear what was pressed.
+  const lastPressed = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      lastPressed.current = (e.target as Element | null)?.closest?.("button") ?? null;
+    };
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
+  }, []);
 
   const status = order.status as OrderStatus;
   const fulfilment = order.fulfilment as Fulfilment;
@@ -189,11 +208,14 @@ export function OrderDetail(props: Props) {
   const due = Math.max(0, round2(order.total - order.amountPaid));
 
   /** Run a server action; toast + refresh. Resolves true on success. */
-  function run(fn: () => Promise<ActionResult>, success: string, after?: (ok: boolean) => void) {
+  function run(fn: () => Promise<ActionResult>, success: string | (() => string), after?: (ok: boolean) => void) {
+    const busy = lastPressed.current;
+    lastPressed.current = null;
+    busy?.setAttribute("data-busy", "");
     startTransition(async () => {
-      const r = await fn();
+      const r = await fn().finally(() => busy?.removeAttribute("data-busy"));
       if (r.ok) {
-        toast.success(success);
+        toast.success(typeof success === "function" ? success() : success);
         router.refresh();
       } else {
         toast.error(r.error);
@@ -207,7 +229,10 @@ export function OrderDetail(props: Props) {
   const claimRef = typeof claim?.data?.reference === "string" ? (claim.data.reference as string) : "";
 
   return (
-    <div className="space-y-4 pb-24">
+    <div
+      data-pending={pending || undefined}
+      className="space-y-4 pb-24 [&[data-pending]_button:disabled:not([data-busy])]:cursor-wait [&[data-pending]_button:disabled:not([data-busy])]:opacity-100 [&_button[data-busy]]:animate-pulse"
+    >
       {/* Header */}
       <div className="space-y-2">
         <Link href="/admin/orders" className="inline-flex h-10 items-center text-sm text-muted-foreground hover:text-foreground">
@@ -298,7 +323,7 @@ export function OrderDetail(props: Props) {
   );
 }
 
-type Run = (fn: () => Promise<ActionResult>, success: string, after?: (ok: boolean) => void) => void;
+type Run = (fn: () => Promise<ActionResult>, success: string | (() => string), after?: (ok: boolean) => void) => void;
 
 /* ───────────── status / next step ───────────── */
 
@@ -982,16 +1007,24 @@ function PaymentCard({
 /* ───────────── delivery ───────────── */
 
 function DeliveryCard({ order, pending, run }: { order: Order; pending: boolean; run: Run }) {
-  function rider(rotate: boolean) {
-    run(
-      async () => {
-        const r = await createRiderLink(order.id, rotate);
-        if (!r.ok) return r;
-        await copyText(r.url, rotate ? "New rider link copied" : "Rider link copied");
-        return { ok: true } as const;
-      },
-      rotate ? "New rider link created" : "Rider link ready",
-    );
+  // Copy reuses the current link; only "New rider link" replaces it. One toast per click.
+  function copyRider() {
+    let message = "Rider link copied";
+    run(async () => {
+      const r = await createRiderLink(order.id, false);
+      if (!r.ok) return r;
+      if (r.change === "created") message = "Rider link created and copied";
+      if (r.change === "renewed") message = "Old rider link had expired — new one copied";
+      return (await writeClipboard(r.url)) ? ({ ok: true } as const) : { ok: false as const, error: `Couldn't copy. Link: ${r.url}` };
+    }, () => message);
+  }
+  function newRider() {
+    if (!window.confirm("Create a new rider link? Any rider link you've already sent will stop working.")) return;
+    run(async () => {
+      const r = await createRiderLink(order.id, true);
+      if (!r.ok) return r;
+      return (await writeClipboard(r.url)) ? ({ ok: true } as const) : { ok: false as const, error: `New link created but couldn't copy. Link: ${r.url}` };
+    }, "New rider link created and copied — the old one no longer works");
   }
   return (
     <Card title="Delivery">
@@ -1008,10 +1041,10 @@ function DeliveryCard({ order, pending, run }: { order: Order; pending: boolean;
         ) : null}
       </dl>
       <div className="flex flex-col gap-2 sm:flex-row">
-        <Button type="button" variant="outline" className={cn(bigBtn, "flex-1")} disabled={pending} onClick={() => rider(false)}>
+        <Button type="button" variant="outline" className={cn(bigBtn, "flex-1")} disabled={pending} onClick={copyRider}>
           <Copy /> Copy rider link
         </Button>
-        <Button type="button" variant="outline" className={bigBtn} disabled={pending} onClick={() => rider(true)}>
+        <Button type="button" variant="outline" className={bigBtn} disabled={pending} onClick={newRider}>
           New rider link
         </Button>
       </div>
@@ -1202,6 +1235,8 @@ function eventText(e: EventRow, templateLabels: Record<string, string>, staffNam
     case "message_sent":
       return { text: `Sent “${templateLabels[str(d.template)] ?? str(d.template)}” on WhatsApp` };
     case "link_rotated":
+      if (str(d.which) === "rider" && str(d.change) === "created") return { text: "Rider link created" };
+      if (str(d.which) === "rider" && str(d.change) === "renewed") return { text: "Rider link renewed (old one expired)" };
       return { text: `${str(d.which) === "rider" ? "Rider" : "Customer"} link reset` };
     default:
       return { text: e.type.replace(/_/g, " ") };

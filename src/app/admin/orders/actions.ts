@@ -396,7 +396,15 @@ export async function rotateCustomerLink(orderId: string): Promise<Result<{ url:
 }
 
 /** Create (or rotate) the rider's proof-of-delivery link. */
-export async function createRiderLink(orderId: string, rotate = false): Promise<Result<{ url: string }>> {
+/**
+ * The rider link for this order. `rotate=false` (Copy) reuses the current link
+ * and only issues one when none exists or it expired; `rotate=true` (New rider
+ * link) always replaces it, revoking the old one. `change` says which happened.
+ */
+export async function createRiderLink(
+  orderId: string,
+  rotate = false,
+): Promise<Result<{ url: string; change: "none" | "created" | "renewed" | "rotated" }>> {
   const admin = await requireStaff();
   if (!admin) return { ok: false, error: "Not allowed" };
   const res = await db.transaction(async (tx) => {
@@ -406,15 +414,16 @@ export async function createRiderLink(orderId: string, rotate = false): Promise<
     if (isOrderStatus(order.status) && TERMINAL.includes(order.status)) return { ok: false, error: "This order is closed" } as Fail;
     let token = order.riderToken;
     const expired = !order.riderTokenExpiresAt || order.riderTokenExpiresAt < new Date();
-    if (!token || rotate || expired) {
+    const change = !token ? "created" : rotate ? "rotated" : expired ? "renewed" : "none";
+    if (change !== "none") {
       token = newToken();
       await tx
         .update(storeOrderTable)
         .set({ riderToken: token, riderTokenExpiresAt: new Date(Date.now() + RIDER_LINK_TTL_MS), riderFailedAttempts: 0, updatedAt: new Date() })
         .where(eq(storeOrderTable.id, orderId));
-      await addEvent(tx, orderId, { type: "staff", id: admin.id }, { type: "link_rotated", data: { which: "rider" } });
+      await addEvent(tx, orderId, { type: "staff", id: admin.id }, { type: "link_rotated", data: { which: "rider", change } });
     }
-    return { ok: true, url: `${siteUrl()}/r/${token}` } as const;
+    return { ok: true, url: `${siteUrl()}/r/${token}`, change } as const;
   });
   refresh(orderId);
   return res;
