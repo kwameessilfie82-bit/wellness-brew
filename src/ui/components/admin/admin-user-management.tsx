@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Edit, Trash2, Search, UserPlus, Shield, UserX } from "lucide-react";
+import { Edit, Loader2, Trash2, Search, UserPlus, Shield, UserX } from "lucide-react";
 
 import { Button } from "@/ui/primitives/button";
 import { Input } from "@/ui/primitives/input";
@@ -60,6 +60,7 @@ export function AdminUserManagement({ adminUser }: AdminUserManagementProps) {
   const [roles, setRoles] = useState<AdminRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -155,6 +156,7 @@ export function AdminUserManagement({ adminUser }: AdminUserManagementProps) {
 
     if (confirm("Are you sure you want to remove this user? This action cannot be undone.")) {
       try {
+        setDeletingId(adminId);
         const baseUserId = target.user?.id || target.userId;
         const res = await fetch(`/api/admin/users/${baseUserId}`, { method: 'DELETE' });
         if (!res.ok) {
@@ -165,6 +167,8 @@ export function AdminUserManagement({ adminUser }: AdminUserManagementProps) {
       } catch (e: unknown) {
         const errorMessage = e instanceof Error ? e.message : 'Failed to delete user';
         alert(errorMessage);
+      } finally {
+        setDeletingId(null);
       }
     }
   };
@@ -447,6 +451,7 @@ export function AdminUserManagement({ adminUser }: AdminUserManagementProps) {
                             variant="ghost"
                             size="icon"
                             disabled={!canDeleteTarget}
+                            loading={deletingId === admin.id}
                             onClick={() => canDeleteTarget && handleDeleteAdmin(admin.id)}
                             title={title}
                           >

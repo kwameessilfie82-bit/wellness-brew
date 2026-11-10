@@ -16,7 +16,6 @@ import { Input } from "@/ui/primitives/input";
 import { Label } from "@/ui/primitives/label";
 import { PasswordInput } from "@/ui/primitives/password-input";
 import { Separator } from "@/ui/primitives/separator";
-import { Loader2 } from "lucide-react";
 
 export function SignInPageClient({ devLogin = false }: { devLogin?: boolean }) {
   const { brand } = useSiteSettings();
@@ -28,6 +27,7 @@ export function SignInPageClient({ devLogin = false }: { devLogin?: boolean }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [emailLoading, setEmailLoading] = useState(false);
+  const [devBusy, setDevBusy] = useState(false);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,6 +46,7 @@ export function SignInPageClient({ devLogin = false }: { devLogin?: boolean }) {
 
   const handleDevLogin = async () => {
     setError("");
+    setDevBusy(true);
     setEmailLoading(true);
     try {
       const res = await prepareDevLogin();
@@ -55,6 +56,7 @@ export function SignInPageClient({ devLogin = false }: { devLogin?: boolean }) {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Dev login failed");
       setEmailLoading(false);
+      setDevBusy(false);
     }
   };
 
@@ -131,16 +133,10 @@ export function SignInPageClient({ devLogin = false }: { devLogin?: boolean }) {
                 type="submit"
                 size="lg"
                 className="w-full"
-                disabled={emailLoading}
+                disabled={loading}
+                loading={emailLoading && !devBusy}
               >
-                {emailLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Signing in...
-                  </>
-                ) : (
-                  "Sign in"
-                )}
+                {emailLoading && !devBusy ? "Signing in..." : "Sign in"}
               </Button>
               {devLogin ? (
                 <Button
@@ -148,7 +144,8 @@ export function SignInPageClient({ devLogin = false }: { devLogin?: boolean }) {
                   variant="outline"
                   size="lg"
                   className="w-full border-dashed border-amber-500 text-amber-700 dark:text-amber-400"
-                  disabled={emailLoading}
+                  disabled={loading}
+                  loading={emailLoading && devBusy}
                   onClick={handleDevLogin}
                   data-testid="dev-login"
                 >
@@ -167,14 +164,12 @@ export function SignInPageClient({ devLogin = false }: { devLogin?: boolean }) {
               size="lg"
               variant="outline"
               className="w-full gap-2"
-              disabled={loading}
+              disabled={emailLoading}
+              loading={loading}
               onClick={handleGoogleLogin}
             >
               {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Connecting to Google...
-                </>
+                "Connecting to Google..."
               ) : (
                 <>
                   <GoogleIcon className="h-5 w-5" />

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 
-import { Copy, Download, ExternalLink, MessageCircle, Phone } from "lucide-react";
+import { Copy, Download, ExternalLink, Loader2, MessageCircle, Phone } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -189,16 +189,9 @@ export function OrderDetail(props: Props) {
   const { order, items, events, otherOrders, staff, products, templateLabels, customerLink } = props;
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  // Which button started the running action: only that one shows as busy; the
-  // rest stay blocked (no double submits) but don't fade, so it's clear what was pressed.
-  const lastPressed = useRef<HTMLElement | null>(null);
-  useEffect(() => {
-    const onClick = (e: MouseEvent) => {
-      lastPressed.current = (e.target as Element | null)?.closest?.("button") ?? null;
-    };
-    document.addEventListener("click", onClick, true);
-    return () => document.removeEventListener("click", onClick, true);
-  }, []);
+  // Which action is running: only its button shows the spinner; the rest stay
+  // blocked (no double submits) but don't fade, so it's clear what was pressed.
+  const [activeKey, setActiveKey] = useState<string | null>(null);
 
   const status = order.status as OrderStatus;
   const fulfilment = order.fulfilment as Fulfilment;
@@ -208,12 +201,15 @@ export function OrderDetail(props: Props) {
   const due = Math.max(0, round2(order.total - order.amountPaid));
 
   /** Run a server action; toast + refresh. Resolves true on success. */
-  function run(fn: () => Promise<ActionResult>, success: string | (() => string), after?: (ok: boolean) => void) {
-    const busy = lastPressed.current;
-    lastPressed.current = null;
-    busy?.setAttribute("data-busy", "");
+  function run(key: string, fn: () => Promise<ActionResult>, success: string | (() => string), after?: (ok: boolean) => void) {
+    setActiveKey(key);
     startTransition(async () => {
-      const r = await fn().finally(() => busy?.removeAttribute("data-busy"));
+      let r: ActionResult;
+      try {
+        r = await fn();
+      } catch {
+        r = { ok: false, error: "Something went wrong. Please try again." };
+      }
       if (r.ok) {
         toast.success(typeof success === "function" ? success() : success);
         router.refresh();
@@ -231,7 +227,7 @@ export function OrderDetail(props: Props) {
   return (
     <div
       data-pending={pending || undefined}
-      className="space-y-4 pb-24 [&[data-pending]_button:disabled:not([data-busy])]:cursor-wait [&[data-pending]_button:disabled:not([data-busy])]:opacity-100 [&_button[data-busy]]:animate-pulse"
+      className="space-y-4 pb-24 [&[data-pending]_button:disabled:not([data-loading])]:cursor-wait [&[data-pending]_button:disabled:not([data-loading])]:opacity-100 [&_button[data-loading]]:opacity-100"
     >
       {/* Header */}
       <div className="space-y-2">
@@ -265,7 +261,7 @@ export function OrderDetail(props: Props) {
       <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         {/* Main column */}
         <div className="space-y-4">
-          <StatusCard order={order} status={status} fulfilment={fulfilment} pending={pending} run={run} />
+          <StatusCard order={order} status={status} fulfilment={fulfilment} pending={pending} activeKey={activeKey} run={run} />
           <WhatsAppCard order={order} status={status} fulfilment={fulfilment} templateLabels={templateLabels} />
           <ItemsCard
             order={order}
@@ -275,9 +271,10 @@ export function OrderDetail(props: Props) {
             isDelivery={isDelivery}
             due={due}
             pending={pending}
+            activeKey={activeKey}
             run={run}
           />
-          <TimelineCard orderId={order.id} events={events} staff={staff} templateLabels={templateLabels} pending={pending} run={run} />
+          <TimelineCard orderId={order.id} events={events} staff={staff} templateLabels={templateLabels} pending={pending} activeKey={activeKey} run={run} />
         </div>
 
         {/* Side column */}
@@ -289,23 +286,27 @@ export function OrderDetail(props: Props) {
             due={due}
             claimRef={claimRef}
             pending={pending}
+            activeKey={activeKey}
             run={run}
           />
-          {isDelivery ? <DeliveryCard order={order} pending={pending} run={run} /> : null}
+          {isDelivery ? <DeliveryCard order={order} pending={pending} activeKey={activeKey} run={run} /> : null}
           <Card title="Handled by">
-            <NativeSelect
-              className="h-11 w-full text-base"
-              value={order.assignedTo ?? ""}
-              disabled={pending}
-              onChange={(e) => run(() => assignOrder(order.id, e.target.value || null), "Assigned")}
-            >
-              <NativeSelectOption value="">Unassigned</NativeSelectOption>
-              {staff.map((s) => (
-                <NativeSelectOption key={s.id} value={s.id}>
-                  {s.name}
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
+            <div className="flex items-center gap-2">
+              <NativeSelect
+                className="h-11 w-full text-base"
+                value={order.assignedTo ?? ""}
+                disabled={pending}
+                onChange={(e) => run("assign", () => assignOrder(order.id, e.target.value || null), "Assigned")}
+              >
+                <NativeSelectOption value="">Unassigned</NativeSelectOption>
+                {staff.map((s) => (
+                  <NativeSelectOption key={s.id} value={s.id}>
+                    {s.name}
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>
+              {pending && activeKey === "assign" ? <Loader2 className="size-5 shrink-0 animate-spin text-muted-foreground" aria-hidden /> : null}
+            </div>
           </Card>
           {customerLink ? (
             <InvoiceCard
@@ -316,14 +317,14 @@ export function OrderDetail(props: Props) {
               confirmed={!["awaiting_customer", "received"].includes(order.status)}
             />
           ) : null}
-          <LinkCard orderId={order.id} customerLink={customerLink} pending={pending} run={run} />
+          <LinkCard orderId={order.id} customerLink={customerLink} pending={pending} activeKey={activeKey} run={run} />
         </div>
       </div>
     </div>
   );
 }
 
-type Run = (fn: () => Promise<ActionResult>, success: string | (() => string), after?: (ok: boolean) => void) => void;
+type Run = (key: string, fn: () => Promise<ActionResult>, success: string | (() => string), after?: (ok: boolean) => void) => void;
 
 /* ───────────── status / next step ───────────── */
 
@@ -332,14 +333,17 @@ function StatusCard({
   status,
   fulfilment,
   pending,
+  activeKey,
   run,
 }: {
   order: Order;
   status: OrderStatus;
   fulfilment: Fulfilment;
   pending: boolean;
+  activeKey: string | null;
   run: Run;
 }) {
+  const busy = (k: string) => pending && activeKey === k;
   const [cancelOpen, setCancelOpen] = useState(false);
   const [undoOpen, setUndoOpen] = useState(false);
   const [reason, setReason] = useState<string>(CANCEL_REASONS[0]);
@@ -352,8 +356,9 @@ function StatusCard({
   const undoTargets = UNDO_TRANSITIONS[status] ?? [];
   const needsFee = fulfilment === "delivery" && !order.deliveryFeeConfirmed;
 
-  function go(to: string, extra: { reason?: string; note?: string; undo?: boolean } = {}, allowNegativeStock = false) {
+  function go(key: string, to: string, extra: { reason?: string; note?: string; undo?: boolean } = {}, allowNegativeStock = false) {
     run(
+      key,
       async () => {
         const r = await changeOrderStatus({ orderId: order.id, to, expectedVersion: order.version, allowNegativeStock, ...extra });
         if (!r.ok && r.code === "stock" && window.confirm(r.error)) {
@@ -387,7 +392,8 @@ function StatusCard({
                 className={cn(bigBtn, "sm:min-w-44")}
                 variant={i === 0 ? "default" : "outline"}
                 disabled={pending || blocked}
-                onClick={() => go(s)}
+                loading={busy("status:" + s)}
+                onClick={() => go("status:" + s, s)}
               >
                 {STATUS_ACTIONS[s]}
               </Button>
@@ -414,7 +420,7 @@ function StatusCard({
         </button>
       ) : null}
 
-      <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
+      <Dialog open={cancelOpen} onOpenChange={(o) => { if (!pending) setCancelOpen(o); }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Cancel {order.orderNumber}?</DialogTitle>
@@ -431,17 +437,17 @@ function StatusCard({
             <input className={inputCls} placeholder="Note (optional)" value={note} onChange={(e) => setNote(e.target.value)} />
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setCancelOpen(false)}>
+            <Button type="button" variant="outline" disabled={pending} onClick={() => setCancelOpen(false)}>
               Keep order
             </Button>
-            <Button type="button" variant="destructive" disabled={pending} onClick={() => go("cancelled", { reason, note })}>
+            <Button type="button" variant="destructive" disabled={pending} loading={busy("cancel")} onClick={() => go("cancel", "cancelled", { reason, note })}>
               Cancel order
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={undoOpen} onOpenChange={setUndoOpen}>
+      <Dialog open={undoOpen} onOpenChange={(o) => { if (!pending) setUndoOpen(o); }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Undo last step</DialogTitle>
@@ -463,10 +469,10 @@ function StatusCard({
             />
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setUndoOpen(false)}>
+            <Button type="button" variant="outline" disabled={pending} onClick={() => setUndoOpen(false)}>
               Close
             </Button>
-            <Button type="button" disabled={pending || !undoNote.trim()} onClick={() => go(undoTo, { undo: true, note: undoNote })}>
+            <Button type="button" disabled={pending || !undoNote.trim()} loading={busy("undo")} onClick={() => go("undo", undoTo, { undo: true, note: undoNote })}>
               Undo
             </Button>
           </DialogFooter>
@@ -506,11 +512,15 @@ function WhatsAppCard({
   ].filter((k): k is string => !!k);
 
   async function send(key: string) {
-    setBusy(key);
+    setBusy("send:" + key);
     // Open synchronously so mobile popup blockers allow it, then point it at wa.me.
     const win = window.open("", "_blank");
-    const r = await prepareMessage(order.id, key);
-    setBusy(null);
+    let r: Awaited<ReturnType<typeof prepareMessage>>;
+    try {
+      r = await prepareMessage(order.id, key);
+    } finally {
+      setBusy(null);
+    }
     if (!r.ok) {
       win?.close();
       toast.error(r.error);
@@ -521,9 +531,13 @@ function WhatsAppCard({
   }
 
   async function copy(key: string) {
-    setBusy(key);
-    const r = await prepareMessage(order.id, key);
-    setBusy(null);
+    setBusy("copy:" + key);
+    let r: Awaited<ReturnType<typeof prepareMessage>>;
+    try {
+      r = await prepareMessage(order.id, key);
+    } finally {
+      setBusy(null);
+    }
     if (!r.ok) return toast.error(r.error);
     await copyText(r.text, "Message copied");
   }
@@ -538,6 +552,7 @@ function WhatsAppCard({
               variant="outline"
               className="h-12 flex-1 justify-start gap-2 text-left whitespace-normal"
               disabled={busy !== null}
+              loading={busy === "send:" + k}
               onClick={() => send(k)}
             >
               <MessageCircle className="text-green-600" />
@@ -550,6 +565,7 @@ function WhatsAppCard({
               className="size-12"
               aria-label={`Copy "${templateLabels[k] ?? k}" message`}
               disabled={busy !== null}
+              loading={busy === "copy:" + k}
               onClick={() => copy(k)}
             >
               <Copy />
@@ -674,6 +690,7 @@ function ItemsCard({
   isDelivery,
   due,
   pending,
+  activeKey,
   run,
 }: {
   order: Order;
@@ -683,8 +700,10 @@ function ItemsCard({
   isDelivery: boolean;
   due: number;
   pending: boolean;
+  activeKey: string | null;
   run: Run;
 }) {
+  const busy = (k: string) => pending && activeKey === k;
   const [editing, setEditing] = useState(false);
   const [lines, setLines] = useState<Line[]>([]);
   const [note, setNote] = useState("");
@@ -712,6 +731,7 @@ function ItemsCard({
 
   function save() {
     run(
+      "items",
       () =>
         updateOrderItems({
           orderId: order.id,
@@ -791,10 +811,10 @@ function ItemsCard({
           </div>
           <input className={inputCls} placeholder="Note about this change (optional)" value={note} onChange={(e) => setNote(e.target.value)} />
           <div className="flex gap-2">
-            <Button type="button" className={cn(bigBtn, "flex-1")} disabled={pending || lines.every((l) => l.quantity <= 0)} onClick={save}>
+            <Button type="button" className={cn(bigBtn, "flex-1")} disabled={pending || lines.every((l) => l.quantity <= 0)} loading={busy("items")} onClick={save}>
               Save items
             </Button>
-            <Button type="button" variant="outline" className={bigBtn} onClick={() => setEditing(false)}>
+            <Button type="button" variant="outline" className={bigBtn} disabled={pending} onClick={() => setEditing(false)}>
               Cancel
             </Button>
           </div>
@@ -866,7 +886,8 @@ function ItemsCard({
               type="button"
               className="h-11"
               disabled={pending || fee.trim() === ""}
-              onClick={() => run(() => setDeliveryFee(order.id, order.version, Number(fee)), "Delivery fee saved")}
+              loading={busy("fee")}
+              onClick={() => run("fee", () => setDeliveryFee(order.id, order.version, Number(fee)), "Delivery fee saved")}
             >
               Save
             </Button>
@@ -885,6 +906,7 @@ function PaymentCard({
   due,
   claimRef,
   pending,
+  activeKey,
   run,
 }: {
   order: Order;
@@ -892,8 +914,10 @@ function PaymentCard({
   due: number;
   claimRef: string;
   pending: boolean;
+  activeKey: string | null;
   run: Run;
 }) {
+  const busy = (k: string) => pending && activeKey === k;
   const [method, setMethod] = useState<string>(order.preferredPayment && PAYMENT_METHODS.includes(order.preferredPayment as PaymentMethod) ? order.preferredPayment : "momo");
   const [amount, setAmount] = useState(String(due || ""));
   const [reference, setReference] = useState("");
@@ -931,7 +955,8 @@ function PaymentCard({
               variant="outline"
               className={bigBtn}
               disabled={pending}
-              onClick={() => run(() => rejectPaymentClaim(order.id, order.version, "Payment not received"), "Marked as not received")}
+              loading={busy("reject")}
+              onClick={() => run("reject", () => rejectPaymentClaim(order.id, order.version, "Payment not received"), "Marked as not received")}
             >
               Not received
             </Button>
@@ -947,7 +972,8 @@ function PaymentCard({
             type="button"
             className={cn(bigBtn, "w-full")}
             disabled={pending}
-            onClick={() => run(() => markRefunded(order.id, order.version, refundRef), "Marked refunded")}
+            loading={busy("refund")}
+            onClick={() => run("refund", () => markRefunded(order.id, order.version, refundRef), "Marked refunded")}
           >
             Mark refunded
           </Button>
@@ -960,6 +986,7 @@ function PaymentCard({
           onSubmit={(e) => {
             e.preventDefault();
             run(
+              "pay",
               () => recordPayment({ orderId: order.id, expectedVersion: order.version, method, amount: Number(amount), reference }),
               "Payment recorded",
               (ok) => {
@@ -995,7 +1022,7 @@ function PaymentCard({
             value={reference}
             onChange={(e) => setReference(e.target.value)}
           />
-          <Button type="submit" className={cn(bigBtn, "w-full")} disabled={pending}>
+          <Button type="submit" className={cn(bigBtn, "w-full")} disabled={pending} loading={busy("pay")}>
             Record payment
           </Button>
         </form>
@@ -1006,11 +1033,12 @@ function PaymentCard({
 
 /* ───────────── delivery ───────────── */
 
-function DeliveryCard({ order, pending, run }: { order: Order; pending: boolean; run: Run }) {
+function DeliveryCard({ order, pending, activeKey, run }: { order: Order; pending: boolean; activeKey: string | null; run: Run }) {
+  const busy = (k: string) => pending && activeKey === k;
   // Copy reuses the current link; only "New rider link" replaces it. One toast per click.
   function copyRider() {
     let message = "Rider link copied";
-    run(async () => {
+    run("rider-copy", async () => {
       const r = await createRiderLink(order.id, false);
       if (!r.ok) return r;
       if (r.change === "created") message = "Rider link created and copied";
@@ -1020,7 +1048,7 @@ function DeliveryCard({ order, pending, run }: { order: Order; pending: boolean;
   }
   function newRider() {
     if (!window.confirm("Create a new rider link? Any rider link you've already sent will stop working.")) return;
-    run(async () => {
+    run("rider-new", async () => {
       const r = await createRiderLink(order.id, true);
       if (!r.ok) return r;
       return (await writeClipboard(r.url)) ? ({ ok: true } as const) : { ok: false as const, error: `New link created but couldn't copy. Link: ${r.url}` };
@@ -1041,10 +1069,10 @@ function DeliveryCard({ order, pending, run }: { order: Order; pending: boolean;
         ) : null}
       </dl>
       <div className="flex flex-col gap-2 sm:flex-row">
-        <Button type="button" variant="outline" className={cn(bigBtn, "flex-1")} disabled={pending} onClick={copyRider}>
+        <Button type="button" variant="outline" className={cn(bigBtn, "flex-1")} disabled={pending} loading={busy("rider-copy")} onClick={copyRider}>
           <Copy /> Copy rider link
         </Button>
-        <Button type="button" variant="outline" className={bigBtn} disabled={pending} onClick={newRider}>
+        <Button type="button" variant="outline" className={bigBtn} disabled={pending} loading={busy("rider-new")} onClick={newRider}>
           New rider link
         </Button>
       </div>
@@ -1105,7 +1133,7 @@ function InvoiceCard({
           ? "PDF invoice with your payment details. It updates automatically when the order changes."
           : "Pro-forma until you confirm the order (prices and fee can still change)."}
       </p>
-      <Button type="button" className="h-11 w-full bg-[#25D366] text-white hover:bg-[#1ebe5a]" onClick={share} disabled={sharing}>
+      <Button type="button" className="h-11 w-full bg-[#25D366] text-white hover:bg-[#1ebe5a]" onClick={share} loading={sharing}>
         <MessageCircle /> {sharing ? "Preparing PDF…" : "Send PDF on WhatsApp"}
       </Button>
       <div className="flex gap-2">
@@ -1128,11 +1156,13 @@ function LinkCard({
   orderId,
   customerLink,
   pending,
+  activeKey,
   run,
 }: {
   orderId: string;
   customerLink: string | null;
   pending: boolean;
+  activeKey: string | null;
   run: Run;
 }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -1158,7 +1188,7 @@ function LinkCard({
       <button type="button" className="h-9 text-sm text-muted-foreground underline underline-offset-2" onClick={() => setConfirmOpen(true)}>
         Reset link
       </button>
-      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+      <Dialog open={confirmOpen} onOpenChange={(o) => { if (!pending) setConfirmOpen(o); }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Reset customer link?</DialogTitle>
@@ -1167,13 +1197,14 @@ function LinkCard({
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setConfirmOpen(false)}>
+            <Button type="button" variant="outline" disabled={pending} onClick={() => setConfirmOpen(false)}>
               Keep link
             </Button>
             <Button
               type="button"
               disabled={pending}
-              onClick={() => run(() => rotateCustomerLink(orderId), "Link reset", (ok) => ok && setConfirmOpen(false))}
+              loading={pending && activeKey === "rotate"}
+              onClick={() => run("rotate", () => rotateCustomerLink(orderId), "Link reset", (ok) => ok && setConfirmOpen(false))}
             >
               Reset link
             </Button>
@@ -1249,6 +1280,7 @@ function TimelineCard({
   staff,
   templateLabels,
   pending,
+  activeKey,
   run,
 }: {
   orderId: string;
@@ -1256,6 +1288,7 @@ function TimelineCard({
   staff: { id: string; name: string }[];
   templateLabels: Record<string, string>;
   pending: boolean;
+  activeKey: string | null;
   run: Run;
 }) {
   const [note, setNote] = useState("");
@@ -1267,7 +1300,7 @@ function TimelineCard({
         className="space-y-2"
         onSubmit={(e) => {
           e.preventDefault();
-          run(() => addOrderNote(orderId, note), "Note added", (ok) => ok && setNote(""));
+          run("note", () => addOrderNote(orderId, note), "Note added", (ok) => ok && setNote(""));
         }}
       >
         <textarea
@@ -1279,7 +1312,7 @@ function TimelineCard({
         />
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs text-muted-foreground">Internal — not shown to the customer</span>
-          <Button type="submit" className="h-11" disabled={pending || !note.trim()}>
+          <Button type="submit" className="h-11" disabled={pending || !note.trim()} loading={pending && activeKey === "note"}>
             Add note
           </Button>
         </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Baby, Heart, Pill, Stethoscope, Syringe, Tablet, TestTube, Utensils, Shield, Eye, Brain, Activity } from "lucide-react";
+import { Baby, Heart, Pill, Stethoscope, Syringe, Tablet, TestTube, Utensils, Shield, Eye, Brain, Activity, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 import {
@@ -82,7 +82,10 @@ export function DynamicCategoryNavigation() {
           <NavigationMenuItem>
             <NavigationMenuTrigger>Categories</NavigationMenuTrigger>
             <NavigationMenuContent>
-              <div className="p-4">Loading categories...</div>
+              <div className="flex items-center gap-2 p-4">
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                Loading categories...
+              </div>
             </NavigationMenuContent>
           </NavigationMenuItem>
         </NavigationMenuList>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Crosshair, Loader2, MapPin, X } from "lucide-react";
+import { Crosshair, MapPin, X } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { accuracyLabel, mapsUrl } from "@/lib/orders/location";
@@ -171,7 +171,7 @@ export function LocationPicker({
         ) : rough ? (
           <p className="text-muted-foreground">This location is approximate — please add a landmark below so the rider can find you.</p>
         ) : null}
-        <Button type="button" variant="outline" size="sm" onClick={locate}>
+        <Button type="button" variant="outline" size="sm" onClick={locate} loading={state.kind === "locating"}>
           <Crosshair className="mr-2 h-4 w-4" />
           Update location
         </Button>
@@ -186,13 +186,9 @@ export function LocationPicker({
         variant="outline"
         className="w-full sm:w-auto"
         onClick={locate}
-        disabled={state.kind === "locating"}
+        loading={state.kind === "locating"}
       >
-        {state.kind === "locating" ? (
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-        ) : (
-          <Crosshair className="mr-2 h-4 w-4" />
-        )}
+        <Crosshair className="mr-2 h-4 w-4" />
         {state.kind === "locating" ? "Finding you…" : "Use my current location"}
       </Button>
       {state.kind === "error" ? (

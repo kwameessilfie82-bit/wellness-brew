@@ -1,7 +1,7 @@
 "use client";
 
 import { History, Plus, RotateCcw } from "lucide-react";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import {
@@ -423,15 +423,21 @@ function PaymentsSection({ initial }: { initial: SettingsMap["payments"] }) {
 
 function HistoryPanel({ history }: { history: SettingHistoryEntry[] }) {
   const [pending, startTransition] = useTransition();
-  const revert = (id: string) =>
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const revert = (id: string) => {
+    setActiveId(id);
     startTransition(async () => {
       const res = await revertSettingChange(id);
       if (res.ok) {
         toast.success("Reverted. Reloading…");
         // Section forms hold their own state; reload so they pick up the reverted values.
         window.location.reload();
-      } else toast.error(res.error);
+      } else {
+        toast.error(res.error);
+        setActiveId(null);
+      }
     });
+  };
 
   return (
     <SectionCard title="Change history" description="Every settings change, newest first. Undo restores what was there before that change.">
@@ -451,7 +457,7 @@ function HistoryPanel({ history }: { history: SettingHistoryEntry[] }) {
                   · {h.changedByName ?? "Unknown"} · {new Date(h.changedAt).toLocaleString()}
                 </span>
               </span>
-              <Button size="sm" variant="ghost" disabled={pending} onClick={() => revert(h.id)}>
+              <Button size="sm" variant="ghost" disabled={pending} loading={pending && activeId === h.id} onClick={() => revert(h.id)}>
                 <RotateCcw className="mr-1 h-4 w-4" /> Undo this change
               </Button>
             </li>

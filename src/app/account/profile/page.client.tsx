@@ -243,15 +243,8 @@ export function ProfilePageClient() {
               </CardContent>
             </Card>
 
-            <Button type="submit" size="lg" className="w-full" disabled={saving}>
-              {saving ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving…
-                </>
-              ) : (
-                "Save profile"
-              )}
+            <Button type="submit" size="lg" className="w-full" loading={saving}>
+              {saving ? "Saving…" : "Save profile"}
             </Button>
           </form>
         </div>

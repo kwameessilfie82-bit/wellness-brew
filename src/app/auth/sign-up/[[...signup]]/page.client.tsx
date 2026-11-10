@@ -19,7 +19,6 @@ import { Input } from "@/ui/primitives/input";
 import { PasswordInput } from "@/ui/primitives/password-input";
 import { Label } from "@/ui/primitives/label";
 import { Separator } from "@/ui/primitives/separator";
-import { Loader2 } from "lucide-react";
 
 export function SignUpPageClient({ slides = [] }: { slides?: Slide[] }) {
   const { brand } = useSiteSettings();
@@ -201,15 +200,8 @@ export function SignUpPageClient({ slides = [] }: { slides?: Slide[] }) {
                     placeholder="At least 6 characters"
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={emailLoading}>
-                  {emailLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating account...
-                    </>
-                  ) : (
-                    "Create account"
-                  )}
+                <Button type="submit" className="w-full" disabled={loading} loading={emailLoading}>
+                  {emailLoading ? "Creating account..." : "Create account"}
                 </Button>
               </form>
 
@@ -221,15 +213,13 @@ export function SignUpPageClient({ slides = [] }: { slides?: Slide[] }) {
 
               <Button
                 className="w-full gap-2"
-                disabled={loading}
+                disabled={emailLoading}
+                loading={loading}
                 onClick={handleGoogleSignUp}
                 variant="outline"
               >
                 {loading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Connecting to Google...
-                  </>
+                  "Connecting to Google..."
                 ) : (
                   <>
                     <GoogleIcon className="h-5 w-5" />

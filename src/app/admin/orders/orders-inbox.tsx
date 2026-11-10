@@ -74,6 +74,9 @@ export function OrdersInbox({
   const [cursor, setCursor] = useState(initialCursor);
   const [seen, setSeen] = useState(initialRows);
   const [loading, startLoad] = useTransition();
+  const [navigating, startNav] = useTransition();
+  const [navTab, setNavTab] = useState<string | null>(null);
+  const [enablingAlerts, setEnablingAlerts] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const [perm, setPerm] = useState<NotificationPermission | "unsupported">("unsupported");
 
@@ -134,12 +137,18 @@ export function OrdersInbox({
   function submitSearch(e: React.FormEvent) {
     e.preventDefault();
     const v = input.trim();
-    router.replace(v ? `/admin/orders?q=${encodeURIComponent(v)}` : `/admin/orders?tab=${tab}`);
+    setNavTab(null);
+    startNav(() => {
+      router.replace(v ? `/admin/orders?q=${encodeURIComponent(v)}` : `/admin/orders?tab=${tab}`);
+    });
   }
 
   function changeTab(key: string) {
     setInput("");
-    router.replace(`/admin/orders?tab=${key}`);
+    setNavTab(key);
+    startNav(() => {
+      router.replace(`/admin/orders?tab=${key}`);
+    });
   }
 
   function loadMore() {
@@ -158,14 +167,23 @@ export function OrdersInbox({
 
   async function enableAlerts() {
     if (typeof Notification === "undefined") return;
-    setPerm(await Notification.requestPermission());
+    setEnablingAlerts(true);
+    try {
+      setPerm(await Notification.requestPermission());
+    } finally {
+      setEnablingAlerts(false);
+    }
   }
 
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         <form onSubmit={submitSearch} className="relative flex-1">
-          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          {navigating && navTab === null ? (
+            <Loader2 className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+          ) : (
+            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          )}
           <input
             type="search"
             inputMode="search"
@@ -176,7 +194,7 @@ export function OrdersInbox({
           />
         </form>
         {perm === "default" ? (
-          <Button type="button" variant="outline" className="h-12 shrink-0" onClick={enableAlerts}>
+          <Button type="button" variant="outline" className="h-12 shrink-0" onClick={enableAlerts} loading={enablingAlerts}>
             <Bell /> Enable alerts
           </Button>
         ) : null}
@@ -196,6 +214,7 @@ export function OrdersInbox({
                 active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-accent",
               )}
             >
+              {navigating && navTab === t.key ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
               {t.label}
               <span
                 className={cn(
@@ -280,8 +299,8 @@ export function OrdersInbox({
       )}
 
       {cursor ? (
-        <Button type="button" variant="outline" className="h-12 w-full" onClick={loadMore} disabled={loading}>
-          {loading ? <Loader2 className="animate-spin" /> : null} Load more
+        <Button type="button" variant="outline" className="h-12 w-full" onClick={loadMore} loading={loading}>
+          Load more
         </Button>
       ) : null}
     </div>

@@ -54,6 +54,7 @@ export function HandoffPanel(props: {
 }) {
   const [mobile, setMobile] = useState<boolean | null>(null);
   const [opening, setOpening] = useState(false);
+  const [copying, setCopying] = useState(false);
   const opened = useRef(false);
 
   const open = () => {
@@ -81,11 +82,14 @@ export function HandoffPanel(props: {
   }, []);
 
   const copy = async () => {
+    setCopying(true);
     try {
       await navigator.clipboard.writeText(props.message);
       toast.success("Order message copied. Paste it in WhatsApp.");
     } catch {
       toast.error("Couldn't copy. Select the text below and copy it.");
+    } finally {
+      setCopying(false);
     }
   };
 
@@ -96,11 +100,11 @@ export function HandoffPanel(props: {
         Your order is saved, but we only see it once you send the message. We'll confirm stock, delivery and payment there.
       </p>
       {opening ? <p className="mt-3 text-sm font-medium">Opening WhatsApp…</p> : null}
-      <Button type="button" size="lg" className={`mt-4 h-12 w-full rounded-full text-base ${WA_GREEN}`} onClick={open} data-testid="send-whatsapp">
+      <Button type="button" size="lg" className={`mt-4 h-12 w-full rounded-full text-base ${WA_GREEN}`} loading={opening} onClick={open} data-testid="send-whatsapp">
         <MessageCircle className="mr-2 h-5 w-5" /> Send order on WhatsApp
       </Button>
       <div className="mt-3 flex flex-wrap gap-2">
-        <Button type="button" variant="outline" size="sm" className="rounded-full" onClick={copy}>
+        <Button type="button" variant="outline" size="sm" className="rounded-full" loading={copying} onClick={copy}>
           <Copy className="mr-1 h-4 w-4" /> Copy message
         </Button>
         {props.callNumber ? (
@@ -163,7 +167,7 @@ export function PaidForm({ token }: { token: string }) {
         aria-label="Payment transaction ID"
         maxLength={120}
       />
-      <Button type="submit" disabled={pending} className="shrink-0">
+      <Button type="submit" disabled={pending} loading={pending} className="shrink-0">
         {pending ? "Sending…" : "I've paid"}
       </Button>
     </form>
@@ -178,6 +182,7 @@ export function CustomerActions(props: {
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
+  const [active, setActive] = useState<"received" | "cancel">("received");
   if (!props.canCancel && !props.canConfirmReceived) return null;
   const run = (fn: () => Promise<{ ok: true } | { ok: false; error: string }>, success: string) =>
     start(async () => {
@@ -194,8 +199,12 @@ export function CustomerActions(props: {
           type="button"
           className="flex-1 rounded-full"
           disabled={pending}
+          loading={pending && active === "received"}
           onClick={() => {
-            if (window.confirm("Confirm you have your order?")) run(() => customerReceived(props.token), "Thanks! Enjoy your tea.");
+            if (window.confirm("Confirm you have your order?")) {
+              setActive("received");
+              run(() => customerReceived(props.token), "Thanks! Enjoy your tea.");
+            }
           }}
         >
           {props.receivedLabel}
@@ -207,8 +216,12 @@ export function CustomerActions(props: {
           variant="outline"
           className="flex-1 rounded-full text-destructive"
           disabled={pending}
+          loading={pending && active === "cancel"}
           onClick={() => {
-            if (window.confirm("Cancel this order?")) run(() => customerCancel(props.token), "Order cancelled.");
+            if (window.confirm("Cancel this order?")) {
+              setActive("cancel");
+              run(() => customerCancel(props.token), "Order cancelled.");
+            }
           }}
         >
           Cancel order
@@ -225,6 +238,7 @@ export function RestoreCart({
 }) {
   const router = useRouter();
   const { addToCart, updateQuantity, items: cart } = useCart();
+  const [going, setGoing] = useState(false);
   const restorable = items.filter((i) => i.id);
   if (restorable.length === 0) return null;
   return (
@@ -232,7 +246,9 @@ export function RestoreCart({
       type="button"
       size="lg"
       className="mt-6 w-full rounded-full"
+      loading={going}
       onClick={() => {
+        setGoing(true);
         for (const i of restorable) {
           const existing = cart.find((c) => c.id === i.id)?.quantity ?? 0;
           if (existing === 0) addToCart({ id: i.id, name: i.name, price: i.price, image: i.image });

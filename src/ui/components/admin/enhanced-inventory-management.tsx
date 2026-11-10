@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Minus, Loader2, Plus, Search, AlertTriangle, TrendingUp, TrendingDown, Package, Edit, Trash2, CheckSquare } from "lucide-react";
+import { Minus, Plus, Search, AlertTriangle, TrendingUp, TrendingDown, Package, Edit, Trash2, CheckSquare } from "lucide-react";
 
 import { Button } from "@/ui/primitives/button";
 import { Input } from "@/ui/primitives/input";
@@ -112,6 +112,8 @@ export function EnhancedInventoryManagement({
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isSavingStock, setIsSavingStock] = useState(false);
   const [updatingReserved, setUpdatingReserved] = useState<string | null>(null);
+  // Row-level action in flight, as "<action>:<productId>" (finalize / edit / delete).
+  const [rowAction, setRowAction] = useState<string | null>(null);
   const addImageFile = async (file: File, isEdit = false) => {
     if (!file) return;
     // Guard against absurd originals; anything reasonable is auto-compressed below.
@@ -433,6 +435,7 @@ export function EnhancedInventoryManagement({
     if (!confirm('Are you sure you want to delete this product?')) return;
 
     try {
+      setRowAction("delete:" + productId);
       const url = `/api/admin/inventory/${productId}`;
       console.log('🔍 Deleting product at URL:', url);
       const response = await fetch(url, {
@@ -444,20 +447,25 @@ export function EnhancedInventoryManagement({
       }
     } catch (error) {
       console.error('Error deleting product:', error);
+    } finally {
+      setRowAction(null);
     }
   };
 
   // Finalize: set reserved to 0 so available equals current stock
   const handleFinalizeReservations = async (productId: string) => {
     try {
+      setRowAction("finalize:" + productId);
       await fetch(`/api/admin/inventory/${productId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ finalizeReservations: true }),
       });
-      void refreshInventoryData();
+      await refreshInventoryData();
     } catch (error) {
       console.error('Error finalizing reservations:', error);
+    } finally {
+      setRowAction(null);
     }
   };
 
@@ -507,7 +515,7 @@ export function EnhancedInventoryManagement({
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <Dialog open={isCreateDialogOpen} onOpenChange={(open) => { if (!isCreating) setIsCreateDialogOpen(open); }}>
             <DialogTrigger asChild>
               <Button className="w-full sm:w-auto">
                 <Plus className="mr-2 h-4 w-4" />
@@ -707,18 +715,11 @@ export function EnhancedInventoryManagement({
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)} disabled={isCreating}>
                 Cancel
               </Button>
-              <Button onClick={handleCreateProduct} disabled={isCreating || isUploadingImage} aria-busy={isCreating}>
-                {isCreating ? (
-                  <span className="inline-flex items-center gap-2 text-primary-foreground">
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                    Creating...
-                  </span>
-                ) : (
-                  "Create Product"
-                )}
+              <Button onClick={handleCreateProduct} disabled={isUploadingImage} loading={isCreating}>
+                {isCreating ? "Creating..." : isUploadingImage ? "Uploading image..." : "Create Product"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -727,7 +728,7 @@ export function EnhancedInventoryManagement({
       </div>
 
       {/* Edit Product Dialog */}
-        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <Dialog open={isEditDialogOpen} onOpenChange={(open) => { if (!isUpdating) setIsEditDialogOpen(open); }}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Edit Product</DialogTitle>
@@ -922,18 +923,11 @@ export function EnhancedInventoryManagement({
               </div>
             )}
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} disabled={isUpdating}>
                 Cancel
               </Button>
-              <Button onClick={handleUpdateProduct} disabled={isUpdating || isUploadingImage} aria-busy={isUpdating}>
-                {isUpdating ? (
-                  <span className="inline-flex items-center gap-2 text-primary-foreground">
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                    Updating...
-                  </span>
-                ) : (
-                  "Update Product"
-                )}
+              <Button onClick={handleUpdateProduct} disabled={isUploadingImage} loading={isUpdating}>
+                {isUpdating ? "Updating..." : isUploadingImage ? "Uploading image..." : "Update Product"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -1198,13 +1192,10 @@ export function EnhancedInventoryManagement({
                               (inventoryData?.quantityReserved || 0) >= (inventoryData?.quantityInStock || 0) ||
                               updatingReserved === product.id
                             }
+                            loading={updatingReserved === product.id}
                             title="Increase reserved"
                           >
-                            {updatingReserved === product.id ? (
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                            ) : (
-                              <Plus className="h-3 w-3" />
-                            )}
+                            <Plus className="h-3 w-3" />
                           </Button>
                           <Button
                             size="sm"
@@ -1215,13 +1206,10 @@ export function EnhancedInventoryManagement({
                               (inventoryData?.quantityReserved || 0) <= 0 ||
                               updatingReserved === product.id
                             }
+                            loading={updatingReserved === product.id}
                             title="Decrease reserved"
                           >
-                            {updatingReserved === product.id ? (
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                            ) : (
-                              <Minus className="h-3 w-3" />
-                            )}
+                            <Minus className="h-3 w-3" />
                           </Button>
                         </div>
                       </div>
@@ -1258,6 +1246,7 @@ export function EnhancedInventoryManagement({
                           variant="ghost"
                           size="sm"
                           disabled={(inventoryData?.quantityReserved || 0) === 0}
+                          loading={rowAction === "finalize:" + product.id}
                           onClick={() => handleFinalizeReservations(product.id)}
                           title="Finalize: set reserved to 0"
                         >
@@ -1266,8 +1255,11 @@ export function EnhancedInventoryManagement({
                         <Button
                           variant="ghost"
                           size="sm"
+                          disabled={rowAction !== null}
+                          loading={rowAction === "edit:" + product.id}
                           onClick={async () => {
                             try {
+                              setRowAction("edit:" + product.id);
                               const res = await fetch(
                                 `/api/admin/inventory/${product.id}`,
                               );
@@ -1279,6 +1271,8 @@ export function EnhancedInventoryManagement({
                               }
                             } catch {
                               setEditingProduct(product);
+                            } finally {
+                              setRowAction(null);
                             }
                             setIsEditDialogOpen(true);
                           }}
@@ -1288,6 +1282,8 @@ export function EnhancedInventoryManagement({
                         <Button
                           variant="ghost"
                           size="sm"
+                          disabled={rowAction !== null}
+                          loading={rowAction === "delete:" + product.id}
                           onClick={() => handleDeleteProduct(product.id)}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -1303,7 +1299,7 @@ export function EnhancedInventoryManagement({
       </Card>
 
       {/* Stock Edit Dialog */}
-      <Dialog open={isStockDialogOpen} onOpenChange={setIsStockDialogOpen}>
+      <Dialog open={isStockDialogOpen} onOpenChange={(open) => { if (!isSavingStock) setIsStockDialogOpen(open); }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Stock</DialogTitle>
@@ -1353,7 +1349,7 @@ export function EnhancedInventoryManagement({
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsStockDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsStockDialogOpen(false)} disabled={isSavingStock}>
               Cancel
             </Button>
             <Button
@@ -1388,17 +1384,9 @@ export function EnhancedInventoryManagement({
                   setIsSavingStock(false);
                 }
               }}
-              disabled={isSavingStock}
-              aria-busy={isSavingStock}
+              loading={isSavingStock}
             >
-              {isSavingStock ? (
-                <span className="inline-flex items-center gap-2 text-primary-foreground">
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  Saving...
-                </span>
-              ) : (
-                'Save'
-              )}
+              {isSavingStock ? "Saving..." : "Save"}
             </Button>
           </DialogFooter>
         </DialogContent>

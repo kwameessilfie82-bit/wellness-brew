@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Search } from "lucide-react";
+import { Loader2, Plus, Search } from "lucide-react";
 
 import { compressImageFile } from "@/lib/image-compress";
 
@@ -37,6 +37,9 @@ export function CategoryManagement({ }: CategoryManagementProps) {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [loading, setLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
   const [newCategory, setNewCategory] = useState({
     name: "",
     description: "",
@@ -187,6 +190,7 @@ export function CategoryManagement({ }: CategoryManagementProps) {
     if (!editingCategory) return;
 
     try {
+      setIsUpdating(true);
       const response = await fetch(`/api/admin/categories/${editingCategory.id}`, {
         method: 'PUT',
         headers: {
@@ -214,12 +218,15 @@ export function CategoryManagement({ }: CategoryManagementProps) {
     } catch (error) {
       console.error('Error updating category:', error);
       alert('Error updating category. Please try again.');
+    } finally {
+      setIsUpdating(false);
     }
   };
 
   const handleDeleteCategory = async (categoryId: string) => {
     if (confirm("Are you sure you want to delete this category?")) {
       try {
+        setDeletingId(categoryId);
         const response = await fetch(`/api/admin/categories/${categoryId}`, {
           method: 'DELETE',
         });
@@ -234,6 +241,8 @@ export function CategoryManagement({ }: CategoryManagementProps) {
       } catch (error) {
         console.error('Error deleting category:', error);
         alert('Error deleting category. Please try again.');
+      } finally {
+        setDeletingId(null);
       }
     }
   };
@@ -243,6 +252,7 @@ export function CategoryManagement({ }: CategoryManagementProps) {
     if (!category) return;
 
     try {
+      setTogglingId(categoryId);
       const response = await fetch(`/api/admin/categories/${categoryId}`, {
         method: 'PUT',
         headers: {
@@ -266,6 +276,8 @@ export function CategoryManagement({ }: CategoryManagementProps) {
     } catch (error) {
       console.error('Error toggling category status:', error);
       alert('Error updating category status. Please try again.');
+    } finally {
+      setTogglingId(null);
     }
   };
 
@@ -279,7 +291,7 @@ export function CategoryManagement({ }: CategoryManagementProps) {
             Manage your product categories and organization
           </p>
         </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <Dialog open={isCreateDialogOpen} onOpenChange={(open) => { if (!isCreating) setIsCreateDialogOpen(open); }}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
@@ -365,18 +377,11 @@ export function CategoryManagement({ }: CategoryManagementProps) {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)} disabled={isCreating}>
                 Cancel
               </Button>
-              <Button onClick={handleCreateCategory} disabled={isCreating} aria-busy={isCreating}>
-                {isCreating ? (
-                  <span className="inline-flex items-center gap-2 text-primary-foreground">
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                    Creating...
-                  </span>
-                ) : (
-                  "Create Category"
-                )}
+              <Button onClick={handleCreateCategory} loading={isCreating}>
+                {isCreating ? "Creating..." : "Create Category"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -475,14 +480,16 @@ export function CategoryManagement({ }: CategoryManagementProps) {
                       <Switch
                         checked={Boolean(item.isActive)}
                         onCheckedChange={() => handleToggleActive(item.id)}
+                        disabled={togglingId === item.id}
                       />
+                      {togglingId === item.id && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" aria-hidden />}
                       <span className="text-xs text-muted-foreground">Toggle</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button onClick={() => handleEditCategory(item)} size="sm" variant="outline">
+                      <Button onClick={() => handleEditCategory(item)} size="sm" variant="outline" disabled={deletingId === item.id}>
                         Edit
                       </Button>
-                      <Button onClick={() => handleDeleteCategory(item.id)} size="sm" variant="destructive">
+                      <Button onClick={() => handleDeleteCategory(item.id)} size="sm" variant="destructive" loading={deletingId === item.id}>
                         Delete
                       </Button>
                     </div>
@@ -495,7 +502,7 @@ export function CategoryManagement({ }: CategoryManagementProps) {
       </Card>
 
       {/* Edit Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+      <Dialog open={isEditDialogOpen} onOpenChange={(open) => { if (!isUpdating) setIsEditDialogOpen(open); }}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Edit Category</DialogTitle>
@@ -596,11 +603,11 @@ export function CategoryManagement({ }: CategoryManagementProps) {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} disabled={isUpdating}>
               Cancel
             </Button>
-            <Button onClick={handleUpdateCategory}>
-              Update Category
+            <Button onClick={handleUpdateCategory} loading={isUpdating}>
+              {isUpdating ? "Updating..." : "Update Category"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,6 +1,7 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
+import { useEffect, useRef, useTransition } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { X, Plus, Minus, ShoppingBag, MessageCircle } from "lucide-react"
@@ -19,9 +20,23 @@ export function CartSheet({ open, onOpenChange }: CartSheetProps) {
   const router = useRouter()
   const { items, removeItem, updateQuantity, totalPrice, totalItems } = useCart()
 
+  const pathname = usePathname()
+  const [checkingOut, startCheckout] = useTransition()
+
+  // Keep the sheet open (with a spinner on the button) until the order page has loaded.
+  const navigating = useRef(false)
+  useEffect(() => {
+    if (navigating.current && pathname === "/order") {
+      navigating.current = false
+      onOpenChange(false)
+    }
+  }, [pathname, onOpenChange])
+
   const handleCheckout = () => {
-    onOpenChange(false)
-    router.push("/order")
+    navigating.current = true
+    startCheckout(() => {
+      router.push("/order")
+    })
   }
 
   return (
@@ -116,6 +131,7 @@ export function CartSheet({ open, onOpenChange }: CartSheetProps) {
               </p>
               <Button
                 onClick={handleCheckout}
+                loading={checkingOut}
                 size="lg"
                 className="w-full bg-[#25D366] text-white hover:bg-[#1ebe5a]"
               >

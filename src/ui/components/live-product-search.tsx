@@ -79,8 +79,10 @@ export function LiveProductSearch({
   const goToShop = (search?: string) => {
     const q = (search ?? query).trim();
     if (q) {
+      window.dispatchEvent(new Event("nav:start"));
       router.push(`/shop?search=${encodeURIComponent(q)}`);
     } else {
+      window.dispatchEvent(new Event("nav:start"));
       router.push("/shop");
     }
     setOpen(false);
@@ -89,6 +91,7 @@ export function LiveProductSearch({
   };
 
   const selectProduct = (product: StoreProduct) => {
+    window.dispatchEvent(new Event("nav:start"));
     router.push(`/shop/${encodeURIComponent(product.slug || product.id)}`);
     setOpen(false);
     setQuery("");

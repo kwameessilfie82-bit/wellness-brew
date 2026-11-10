@@ -8,10 +8,12 @@ import { ArrowRight, MessageCircle, Minus, Plus, ShoppingBag, X } from "lucide-r
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useTransition } from "react"
 import { formatPrice } from "@/lib/format"
 
 export default function CartPage() {
   const router = useRouter()
+  const [checkingOut, startCheckout] = useTransition()
   const { items, removeItem, updateQuantity, totalPrice, totalItems, clearCart } = useCart()
 
   return (
@@ -115,7 +117,8 @@ export default function CartPage() {
                   <Button
                     size="lg"
                     className="w-full bg-[#25D366] text-white hover:bg-[#1ebe5a]"
-                    onClick={() => router.push("/order")}
+                    loading={checkingOut}
+                    onClick={() => startCheckout(() => router.push("/order"))}
                   >
                     <MessageCircle className="h-4 w-4 mr-2" />
                     Order on WhatsApp

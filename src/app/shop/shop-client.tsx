@@ -2,6 +2,7 @@
 
 import { ProductCard } from "@/ui/product-card"
 import { toCardProduct } from "@/lib/products/card"
+import { Loader2 } from "lucide-react"
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import type { StoreProduct } from "@/lib/products/normalize"
@@ -213,8 +214,11 @@ export function ShopClient({ initial }: { initial: ShopInitialData }) {
           </div>
 
           {loading ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">Loading products...</p>
+            <div className="text-center py-12" role="status">
+              <p className="inline-flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                Loading products...
+              </p>
             </div>
           ) : (
             <>
@@ -227,7 +231,10 @@ export function ShopClient({ initial }: { initial: ShopInitialData }) {
               {/* Infinite scroll trigger */}
               <div ref={observerTarget} className="h-10 flex items-center justify-center">
                 {loadingMore && (
-                  <p className="text-muted-foreground">Loading more products...</p>
+                  <p className="inline-flex items-center gap-2 text-muted-foreground" role="status">
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                    Loading more products...
+                  </p>
                 )}
               </div>
 

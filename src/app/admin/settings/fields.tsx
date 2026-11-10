@@ -158,7 +158,7 @@ export function ImageField({
           onChange={(e) => onChange(e.target.value)}
           aria-invalid={!!error}
         />
-        <Button type="button" variant="outline" disabled={uploading} onClick={() => fileRef.current?.click()}>
+        <Button type="button" variant="outline" loading={uploading} onClick={() => fileRef.current?.click()}>
           <Upload className="mr-1 h-4 w-4" />
           {uploading ? "Uploading…" : "Upload"}
         </Button>
@@ -300,7 +300,7 @@ export function SaveBar({
       <Button type="button" variant="outline" disabled={!dirty || pending} onClick={onReset}>
         Discard
       </Button>
-      <Button type="button" disabled={!dirty || pending} onClick={onSave}>
+      <Button type="button" disabled={!dirty} loading={pending} onClick={onSave}>
         <Save className="mr-2 h-4 w-4" />
         {pending ? "Saving…" : "Save"}
       </Button>

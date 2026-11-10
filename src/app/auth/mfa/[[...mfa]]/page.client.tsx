@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import { useState } from "react";
 
 import { SYSTEM_CONFIG } from "@/app";
@@ -267,6 +268,7 @@ export function TwoFactorPageClient() {
                     onClick={generateNewCodes}
                     type="button"
                   >
+                    {backupLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden /> : null}
                     generate new backup codes
                   </button>
                 </div>
@@ -287,6 +289,7 @@ export function TwoFactorPageClient() {
               disabled={loading}
               type="submit"
             >
+              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden /> : null}
               {loading ? "Verifying..." : "Verify"}
             </button>
 
@@ -298,6 +301,7 @@ export function TwoFactorPageClient() {
                 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2
                 focus:outline-none
               `}
+              disabled={loading || backupLoading}
               onClick={toggleVerificationMethod}
               type="button"
             >

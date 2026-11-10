@@ -478,7 +478,7 @@ function ScanCard() {
           <h3 className="text-sm font-semibold">Scan the site</h3>
           <p className="text-xs text-muted-foreground">Scans the saved list — save changes first.</p>
         </div>
-        <Button type="button" variant="outline" disabled={pending} onClick={run}>
+        <Button type="button" variant="outline" loading={pending} onClick={run}>
           <ScanSearch className="mr-1 h-4 w-4" />
           {pending ? "Scanning…" : "Scan now"}
         </Button>

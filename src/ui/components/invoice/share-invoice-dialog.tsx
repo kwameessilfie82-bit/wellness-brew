@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/ui/primitives/dialog"
 import { Button } from "@/ui/primitives/button"
-import { Mail, MessageCircle, Loader2 } from "lucide-react"
+import { Mail, MessageCircle } from "lucide-react"
 import type { InvoiceData } from "@/lib/types"
 import { formatCurrency, formatDate } from "@/lib/invoice-utils"
 
@@ -160,21 +160,23 @@ ${invoiceData.seller.businessName}`
         <div className="grid gap-3 py-4">
           <Button
             onClick={handleWhatsAppShare}
-            disabled={isWhatsAppSharing || isEmailSharing}
+            disabled={isEmailSharing}
+            loading={isWhatsAppSharing}
             className="w-full gap-2 bg-[#25D366] hover:bg-[#20BA5A] text-white"
             size="lg"
           >
-            {isWhatsAppSharing ? <Loader2 className="h-5 w-5 animate-spin" /> : <MessageCircle className="h-5 w-5" />}
+            <MessageCircle className="h-5 w-5" />
             {isWhatsAppSharing ? "Preparing..." : "Share via WhatsApp"}
           </Button>
           <Button
             onClick={handleEmailShare}
-            disabled={isWhatsAppSharing || isEmailSharing}
+            disabled={isWhatsAppSharing}
+            loading={isEmailSharing}
             variant="outline"
             className="w-full gap-2 bg-transparent"
             size="lg"
           >
-            {isEmailSharing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Mail className="h-5 w-5" />}
+            <Mail className="h-5 w-5" />
             {isEmailSharing ? "Preparing..." : "Share via Email"}
           </Button>
         </div>

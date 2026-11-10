@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/ui/primitives/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/primitives/card"
-import { Loader2, Database, CheckCircle, XCircle, FolderTree, RefreshCw } from "lucide-react"
+import { Database, CheckCircle, XCircle, FolderTree, RefreshCw } from "lucide-react"
 
 export function SeedPageClient() {
   const [isSeeding, setIsSeeding] = useState(false)
@@ -135,16 +135,14 @@ export function SeedPageClient() {
         <CardContent className="space-y-4">
           <Button
             onClick={handleSeedCategories}
-            disabled={isSeedingCategories}
+            loading={isSeedingCategories}
+            disabled={isUpdatingCategories || isSeeding}
             className="w-full"
             size="lg"
             variant="outline"
           >
             {isSeedingCategories ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Seeding Categories...
-              </>
+              "Seeding Categories..."
             ) : (
               <>
                 <FolderTree className="mr-2 h-4 w-4" />
@@ -181,16 +179,14 @@ export function SeedPageClient() {
           </div>
           <Button
             onClick={handleUpdateProductCategories}
-            disabled={isUpdatingCategories}
+            loading={isUpdatingCategories}
+            disabled={isSeedingCategories || isSeeding}
             className="w-full"
             size="lg"
             variant="outline"
           >
             {isUpdatingCategories ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Updating Categories...
-              </>
+              "Updating Categories..."
             ) : (
               <>
                 <RefreshCw className="mr-2 h-4 w-4" />
@@ -227,15 +223,13 @@ export function SeedPageClient() {
 
           <Button
             onClick={handleSeed}
-            disabled={isSeeding}
+            loading={isSeeding}
+            disabled={isSeedingCategories || isUpdatingCategories}
             className="w-full"
             size="lg"
           >
             {isSeeding ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Seeding Inventory...
-              </>
+              "Seeding Inventory..."
             ) : (
               <>
                 <Database className="mr-2 h-4 w-4" />

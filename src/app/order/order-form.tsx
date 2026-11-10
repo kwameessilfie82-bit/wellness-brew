@@ -158,6 +158,7 @@ export function OrderForm({ config }: { config: OrderFormConfig }) {
   const [failure, setFailure] = useState<string | null>(null);
   const [acceptPrices, setAcceptPrices] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
+  const [activeAction, setActiveAction] = useState<"submit" | "prices" | "duplicate">("submit");
 
   const waDigits = (contact.whatsappNumber || contact.orderPhone).replace(/\D/g, "");
   const waHref = waDigits ? `https://wa.me/${waDigits}` : null;
@@ -266,6 +267,7 @@ export function OrderForm({ config }: { config: OrderFormConfig }) {
   const submit = (opts: { acceptPriceChanges?: boolean; allowDuplicate?: boolean } = {}) => {
     const accept = opts.acceptPriceChanges ?? acceptPrices;
     if (opts.acceptPriceChanges) setAcceptPrices(true);
+    setActiveAction(opts.acceptPriceChanges ? "prices" : opts.allowDuplicate ? "duplicate" : "submit");
     setErrors({});
     setPriceChanges(null);
     setProblems(null);
@@ -415,7 +417,12 @@ export function OrderForm({ config }: { config: OrderFormConfig }) {
                 })}
               </ul>
               <div className="flex flex-col gap-2 sm:flex-row">
-                <Button type="button" disabled={pending} onClick={() => submit({ acceptPriceChanges: true })}>
+                <Button
+                  type="button"
+                  disabled={pending}
+                  loading={pending && activeAction === "prices"}
+                  onClick={() => submit({ acceptPriceChanges: true })}
+                >
                   Update prices and continue
                 </Button>
                 <Button type="button" variant="outline" asChild>
@@ -461,7 +468,13 @@ export function OrderForm({ config }: { config: OrderFormConfig }) {
               <Button type="button" asChild>
                 <Link href={`/o/${duplicate.token}`}>View that order</Link>
               </Button>
-              <Button type="button" variant="outline" disabled={pending} onClick={() => submit({ allowDuplicate: true })}>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={pending}
+                loading={pending && activeAction === "duplicate"}
+                onClick={() => submit({ allowDuplicate: true })}
+              >
                 Place a new order anyway
               </Button>
             </CardContent>
@@ -989,13 +1002,11 @@ export function OrderForm({ config }: { config: OrderFormConfig }) {
             type="submit"
             size="lg"
             disabled={!canSubmit}
+            loading={pending && activeAction === "submit"}
             className="w-full bg-[#25D366] text-white hover:bg-[#1ebe5a] disabled:opacity-60"
           >
-            {pending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Placing your order…
-              </>
+            {pending && activeAction === "submit" ? (
+              "Placing your order…"
             ) : (
               <>
                 <MessageCircle className="mr-2 h-4 w-4" />

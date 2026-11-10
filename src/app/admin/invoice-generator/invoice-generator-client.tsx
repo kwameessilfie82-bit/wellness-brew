@@ -15,7 +15,7 @@ import {
   calculateTax,
   calculateTotal,
 } from "@/lib/invoice-utils"
-import { Download, Share2, Loader2, Save } from "lucide-react"
+import { Download, Share2, Save } from "lucide-react"
 import type { BrandSettings, ContactSettings, PaymentsSettings } from "@/lib/settings/schemas"
 
 function buildBankDetails(p: PaymentsSettings): string {
@@ -836,9 +836,9 @@ export function InvoiceGeneratorClient({ payments, brand, contact }: InvoiceGene
               size="lg"
               variant="outline"
               className="gap-2 w-full sm:w-auto"
-              disabled={isSaving}
+              loading={isSaving}
             >
-              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              <Save className="h-4 w-4" />
               {isSaving ? "Saving..." : "Save invoice"}
             </Button>
             <Button
@@ -854,9 +854,9 @@ export function InvoiceGeneratorClient({ payments, brand, contact }: InvoiceGene
               onClick={handleDownloadPDF} 
               size="lg" 
               className="gap-2 w-full sm:w-auto" 
-              disabled={isGeneratingPDF}
+              loading={isGeneratingPDF}
             >
-              {isGeneratingPDF ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              <Download className="h-4 w-4" />
               {isGeneratingPDF ? "Generating..." : "Download PDF"}
             </Button>
           </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 import { signOut as supabaseSignOut } from "@/lib/auth-client";
 import { cn } from "@/lib/cn";
@@ -11,14 +12,21 @@ import { Skeleton } from "@/ui/primitives/skeleton";
 export function SignOutPageClient() {
   const router = useRouter();
   const mounted = useMounted();
+  const [signingOut, setSigningOut] = useState(false);
 
   const handlePageBack = async () => {
     router.back();
   };
 
   const handleSignOut = async () => {
-    await supabaseSignOut();
-    router.push("/");
+    setSigningOut(true);
+    try {
+      await supabaseSignOut();
+      router.push("/");
+    } catch (err) {
+      setSigningOut(false);
+      throw err;
+    }
   };
 
   return (
@@ -28,12 +36,12 @@ export function SignOutPageClient() {
         sm:flex-row
       `}
     >
-      <Button onClick={handlePageBack} size="default" variant="outline">
+      <Button onClick={handlePageBack} size="default" variant="outline" disabled={signingOut}>
         Go back
         <span className="sr-only">Previous page</span>
       </Button>
       {mounted ? (
-        <Button onClick={handleSignOut} size="default" variant="secondary">
+        <Button onClick={handleSignOut} size="default" variant="secondary" loading={signingOut}>
           Log out
           <span className="sr-only">
             This action will log you out of your account.

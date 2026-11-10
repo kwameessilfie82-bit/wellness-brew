@@ -11,12 +11,9 @@ export default function PendingVerificationPage() {
 
   const checkAccess = async () => {
     setChecking(true);
-    try {
-      // Go through the home route which contains the role-based redirects
-      router.push("/");
-    } finally {
-      setChecking(false);
-    }
+    // Go through the home route which contains the role-based redirects.
+    // Stay busy: the page navigates away.
+    router.push("/");
   };
 
   useEffect(() => {
@@ -38,7 +35,7 @@ export default function PendingVerificationPage() {
           If you need urgent access, please contact your manager.
         </p>
         <div className="pt-2">
-          <Button onClick={checkAccess} disabled={checking}>
+          <Button onClick={checkAccess} loading={checking}>
             {checking ? "Checking..." : "Check access"}
           </Button>
         </div>

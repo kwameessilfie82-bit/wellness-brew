@@ -3,7 +3,7 @@
 import type { ColumnDef, ColumnMeta, Column } from "@tanstack/react-table";
 import type React from "react";
 
-import { Hash, Mail, User as UserIcon, Calendar, Shield, CheckCircle, XCircle, Search, Trash2, Users, UserCog, UserCheck } from "lucide-react";
+import { Hash, Mail, User as UserIcon, Calendar, Shield, CheckCircle, XCircle, Search, Trash2, Loader2, Users, UserCog, UserCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useCallback } from "react";
 
@@ -34,6 +34,8 @@ const CustomersPageClient: React.FC<CustomersPageClientProps> = ({
   const router = useRouter();
   const [users, setUsers] = useState<UserWithRole[]>(initialData);
   const [searchQuery, setSearchQuery] = useState("");
+  const [busyUserId, setBusyUserId] = useState<string | null>(null);
+  const [busyAction, setBusyAction] = useState<"role" | "delete" | null>(null);
 
   // Calculate user statistics
   const userStats = useMemo(() => {
@@ -59,6 +61,8 @@ const CustomersPageClient: React.FC<CustomersPageClientProps> = ({
   // Handle role change
   const handleRoleChange = useCallback(async (userId: string, newRole: string) => {
     try {
+      setBusyUserId(userId);
+      setBusyAction("role");
       const response = await fetch(`/api/admin/users/${userId}/role`, {
         method: 'PUT',
         headers: {
@@ -82,6 +86,9 @@ const CustomersPageClient: React.FC<CustomersPageClientProps> = ({
     } catch (error) {
       console.error('Error updating user role:', error);
       alert('Error updating user role. Please try again.');
+    } finally {
+      setBusyUserId(null);
+      setBusyAction(null);
     }
   }, []);
 
@@ -97,6 +104,8 @@ const CustomersPageClient: React.FC<CustomersPageClientProps> = ({
 
     if (confirm("Are you sure you want to delete this user? This action cannot be undone.")) {
       try {
+        setBusyUserId(userId);
+        setBusyAction("delete");
         const response = await fetch(`/api/admin/users/${userId}`, {
           method: 'DELETE',
         });
@@ -112,6 +121,9 @@ const CustomersPageClient: React.FC<CustomersPageClientProps> = ({
       } catch (error) {
         console.error('Error deleting user:', error);
         alert('Error deleting user. Please try again.');
+      } finally {
+        setBusyUserId(null);
+        setBusyAction(null);
       }
     }
   }, [adminUser, router]);
@@ -221,6 +233,7 @@ const CustomersPageClient: React.FC<CustomersPageClientProps> = ({
               <Select
                 value={currentRole}
                 onValueChange={(value) => handleRoleChange(user.id, value)}
+                disabled={busyUserId === user.id}
               >
                 <SelectTrigger className="w-40">
                   <SelectValue />
@@ -231,6 +244,9 @@ const CustomersPageClient: React.FC<CustomersPageClientProps> = ({
                   <SelectItem value="manager">Manager</SelectItem>
                 </SelectContent>
               </Select>
+              {busyUserId === user.id && busyAction === "role" && (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" aria-hidden />
+              )}
             </div>
           );
         },
@@ -255,7 +271,8 @@ const CustomersPageClient: React.FC<CustomersPageClientProps> = ({
                 variant="destructive"
                 size="sm"
                 onClick={() => canDelete && handleDeleteUser(user.id)}
-                disabled={!canDelete}
+                disabled={!canDelete || busyUserId === user.id}
+                loading={busyUserId === user.id && busyAction === "delete"}
                 title={!canDelete ? (isSelf ? 'You cannot delete your own account' : 'Only managers can delete users') : 'Delete user'}
               >
                 <Trash2 className="h-4 w-4" />
@@ -265,7 +282,7 @@ const CustomersPageClient: React.FC<CustomersPageClientProps> = ({
         },
       },
     ],
-    [handleDeleteUser, handleRoleChange, adminUser?.role?.name, adminUser?.userId],
+    [handleDeleteUser, handleRoleChange, adminUser?.role?.name, adminUser?.userId, busyUserId, busyAction],
   );
 
   return (

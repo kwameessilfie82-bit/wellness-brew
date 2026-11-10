@@ -168,7 +168,7 @@ export function DeliveryLocationPicker({
           variant="outline"
           size="sm"
           onClick={useCurrentLocation}
-          disabled={locating}
+          loading={locating}
         >
           <Navigation className="mr-2 h-4 w-4" />
           {locating ? "Getting location…" : "Use my location"}

@@ -3,6 +3,7 @@ import { CartProvider } from "@/lib/cart-context";
 import { getPublicSettings } from "@/lib/settings/get";
 import { SiteSettingsProvider } from "@/lib/settings/site-settings-context";
 import { WishlistProvider } from "@/lib/wishlist-context";
+import { NavigationProgress } from "@/ui/components/navigation-progress";
 import { OAuthLocalhostRecovery } from "@/ui/components/oauth-localhost-recovery";
 import { ThemeProvider } from "@/ui/components/theme-provider";
 import { Toaster } from "@/ui/primitives/sonner";
@@ -12,6 +13,7 @@ import { IS_INDEXABLE, SITE_URL } from "@/lib/seo/site";
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Playfair_Display } from "next/font/google";
 import type React from "react";
+import { Suspense } from "react";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
@@ -85,6 +87,9 @@ export default async function RootLayout({
 					<ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
 						<CartProvider>
 							<WishlistProvider>
+								<Suspense fallback={null}>
+									<NavigationProgress />
+								</Suspense>
 								<OAuthLocalhostRecovery />
 								{children}
 								<Toaster richColors closeButton position="top-center" />

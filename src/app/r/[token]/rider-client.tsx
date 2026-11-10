@@ -26,6 +26,7 @@ export function RiderPanel(props: {
   const [failing, setFailing] = useState(false);
   const [reason, setReason] = useState("");
   const [error, setError] = useState("");
+  const [active, setActive] = useState<"start" | "confirm" | "failed">("start");
 
   const done = props.status === "delivered" || props.status === "completed";
   if (done) {
@@ -47,13 +48,15 @@ export function RiderPanel(props: {
             size="lg"
             className="h-14 w-full text-base"
             disabled={pending}
-            onClick={() =>
+            loading={pending && active === "start"}
+            onClick={() => {
+              setActive("start");
               start(async () => {
                 const r = await riderStart(props.token);
                 if (r.ok) router.refresh();
                 else toast.error(r.error);
-              })
-            }
+              });
+            }}
           >
             Start delivery
           </Button>
@@ -81,6 +84,7 @@ export function RiderPanel(props: {
         onSubmit={(e) => {
           e.preventDefault();
           setError("");
+          setActive("confirm");
           start(async () => {
             const r = await riderConfirm(props.token, code, cash);
             if (r.ok) {
@@ -118,7 +122,9 @@ export function RiderPanel(props: {
             {error}
           </p>
         ) : null}
-        <Button type="submit" size="lg" className="h-14 w-full text-base" disabled={pending || code.length !== 4}>
+        <Button type="submit" size="lg" className="h-14 w-full text-base" disabled={pending || code.length !== 4}
+          loading={pending && active === "confirm"}
+        >
           Confirm delivery
         </Button>
       </form>
@@ -128,6 +134,7 @@ export function RiderPanel(props: {
           className="space-y-2 rounded-xl border p-4"
           onSubmit={(e) => {
             e.preventDefault();
+            setActive("failed");
             start(async () => {
               const r = await riderFailed(props.token, reason);
               if (r.ok) {
@@ -141,7 +148,7 @@ export function RiderPanel(props: {
             What happened?
           </label>
           <Input id="reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Customer not answering" />
-          <Button type="submit" variant="destructive" className="w-full" disabled={pending}>
+          <Button type="submit" variant="destructive" className="w-full" disabled={pending} loading={pending && active === "failed"}>
             Couldn&apos;t deliver
           </Button>
         </form>
