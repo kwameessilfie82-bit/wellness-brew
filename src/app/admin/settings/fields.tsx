@@ -26,6 +26,9 @@ export const SECTION_LABELS: Record<SettingsSection, string> = {
   compliance: "Compliance",
   claims: "Claims & wording",
   payments: "Payments & invoices",
+  ordering: "Ordering",
+  delivery: "Delivery",
+  whatsapp: "WhatsApp messages",
 };
 
 export type Errors = Record<string, string>;

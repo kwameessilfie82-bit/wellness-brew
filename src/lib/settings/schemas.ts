@@ -5,6 +5,8 @@
  */
 import { z } from "zod";
 
+import type { DeliverySettings, OrderingSettings, WhatsappSettings } from "./ordering-schemas";
+
 const str = (max = 500) => z.string().trim().max(max);
 const optionalUrl = z
   .string()
@@ -245,6 +247,9 @@ export type SettingsMap = {
   homepage: HomepageContent;
   about: AboutContent;
   claims: ClaimsSettings;
+  ordering: OrderingSettings;
+  delivery: DeliverySettings;
+  whatsapp: WhatsappSettings;
 };
 export type SettingsSection = keyof SettingsMap;
 export const PUBLIC_SECTIONS = ["brand", "contact", "locations", "social", "compliance"] as const;

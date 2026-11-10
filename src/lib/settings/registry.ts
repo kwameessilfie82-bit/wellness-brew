@@ -19,6 +19,7 @@ import {
   type SettingsSection,
   socialSchema,
 } from "./schemas";
+import { deliverySchema, ORDERING_DEFAULTS, orderingSchema, whatsappSchema } from "./ordering-schemas";
 
 const banned = (phrase: string, reason: string, suggestion = "") => ({
   id: `bp-${phrase.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
@@ -72,6 +73,9 @@ export const SETTINGS_SCHEMAS = {
   homepage: homepageSchema,
   about: aboutSchema,
   claims: claimsSchema,
+  ordering: orderingSchema,
+  delivery: deliverySchema,
+  whatsapp: whatsappSchema,
 } as const;
 
 export const SETTINGS_SECTIONS = Object.keys(SETTINGS_SCHEMAS) as SettingsSection[];
@@ -159,6 +163,7 @@ export const SETTINGS_DEFAULTS: SettingsMap = {
     bannedPhrases: DEFAULT_BANNED_PHRASES,
     register: [],
   },
+  ...ORDERING_DEFAULTS,
 };
 
 /** Merge a stored value over defaults; fall back to defaults if it no longer validates. */

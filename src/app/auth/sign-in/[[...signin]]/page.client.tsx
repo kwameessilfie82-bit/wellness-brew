@@ -7,10 +7,6 @@ import { useState } from "react";
 
 import { useSiteSettings } from "@/lib/settings/site-settings-context";
 import { signInWithEmail, signInWithGoogle } from "@/lib/auth-client";
-import {
-  backupCartForCheckout,
-  readCartFromStorage,
-} from "@/lib/cart-storage";
 import { GoogleIcon } from "@/ui/components/icons/google";
 import { Button } from "@/ui/primitives/button";
 import { Card, CardContent } from "@/ui/primitives/card";
@@ -36,9 +32,6 @@ export function SignInPageClient() {
     setError("");
     setEmailLoading(true);
     try {
-      if (next === "/checkout" || next.startsWith("/checkout?")) {
-        backupCartForCheckout(readCartFromStorage());
-      }
       await signInWithEmail(email, password);
       window.location.href = next;
     } catch (err) {
@@ -52,9 +45,6 @@ export function SignInPageClient() {
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
-      if (next === "/checkout" || next.startsWith("/checkout?")) {
-        backupCartForCheckout(readCartFromStorage());
-      }
       signInWithGoogle(`/auth/callback?next=${encodeURIComponent(next)}`);
     } catch (err) {
       const message =

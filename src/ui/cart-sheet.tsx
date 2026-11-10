@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
-import { X, Plus, Minus, ShoppingBag } from "lucide-react"
+import { X, Plus, Minus, ShoppingBag, MessageCircle } from "lucide-react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/ui/primitives/sheet"
 import { Button } from "@/ui/primitives/button"
 import { useCart } from "@/lib/cart-context"
@@ -21,7 +21,7 @@ export function CartSheet({ open, onOpenChange }: CartSheetProps) {
 
   const handleCheckout = () => {
     onOpenChange(false)
-    router.push("/checkout")
+    router.push("/order")
   }
 
   return (
@@ -112,11 +112,19 @@ export function CartSheet({ open, onOpenChange }: CartSheetProps) {
                 <span>{formatPrice(totalPrice)}</span>
               </div>
               <p className="text-sm text-muted-foreground">
-                Shipping and taxes calculated at checkout
+                Delivery fee is confirmed on the next step
               </p>
-              <Button onClick={handleCheckout} size="lg" className="w-full">
-                Proceed to Checkout
+              <Button
+                onClick={handleCheckout}
+                size="lg"
+                className="w-full bg-[#25D366] text-white hover:bg-[#1ebe5a]"
+              >
+                <MessageCircle className="mr-2 h-4 w-4" />
+                Order on WhatsApp
               </Button>
+              <p className="text-center text-xs text-muted-foreground">
+                Confirm and pay on WhatsApp — no account needed.
+              </p>
               <Button
                 onClick={() => onOpenChange(false)}
                 variant="outline"

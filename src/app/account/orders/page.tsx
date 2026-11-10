@@ -7,6 +7,7 @@ import { Footer } from "@/ui/footer";
 import { Navigation } from "@/ui/navigation";
 import { useCurrentUser } from "@/lib/auth-client";
 import { formatPrice } from "@/lib/format";
+import { STATUS_LABELS, type OrderStatus } from "@/lib/orders/status";
 import { ArrowLeft, Loader2, Package } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -24,6 +25,7 @@ type OrderItem = {
 type Order = {
   id: string;
   orderNumber: string;
+  publicToken: string | null;
   status: string;
   paymentStatus: string | null;
   total: number;
@@ -60,16 +62,8 @@ export default function OrdersPage() {
     void load();
   }, [isPending, user, router]);
 
-  const statusLabel = (status: string) => {
-    const map: Record<string, string> = {
-      pending_payment: "Awaiting payment",
-      processing: "Processing",
-      shipped: "Out for delivery",
-      delivered: "Delivered",
-      cancelled: "Cancelled",
-    };
-    return map[status] ?? status;
-  };
+  const statusLabel = (status: string) =>
+    STATUS_LABELS[status as OrderStatus] ?? status;
 
   if (isPending || loading) {
     return (
@@ -169,15 +163,15 @@ export default function OrdersPage() {
                         {formatPrice(order.total)}
                       </span>
                     </div>
-                    <Button
-                      variant="outline"
-                      className="mt-4 w-full bg-transparent sm:w-auto"
-                      asChild
-                    >
-                      <Link href={`/order-confirmation?orderId=${order.id}`}>
-                        View details
-                      </Link>
-                    </Button>
+                    {order.publicToken ? (
+                      <Button
+                        variant="outline"
+                        className="mt-4 w-full bg-transparent sm:w-auto"
+                        asChild
+                      >
+                        <Link href={`/o/${order.publicToken}`}>View order</Link>
+                      </Button>
+                    ) : null}
                   </CardContent>
                 </Card>
               ))}

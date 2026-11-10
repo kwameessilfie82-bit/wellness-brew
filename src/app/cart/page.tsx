@@ -4,7 +4,7 @@ import { Button } from "@/ui/primitives/button";
 import { useCart } from "@/lib/cart-context"
 import { Footer } from "@/ui/footer"
 import { Navigation } from "@/ui/navigation"
-import { ArrowRight, Minus, Plus, ShoppingBag, X } from "lucide-react"
+import { ArrowRight, MessageCircle, Minus, Plus, ShoppingBag, X } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -103,7 +103,7 @@ export default function CartPage() {
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-muted-foreground">Delivery</span>
-                      <span className="font-medium">At checkout</span>
+                      <span className="font-medium">Confirmed on WhatsApp</span>
                     </div>
                   </div>
                   <div className="border-t border-border pt-4 mb-6">
@@ -112,10 +112,17 @@ export default function CartPage() {
                       <span>{formatPrice(totalPrice)}</span>
                     </div>
                   </div>
-                  <Button size="lg" className="w-full mb-3" onClick={() => router.push("/checkout")}>
-                    Proceed to Checkout
-                    <ArrowRight className="h-4 w-4 ml-2" />
+                  <Button
+                    size="lg"
+                    className="w-full bg-[#25D366] text-white hover:bg-[#1ebe5a]"
+                    onClick={() => router.push("/order")}
+                  >
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Order on WhatsApp
                   </Button>
+                  <p className="mt-2 mb-3 text-center text-xs text-muted-foreground">
+                    Confirm and pay on WhatsApp — no account needed.
+                  </p>
                   <Button size="lg" variant="outline" className="w-full bg-transparent" asChild>
                     <Link href="/shop">Continue Shopping</Link>
                   </Button>

@@ -1,4 +1,15 @@
-import { pgTable, text, timestamp, boolean, integer, decimal } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import {
+  boolean,
+  decimal,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 import { userTable } from "../users/tables";
 
 // Admin roles table
@@ -136,27 +147,74 @@ export const productVariantTable = pgTable("product_variant", {
   updatedAt: timestamp("updated_at").notNull(),
 });
 
-export const storeOrderTable = pgTable("store_order", {
-  id: text("id").primaryKey(),
-  orderNumber: text("order_number").notNull().unique(),
-  userId: text("user_id").references(() => userTable.id, { onDelete: "set null" }),
-  status: text("status").notNull().default("pending"),
-  customerEmail: text("customer_email").notNull(),
-  customerName: text("customer_name").notNull(),
-  customerPhone: text("customer_phone"),
-  shippingAddress: text("shipping_address").notNull(),
-  shippingMethod: text("shipping_method"),
-  paymentMethod: text("payment_method"),
-  paymentReference: text("payment_reference"),
-  paymentStatus: text("payment_status").default("pending"),
-  subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
-  shipping: decimal("shipping", { precision: 10, scale: 2 }).notNull(),
-  tax: decimal("tax", { precision: 10, scale: 2 }).notNull(),
-  total: decimal("total", { precision: 10, scale: 2 }).notNull(),
-  notes: text("notes"),
-  createdAt: timestamp("created_at").notNull(),
-  updatedAt: timestamp("updated_at").notNull(),
-});
+/** Order statuses / channels: see src/lib/orders/status.ts. */
+export const storeOrderTable = pgTable(
+  "store_order",
+  {
+    id: text("id").primaryKey(),
+    orderNumber: text("order_number").notNull().unique(),
+    publicToken: text("public_token"),
+    channel: text("channel").notNull().default("whatsapp"),
+    userId: text("user_id").references(() => userTable.id, { onDelete: "set null" }),
+    status: text("status").notNull().default("awaiting_customer"),
+    customerEmail: text("customer_email"),
+    customerName: text("customer_name").notNull(),
+    customerPhone: text("customer_phone"),
+    customerPhoneE164: text("customer_phone_e164"),
+    fulfilment: text("fulfilment").notNull().default("delivery"),
+    /** Delivery address / landmark (free text). */
+    shippingAddress: text("shipping_address"),
+    shippingMethod: text("shipping_method"),
+    deliveryZoneId: text("delivery_zone_id"),
+    deliveryArea: text("delivery_area"),
+    gpsAddress: text("gps_address"),
+    deliveryFeeConfirmed: boolean("delivery_fee_confirmed").notNull().default(true),
+    pickupLocationId: text("pickup_location_id"),
+    pickupLocationName: text("pickup_location_name"),
+    deliveryWindow: text("delivery_window"),
+    isGift: boolean("is_gift").notNull().default(false),
+    recipientName: text("recipient_name"),
+    recipientPhone: text("recipient_phone"),
+    giftMessage: text("gift_message"),
+    preferredPayment: text("preferred_payment"),
+    paymentMethod: text("payment_method"),
+    paymentReference: text("payment_reference"),
+    paymentStatus: text("payment_status").notNull().default("unpaid"),
+    amountPaid: decimal("amount_paid", { precision: 10, scale: 2 }).notNull().default("0"),
+    subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
+    /** Delivery fee. */
+    shipping: decimal("shipping", { precision: 10, scale: 2 }).notNull(),
+    tax: decimal("tax", { precision: 10, scale: 2 }).notNull(),
+    total: decimal("total", { precision: 10, scale: 2 }).notNull(),
+    notes: text("notes"),
+    deliveryCode: text("delivery_code"),
+    riderToken: text("rider_token"),
+    riderTokenExpiresAt: timestamp("rider_token_expires_at"),
+    riderFailedAttempts: integer("rider_failed_attempts").notNull().default(0),
+    deliveredAt: timestamp("delivered_at"),
+    deliveryProof: text("delivery_proof"),
+    assignedTo: text("assigned_to").references(() => adminUserTable.id, { onDelete: "set null" }),
+    whatsappReceivedAt: timestamp("whatsapp_received_at"),
+    confirmedAt: timestamp("confirmed_at"),
+    stockDeducted: boolean("stock_deducted").notNull().default(false),
+    expiresAt: timestamp("expires_at"),
+    cancelReason: text("cancel_reason"),
+    attentionReason: text("attention_reason"),
+    idempotencyKey: text("idempotency_key"),
+    version: integer("version").notNull().default(0),
+    createdAt: timestamp("created_at").notNull(),
+    updatedAt: timestamp("updated_at").notNull(),
+  },
+  (t) => [
+    uniqueIndex("store_order_public_token_idx").on(t.publicToken),
+    uniqueIndex("store_order_rider_token_idx").on(t.riderToken),
+    uniqueIndex("store_order_idempotency_key_idx").on(t.idempotencyKey),
+    index("store_order_status_created_idx").on(t.status, t.createdAt.desc()),
+    index("store_order_created_idx").on(t.createdAt.desc()),
+    index("store_order_phone_created_idx").on(t.customerPhoneE164, t.createdAt.desc()),
+    index("store_order_expiry_idx").on(t.expiresAt).where(sql`${t.status} = 'awaiting_customer'`),
+  ],
+);
 
 export const orderItemTable = pgTable("order_item", {
   id: text("id").primaryKey(),
@@ -196,6 +254,10 @@ export const invoiceTable = pgTable("invoice", {
   createdBy: text("created_by").references(() => adminUserTable.id, {
     onDelete: "set null",
   }),
+  /** Set when the invoice was generated from a WhatsApp order. */
+  orderId: text("order_id")
+    .unique("invoice_order_id_idx")
+    .references(() => storeOrderTable.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").notNull(),
 });
 
@@ -214,3 +276,34 @@ export const invoiceItemTable = pgTable("invoice_item", {
   quantity: integer("quantity").notNull(),
   lineTotal: decimal("line_total", { precision: 10, scale: 2 }).notNull(),
 });
+
+/** Order timeline: status changes, payments, edits, notes and messages. */
+export const orderEventTable = pgTable(
+  "order_event",
+  {
+    id: text("id").primaryKey(),
+    orderId: text("order_id")
+      .notNull()
+      .references(() => storeOrderTable.id, { onDelete: "cascade" }),
+    type: text("type").notNull(),
+    fromStatus: text("from_status"),
+    toStatus: text("to_status"),
+    data: jsonb("data"),
+    actorType: text("actor_type").notNull(),
+    actorId: text("actor_id").references(() => adminUserTable.id, { onDelete: "set null" }),
+    customerVisible: boolean("customer_visible").notNull().default(false),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("order_event_order_created_idx").on(t.orderId, t.createdAt)],
+);
+
+/** Fixed-window rate-limit counters. */
+export const rateLimitTable = pgTable(
+  "rate_limit",
+  {
+    key: text("key").primaryKey(),
+    count: integer("count").notNull(),
+    windowStart: timestamp("window_start").notNull(),
+  },
+  (t) => [index("rate_limit_window_idx").on(t.windowStart)],
+);

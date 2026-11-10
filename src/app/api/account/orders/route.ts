@@ -16,6 +16,7 @@ export async function GET() {
     orders: orders.map((order) => ({
       id: order.id,
       orderNumber: order.orderNumber,
+      publicToken: order.publicToken,
       status: order.status,
       paymentStatus: order.paymentStatus,
       total: parsePrice(order.total),
@@ -23,7 +24,7 @@ export async function GET() {
       createdAt: order.createdAt,
       deliveryAddress: (() => {
         try {
-          return JSON.parse(order.shippingAddress) as Record<string, string>;
+          return JSON.parse(order.shippingAddress ?? "") as Record<string, string>;
         } catch {
           return { location: order.shippingAddress };
         }

@@ -33,16 +33,6 @@ export function writeCartToStorage(items: StoredCartItem[]) {
   localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
 }
 
-/** Persist cart before OAuth so it survives the full-page redirect round-trip */
-export function backupCartForCheckout(items: StoredCartItem[]) {
-  if (typeof window === "undefined") {
-    return;
-  }
-  const payload = JSON.stringify(items);
-  localStorage.setItem(CART_STORAGE_KEY, payload);
-  sessionStorage.setItem(CART_CHECKOUT_BACKUP_KEY, payload);
-}
-
 export function restoreCartAfterAuth(): StoredCartItem[] {
   const fromLocal = readCartFromStorage();
   if (fromLocal.length > 0) {
@@ -67,11 +57,5 @@ export function restoreCartAfterAuth(): StoredCartItem[] {
     return parsed;
   } catch {
     return [];
-  }
-}
-
-export function clearCheckoutCartBackup() {
-  if (typeof window !== "undefined") {
-    sessionStorage.removeItem(CART_CHECKOUT_BACKUP_KEY);
   }
 }
