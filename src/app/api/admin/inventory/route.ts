@@ -38,19 +38,17 @@ const getHandler = withAdminAuth(async (request) => {
     const { search, categoryId, status, minimal, page, limit } =
       parseSearchParams(request);
 
-    const { products, pagination } = await fetchInventoryList({
-      search,
-      categoryId,
-      status,
-      page,
-      limit,
-    });
+    const [{ products, pagination }, minimalStats] = await Promise.all([
+      fetchInventoryList({ search, categoryId, status, page, limit }),
+      // Stats ride along so the stats bar stays in sync with the table.
+      minimal ? fetchInventoryStats() : Promise.resolve(null),
+    ]);
 
     if (minimal) {
       // Admin inventory must always be fresh — a stale HTTP cache here made
       // renamed/edited products appear to "not update" after saving.
       return NextResponse.json(
-        { products, pagination },
+        { products, pagination, stats: minimalStats },
         { headers: { "Cache-Control": "no-store" } },
       );
     }

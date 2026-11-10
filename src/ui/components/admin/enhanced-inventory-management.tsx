@@ -225,6 +225,8 @@ export function EnhancedInventoryManagement({
           )
           .filter(Boolean) || [];
       setInventory(inventoryData);
+      // Keep the stats bar above the table in sync after every create/edit/stock change.
+      if (data.stats) window.dispatchEvent(new CustomEvent("inventory:stats", { detail: data.stats }));
     } catch (error) {
       console.error("Error loading inventory:", error);
     }

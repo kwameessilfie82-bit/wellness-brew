@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertTriangle, Package, PackageCheck, PackageX } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { cn } from "@/lib/cn";
 
@@ -12,7 +13,17 @@ type Stats = {
 };
 
 export function InventoryStatsBar({ initialStats }: { initialStats: Stats }) {
-  const stats = initialStats;
+  // Server snapshot on load, then live updates whenever the table reloads
+  // (it used to stay frozen, e.g. still "1 out of stock" after restocking).
+  const [stats, setStats] = useState(initialStats);
+  useEffect(() => {
+    const onStats = (e: Event) => {
+      const next = (e as CustomEvent<Stats>).detail;
+      if (next) setStats(next);
+    };
+    window.addEventListener("inventory:stats", onStats);
+    return () => window.removeEventListener("inventory:stats", onStats);
+  }, []);
 
   const cards = [
     {
