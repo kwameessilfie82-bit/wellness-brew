@@ -5,12 +5,16 @@ import { formatCurrency, formatDate } from "@/lib/invoice-utils"
 import { Card, CardContent } from "@/ui/primitives/card"
 import { Separator } from "@/ui/primitives/separator"
 import Image from "next/image"
+import { useSiteSettings } from "@/lib/settings/site-settings-context"
 
 interface InvoicePreviewProps {
   data: InvoiceData
+  invoiceTitle?: string
+  chequesPayableTo?: string
 }
 
-export function InvoicePreview({ data }: InvoicePreviewProps) {
+export function InvoicePreview({ data, invoiceTitle = "", chequesPayableTo = "" }: InvoicePreviewProps) {
+  const { brand } = useSiteSettings()
   return (
     <Card className="w-full max-w-4xl mx-auto print:shadow-none">
 
@@ -21,7 +25,10 @@ export function InvoicePreview({ data }: InvoicePreviewProps) {
           {/* Logo and Seller Info (Left) */}
           <div className="flex items-start gap-4">
             <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
-              <Image src="/leafyvibestea.png" alt="Wellness Brew logo" width={60} height={60} />
+              {brand.logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={brand.logoUrl} alt={`${brand.name} logo`} width={60} height={60} />
+              ) : null}
             </div>
             <div className="text-sm text-muted-foreground space-y-1">
               <p>{data.seller.address}</p>
@@ -34,10 +41,12 @@ export function InvoicePreview({ data }: InvoicePreviewProps) {
 
             {/* Title (Center) */}
        <div className="p-4 md:p-6 text-center space-y-2">
-            <h1 className="text-3xl font-bold text-foreground leading-tight">Hibiscus Teas</h1>
-            <p className="text-xs text-muted-foreground mt-1">
-              Cheques Payable to: PillJoint Pharmacy Ltd
-            </p>
+            <h1 className="text-3xl font-bold text-foreground leading-tight">{invoiceTitle}</h1>
+            {chequesPayableTo ? (
+              <p className="text-xs text-muted-foreground mt-1">
+                Cheques Payable to: {chequesPayableTo}
+              </p>
+            ) : null}
             <p className="text-sm text-muted-foreground mt-1">Premium Tea & Wellness</p>
           </div>
 

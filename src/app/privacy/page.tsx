@@ -1,7 +1,9 @@
+import { getPublicSettings } from "@/lib/settings/get"
 import { Navigation } from "@/ui/navigation"
 import { Footer } from "@/ui/footer"
 
-export default function PrivacyPage() {
+export default async function PrivacyPage() {
+  const { brand } = await getPublicSettings()
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
@@ -20,7 +22,7 @@ export default function PrivacyPage() {
               <section>
                 <h2 className="text-2xl font-serif font-bold text-foreground mb-4">1. Introduction</h2>
                 <p className="leading-relaxed">
-                  Welcome to Wellness Brew. We are committed to protecting your privacy and ensuring the security of your personal information. 
+                  Welcome to {brand.name}. We are committed to protecting your privacy and ensuring the security of your personal information. 
                   This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website and use our services.
                 </p>
               </section>

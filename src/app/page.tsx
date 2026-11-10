@@ -11,8 +11,10 @@ import { Navigation } from "@/ui/navigation";
 import { ProductCard } from "@/ui/product-card";
 import { Button } from "@/ui/primitives/button";
 import { cn } from "@/lib/cn";
+import { useSiteSettings } from "@/lib/settings/site-settings-context";
 
 export default function HomePage() {
+  const { brand } = useSiteSettings();
   const [featuredProducts, setFeaturedProducts] = useState<StoreProduct[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -81,7 +83,7 @@ export default function HomePage() {
               <div className="relative h-full overflow-hidden rounded-3xl border border-border/60 bg-white shadow-2xl">
                 <Image
                   src="/hero_image.webp"
-                  alt="Wellness Brew Teas — pure, organic wellness teas"
+                  alt={`${brand.name} Teas — pure, organic wellness teas`}
                   fill
                   className="object-contain"
                   priority
@@ -190,7 +192,7 @@ export default function HomePage() {
             Ready to start your wellness journey?
           </h2>
           <p className="mx-auto mb-8 max-w-lg text-muted-foreground">
-            Join thousands who make Wellness Brew part of their daily routine.
+            Join thousands who make {brand.name} part of their daily routine.
           </p>
           <Link href="/shop">
             <Button size="lg" className="h-12 rounded-full px-10">

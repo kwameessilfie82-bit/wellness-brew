@@ -1,6 +1,11 @@
+"use client"
+
 import Image from "next/image"
 
+import { useSiteSettings } from "@/lib/settings/site-settings-context"
+
 export function About() {
+  const { brand } = useSiteSettings()
   return (
     <section className="py-16 md:py-24">
       <div className="container mx-auto px-4">
@@ -10,7 +15,7 @@ export function About() {
             <div className="absolute inset-0 bg-primary/5 rounded-3xl" />
             <Image
               src="/traditional-tea-ceremony-with-natural-herbs-and-bo.jpg"
-              alt="About Wellness Brew"
+              alt={`About ${brand.name}`}
               fill
               className="object-cover rounded-3xl"
             />
@@ -24,7 +29,7 @@ export function About() {
             <h2 className="text-3xl md:text-5xl font-serif font-bold text-balance">A Tea Lover&apos;s Safe Haven</h2>
             <div className="space-y-4 text-muted-foreground leading-relaxed">
               <p>
-                At Wellness Brew, we believe tea is more than just a drink. It&apos;s comfort, healing, and a daily
+                At {brand.name}, we believe tea is more than just a drink. It&apos;s comfort, healing, and a daily
                 ritual of slowing down in our fast-paced world.
               </p>
               <p>

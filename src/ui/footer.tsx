@@ -1,13 +1,78 @@
+"use client"
+
+import { Facebook, Instagram, Linkedin, MessageCircle, Twitter, Youtube } from "lucide-react"
 import Link from "next/link"
 
+import { telLink } from "@/lib/settings/schemas"
+import { useSiteSettings } from "@/lib/settings/site-settings-context"
+
+const SOCIAL_ICONS = {
+  instagram: Instagram,
+  facebook: Facebook,
+  linkedin: Linkedin,
+  youtube: Youtube,
+  x: Twitter,
+  whatsapp: MessageCircle,
+  tiktok: MessageCircle,
+  other: MessageCircle,
+} as const
+
+const PLATFORM_NAMES: Record<string, string> = {
+  instagram: "Instagram",
+  facebook: "Facebook",
+  linkedin: "LinkedIn",
+  youtube: "YouTube",
+  x: "X",
+  whatsapp: "WhatsApp",
+  tiktok: "TikTok",
+  other: "Social profile",
+}
+
 export function Footer() {
+  const { brand, contact, social } = useSiteSettings()
+  const footerSocial = social.items.filter((s) => s.showInFooter)
   return (
     <footer className="bg-card border-t border-border mt-20">
       <div className="section-container py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           <div>
-            <h3 className="mb-4 font-serif text-lg font-bold text-brand">Wellness Brew</h3>
-            <p className="text-muted-foreground text-sm">Premium wellness teas for your daily ritual</p>
+            <h3 className="mb-4 font-serif text-lg font-bold text-brand">{brand.name}</h3>
+            {brand.tagline ? <p className="text-muted-foreground text-sm">{brand.tagline}</p> : null}
+            {contact.orderPhone ? (
+              <a
+                href={telLink(contact.orderPhone)}
+                className="mt-2 block text-sm text-muted-foreground transition hover:text-brand"
+              >
+                {contact.orderPhone}
+              </a>
+            ) : null}
+            {contact.emailHello ? (
+              <a
+                href={`mailto:${contact.emailHello}`}
+                className="block text-sm text-muted-foreground transition hover:text-brand"
+              >
+                {contact.emailHello}
+              </a>
+            ) : null}
+            {footerSocial.length > 0 ? (
+              <div className="mt-4 flex gap-3">
+                {footerSocial.map((s) => {
+                  const Icon = SOCIAL_ICONS[s.platform]
+                  return (
+                    <a
+                      key={s.id}
+                      href={s.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={PLATFORM_NAMES[s.platform]}
+                      className="text-muted-foreground transition hover:text-brand"
+                    >
+                      <Icon className="h-5 w-5" />
+                    </a>
+                  )
+                })}
+              </div>
+            ) : null}
           </div>
           <div>
             <h4 className="font-semibold mb-4">Shop</h4>
@@ -50,7 +115,7 @@ export function Footer() {
           </div>
         </div>
         <div className="border-t border-border pt-8 text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} Wellness Brew. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} {brand.name}. All rights reserved.</p>
         </div>
       </div>
     </footer>

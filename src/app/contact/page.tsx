@@ -6,9 +6,21 @@ import { Button } from "@/ui/primitives/button"
 import { Input } from "@/ui/primitives/input"
 import { Textarea } from "@/ui/primitives/textarea"
 import { Label } from "@/ui/primitives/label"
-import { Mail, Phone, MapPin } from "lucide-react"
+import { Clock, Mail, Phone, MapPin } from "lucide-react"
+import { telLink } from "@/lib/settings/schemas"
+import { useSiteSettings } from "@/lib/settings/site-settings-context"
+
+const LOCATION_TYPE_LABELS = {
+  pickup: "Pickup point",
+  correspondence: "Correspondence address",
+  retail: "Stockist",
+  event: "Event",
+} as const
 
 export default function ContactPage() {
+  const { contact, locations } = useSiteSettings()
+  const publicLocations = locations.items.filter((l) => l.isPublic)
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
@@ -27,29 +39,102 @@ export default function ContactPage() {
 
             <div className="grid md:grid-cols-2 gap-12">
               <div className="space-y-6">
-                <div className="flex gap-4">
-                  <Mail className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
-                  <div>
-                    <h3 className="font-semibold text-lg mb-1">Email</h3>
-                    <p className="text-muted-foreground">info@leafyvibestea.com</p>
+                {contact.emailHello ? (
+                  <div className="flex gap-4">
+                    <Mail className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
+                    <div>
+                      <h3 className="font-semibold text-lg mb-1">Email</h3>
+                      <p className="text-muted-foreground">
+                        <a href={`mailto:${contact.emailHello}`} className="hover:text-brand">{contact.emailHello}</a>
+                      </p>
+                      {contact.emailOrders ? (
+                        <p className="text-muted-foreground">
+                          Orders:{" "}
+                          <a href={`mailto:${contact.emailOrders}`} className="hover:text-brand">{contact.emailOrders}</a>
+                        </p>
+                      ) : null}
+                      {contact.emailB2B ? (
+                        <p className="text-muted-foreground">
+                          Corporate &amp; gifting:{" "}
+                          <a href={`mailto:${contact.emailB2B}`} className="hover:text-brand">{contact.emailB2B}</a>
+                        </p>
+                      ) : null}
+                    </div>
                   </div>
-                </div>
+                ) : contact.emailOrders || contact.emailB2B ? (
+                  <div className="flex gap-4">
+                    <Mail className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
+                    <div>
+                      <h3 className="font-semibold text-lg mb-1">Email</h3>
+                      {contact.emailOrders ? (
+                        <p className="text-muted-foreground">
+                          Orders:{" "}
+                          <a href={`mailto:${contact.emailOrders}`} className="hover:text-brand">{contact.emailOrders}</a>
+                        </p>
+                      ) : null}
+                      {contact.emailB2B ? (
+                        <p className="text-muted-foreground">
+                          Corporate &amp; gifting:{" "}
+                          <a href={`mailto:${contact.emailB2B}`} className="hover:text-brand">{contact.emailB2B}</a>
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+                ) : null}
                 <div className="flex gap-4">
                   <Phone className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
                   <div>
                     <h3 className="font-semibold text-lg mb-1">Phone</h3>
-                    <p className="text-muted-foreground">+233 553 981 862</p>
-                  </div>
-                </div>
-                <div className="flex gap-4">
-                  <MapPin className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
-                  <div>
-                    <h3 className="font-semibold text-lg mb-1">Address</h3>
                     <p className="text-muted-foreground">
-                      Parakuo Estate, Dome, Accra
+                      <a href={telLink(contact.orderPhone)} className="hover:text-brand">{contact.orderPhone}</a>
                     </p>
+                    {contact.otherPhones
+                      .filter((p) => p.number)
+                      .map((p) => (
+                        <p key={p.id} className="text-muted-foreground">
+                          {p.label ? `${p.label}: ` : ""}
+                          <a href={telLink(p.number)} className="hover:text-brand">{p.number}</a>
+                        </p>
+                      ))}
                   </div>
                 </div>
+                {contact.businessHours || contact.responseTime ? (
+                  <div className="flex gap-4">
+                    <Clock className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
+                    <div>
+                      <h3 className="font-semibold text-lg mb-1">Hours</h3>
+                      {contact.businessHours ? (
+                        <p className="text-muted-foreground">{contact.businessHours}</p>
+                      ) : null}
+                      {contact.responseTime ? (
+                        <p className="text-muted-foreground">{contact.responseTime}</p>
+                      ) : null}
+                    </div>
+                  </div>
+                ) : null}
+                {publicLocations.map((loc) => (
+                  <div key={loc.id} className="flex gap-4">
+                    <MapPin className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
+                    <div>
+                      <h3 className="font-semibold text-lg mb-1">{loc.name}</h3>
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                        {LOCATION_TYPE_LABELS[loc.type]}
+                      </p>
+                      {loc.address ? <p className="text-muted-foreground">{loc.address}</p> : null}
+                      {loc.hours ? <p className="text-muted-foreground">{loc.hours}</p> : null}
+                      {loc.mapUrl ? (
+                        <a
+                          href={loc.mapUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-brand hover:underline"
+                        >
+                          View on map
+                        </a>
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
               </div>
 
               <form className="space-y-4">

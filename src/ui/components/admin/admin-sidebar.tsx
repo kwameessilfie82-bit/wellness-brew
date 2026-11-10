@@ -11,6 +11,7 @@ import {
   Users,
   FileText,
   ShoppingBag,
+  Settings,
 } from "lucide-react";
 
 import { cn } from "@/lib/cn";
@@ -23,7 +24,7 @@ import {
   SheetTrigger,
 } from "@/ui/primitives/sheet";
 import type { AdminUserWithDetails } from "@/db/schema";
-import { SEO_CONFIG } from "@/app";
+import { useSiteSettings } from "@/lib/settings/site-settings-context";
 
 interface AdminSidebarProps {
   adminUser: AdminUserWithDetails;
@@ -66,6 +67,12 @@ const navigationItems = [
     href: "/admin/invoice-generator",
     icon: FileText,
     permission: "canManageOrders" as const,
+  },
+  {
+    name: "Settings",
+    href: "/admin/settings",
+    icon: Settings,
+    permission: "canManageSettings" as const,
   },
 ];
 
@@ -121,10 +128,11 @@ function SidebarContent({
   filteredNavigation: typeof navigationItems;
   onNavigate?: () => void;
 }) {
+  const { brand } = useSiteSettings();
   return (
   <div className="flex h-full flex-col">
     <div className="border-b border-border/60 px-4 py-5">
-      <p className="font-serif text-lg font-bold text-brand">{SEO_CONFIG.name}</p>
+      <p className="font-serif text-lg font-bold text-brand">{brand.name}</p>
       <p className="text-xs text-muted-foreground">Store management</p>
     </div>
 

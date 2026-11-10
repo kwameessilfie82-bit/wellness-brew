@@ -4,7 +4,7 @@ import Image from "next/image";
 // import Link from "next/link";
 import { useState } from "react";
 
-import { SEO_CONFIG } from "@/app";
+import { useSiteSettings } from "@/lib/settings/site-settings-context";
 import {
   signInWithGoogle,
   signUpWithEmail,
@@ -20,6 +20,7 @@ import { Separator } from "@/ui/primitives/separator";
 import { Loader2 } from "lucide-react";
 
 export function SignUpPageClient() {
+  const { brand } = useSiteSettings();
   const { user } = useCurrentUser();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -127,9 +128,9 @@ export function SignUpPageClient() {
           `}
         />
         <div className="absolute bottom-8 left-8 z-10 text-white">
-          <h1 className="text-3xl font-bold">{SEO_CONFIG.name}</h1>
+          <h1 className="text-3xl font-bold">{brand.name}</h1>
           <p className="mt-2 max-w-md text-sm text-white/80">
-            {SEO_CONFIG.slogan}
+            {brand.tagline}
           </p>
         </div>
       </div>

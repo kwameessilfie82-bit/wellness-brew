@@ -2,9 +2,12 @@
  * Run SQL migration files when drizzle-kit push fails.
  * Usage: node scripts/run-sql.mjs drizzle/0001_store_orders.sql
  */
-import "dotenv/config";
+import { config } from "dotenv";
 import { readFileSync } from "node:fs";
 import postgres from "postgres";
+
+// Local overrides first (.env.local), then .env — same order as drizzle.config.ts.
+config({ path: [".env.local", ".env"] });
 
 const file = process.argv[2];
 if (!file) {
@@ -13,6 +16,7 @@ if (!file) {
 }
 
 const url = process.env.DATABASE_URL_DIRECT ?? process.env.DATABASE_URL;
+if (url) console.log("Target DB:", new URL(url).host);
 if (!url) {
   console.error("DATABASE_URL (or DATABASE_URL_DIRECT) is not set");
   process.exit(1);

@@ -1,8 +1,10 @@
+import { getPublicSettings } from "@/lib/settings/get"
 import { Navigation } from "@/ui/navigation"
 import { Footer } from "@/ui/footer"
 import Image from "next/image"
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const { brand } = await getPublicSettings()
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
@@ -11,7 +13,7 @@ export default function AboutPage() {
         <div className="section-container">
           <div className="max-w-3xl mx-auto text-center mb-16">
             <h1 className="mb-6 font-serif text-5xl font-bold text-heading md:text-6xl">
-              About Wellness Brew
+              About {brand.name}
             </h1>
             <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
               We are passionate about bringing you the finest selection of premium Rose of Sharon (Hibiscus) teas and wellness products. 
@@ -51,7 +53,7 @@ export default function AboutPage() {
             <div>
               <h2 className="mb-4 font-serif text-3xl font-bold text-heading">Our Story</h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                Founded with a vision to make premium wellness products accessible to everyone, Wellness Brew has been 
+                Founded with a vision to make premium wellness products accessible to everyone, {brand.name} has been 
                 dedicated to sourcing the finest Rose of Sharon (Hibiscus) teas and herbal blends from around the world. 
                 Each product is carefully selected for its quality, purity, and health benefits.
               </p>

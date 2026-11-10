@@ -12,6 +12,7 @@ import { Skeleton } from "@/ui/primitives/skeleton";
 import { NavigationUserInfo } from "@/ui/components/navigation-user-info";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
+import { useSiteSettings } from "@/lib/settings/site-settings-context";
 
 const navLinks = [
   { href: "/", label: "Home" },
@@ -22,6 +23,7 @@ const navLinks = [
 
 export function Navigation() {
   const pathname = usePathname();
+  const { brand } = useSiteSettings();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -35,7 +37,11 @@ export function Navigation() {
           href="/"
           className="font-serif text-xl font-bold tracking-tight text-brand md:text-2xl"
         >
-          Wellness Brew
+          {brand.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={brand.logoUrl} alt="" className="mr-2 inline-block h-8 w-8 rounded-full object-cover align-middle" />
+          ) : null}
+          {brand.name}
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">

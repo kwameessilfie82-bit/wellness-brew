@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 
-import { SEO_CONFIG } from "@/app";
+import { useSiteSettings } from "@/lib/settings/site-settings-context";
 import { useCurrentUser } from "@/lib/auth-client";
 import { cn } from "@/lib/cn";
 import dynamic from "next/dynamic";
@@ -30,6 +30,7 @@ interface HeaderProps {
 }
 
 export function Header({ showAuth = true, adminUser }: HeaderProps) {
+  const { brand } = useSiteSettings();
   const pathname = usePathname();
   const { isPending, user } = useCurrentUser();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -103,7 +104,7 @@ export function Header({ showAuth = true, adminUser }: HeaderProps) {
                   `,
                 )}
               >
-                {SEO_CONFIG.name}
+                {brand.name}
               </span>
             </Link>
             <nav

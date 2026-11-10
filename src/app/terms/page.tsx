@@ -1,7 +1,9 @@
+import { getPublicSettings } from "@/lib/settings/get"
 import { Navigation } from "@/ui/navigation"
 import { Footer } from "@/ui/footer"
 
-export default function TermsPage() {
+export default async function TermsPage() {
+  const { brand } = await getPublicSettings()
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
@@ -20,7 +22,7 @@ export default function TermsPage() {
               <section>
                 <h2 className="text-2xl font-serif font-bold text-foreground mb-4">1. Acceptance of Terms</h2>
                 <p className="leading-relaxed">
-                  By accessing and using the Wellness Brew website, you accept and agree to be bound by the terms and 
+                  By accessing and using the {brand.name} website, you accept and agree to be bound by the terms and 
                   provision of this agreement. If you do not agree to abide by the above, please do not use this service.
                 </p>
               </section>
@@ -28,7 +30,7 @@ export default function TermsPage() {
               <section>
                 <h2 className="text-2xl font-serif font-bold text-foreground mb-4">2. Use License</h2>
                 <p className="leading-relaxed mb-3">
-                  Permission is granted to temporarily access the materials on Wellness Brew's website for personal,
+                  Permission is granted to temporarily access the materials on {brand.name}'s website for personal,
                   non-commercial transitory viewing only. This is the grant of a license, not a transfer of title, and under this license you may not:
                 </p>
                 <ul className="list-disc pl-6 space-y-2">
@@ -103,14 +105,14 @@ export default function TermsPage() {
                 <h2 className="text-2xl font-serif font-bold text-foreground mb-4">9. Intellectual Property</h2>
                 <p className="leading-relaxed">
                   All content on this website, including text, graphics, logos, images, and software, is the property of 
-                  Wellness Brew or its content suppliers and is protected by copyright and other intellectual property laws.
+                  {brand.name} or its content suppliers and is protected by copyright and other intellectual property laws.
                 </p>
               </section>
 
               <section>
                 <h2 className="text-2xl font-serif font-bold text-foreground mb-4">10. Limitation of Liability</h2>
                 <p className="leading-relaxed">
-                  Wellness Brew shall not be liable for any indirect, incidental, special, consequential, or punitive damages 
+                  {brand.name} shall not be liable for any indirect, incidental, special, consequential, or punitive damages 
                   resulting from your use of or inability to use the website or products.
                 </p>
               </section>

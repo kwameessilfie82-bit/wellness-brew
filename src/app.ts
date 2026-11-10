@@ -1,3 +1,4 @@
+// Fallback only — real values come from Settings → Brand
 export const SEO_CONFIG = {
   description:
     "Wellness Brew: Premium tea and wellness e-commerce site.",
@@ -10,7 +11,7 @@ export const SYSTEM_CONFIG = {
   // Default post-auth redirects; home route now handles admin/customer routing
   redirectAfterSignIn: "/",
   redirectAfterSignUp: "/",
-  repoName: "leafyvibestea",
+  repoName: "nutrihealth-invoice",
   repoOwner: "samezzz",
   repoStars: true,
 };

@@ -13,3 +13,5 @@ export * from "./users/types";
 export * from "./uploads/relations";
 export * from "./uploads/tables";
 export * from "./uploads/types";
+
+export * from "./settings/tables";
