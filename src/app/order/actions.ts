@@ -175,14 +175,17 @@ export async function placeOrder(raw: unknown): Promise<PlaceOrderResult> {
     let pickupLocationId: string | null = null;
     let pickupLocationName: string | null = null;
     if (input.fulfilment === "delivery") {
-      const zone = input.zoneId ? delivery.zones.find((z) => z.id === input.zoneId && z.isActive) : undefined;
+      const activeZones = delivery.zones.filter((z) => z.isActive);
+      // With no zones set up, any area is accepted and the fee is agreed on WhatsApp.
+      const freeTextOk = delivery.allowUnlistedAreas || activeZones.length === 0;
+      const zone = input.zoneId ? activeZones.find((z) => z.id === input.zoneId) : undefined;
       if (zone) {
         deliveryZoneId = zone.id;
         deliveryArea = zone.name;
         if (zone.fee === null) feeConfirmed = false;
         else deliveryFee = zone.fee;
-      } else if (input.areaText && delivery.allowUnlistedAreas) {
-        deliveryArea = input.areaText;
+      } else if (freeTextOk && (input.areaText || input.location)) {
+        deliveryArea = input.areaText || "Shared location (map pin)";
         feeConfirmed = false;
       } else {
         return {

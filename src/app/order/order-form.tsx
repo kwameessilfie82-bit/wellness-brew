@@ -184,6 +184,10 @@ export function OrderForm({ config }: { config: OrderFormConfig }) {
   }, [scrollTick]);
 
   // ── Fees ───────────────────────────────────────────────────────────────
+  // No zones configured → no dropdown, just a free-text area (fee agreed on WhatsApp).
+  const hasZones = delivery.zones.length > 0;
+  const freeTextArea = delivery.allowUnlistedAreas || !hasZones;
+  const typingArea = !hasZones || zoneId === OTHER_AREA;
   const zone = delivery.zones.find((z) => z.id === zoneId);
   const freeOver = delivery.freeDeliveryOver !== null && totalPrice >= delivery.freeDeliveryOver;
   let feeLabel: string;
@@ -268,7 +272,7 @@ export function OrderForm({ config }: { config: OrderFormConfig }) {
     setDuplicate(null);
     setFailure(null);
 
-    const otherArea = zoneId === OTHER_AREA;
+    const otherArea = typingArea || !zoneId;
     startTransition(async () => {
       try {
         const res = await placeOrder({
@@ -647,43 +651,88 @@ export function OrderForm({ config }: { config: OrderFormConfig }) {
 
             {fulfilment === "delivery" && deliveryOn ? (
               <>
-                <Field id="zoneId" label="Your area" error={err("zoneId")}>
-                  <div className="[&>div]:w-full">
-                    <NativeSelect
-                      id="zoneId"
-                      value={zoneId}
-                      onChange={(e) => {
-                        setZoneId(e.target.value);
-                        clearErr("zoneId");
-                      }}
-                      {...aria("zoneId")}
-                    >
-                      <NativeSelectOption value="">Choose your area</NativeSelectOption>
-                      {delivery.zones.map((z) => (
-                        <NativeSelectOption key={z.id} value={z.id}>
-                          {z.name} —{" "}
-                          {z.fee === null ? "fee confirmed on WhatsApp" : z.fee === 0 ? "Free" : formatMoney(z.fee)}
-                          {z.etaText ? ` (${z.etaText})` : ""}
-                        </NativeSelectOption>
-                      ))}
-                      {delivery.allowUnlistedAreas ? (
-                        <NativeSelectOption value={OTHER_AREA}>My area isn&apos;t listed</NativeSelectOption>
-                      ) : null}
-                    </NativeSelect>
-                  </div>
-                </Field>
+                {/* Location first: one tap fills the area and address for most people. */}
+                <LocationPicker
+                  value={location}
+                  onChange={(loc) => {
+                    setLocation(loc);
+                    if (loc) {
+                      clearErr("address");
+                      clearErr("zoneId");
+                      clearErr("areaText");
+                    }
+                  }}
+                  onResolved={(geo) => {
+                    // Only fill blanks — never overwrite what the customer typed or picked.
+                    setAddress((cur) => (cur.trim() ? cur : geo.address));
+                    if (!geo.area) return;
+                    const needle = geo.area.toLowerCase();
+                    const match = hasZones
+                      ? delivery.zones.find((z) =>
+                          [z.name, ...z.areas.split(/[,;\n]/)]
+                            .map((s) => s.trim().toLowerCase())
+                            .some((s) => s && (s === needle || needle.includes(s) || s.includes(needle))),
+                        )
+                      : undefined;
+                    setZoneId((cur) => {
+                      if (cur && cur !== OTHER_AREA) return cur; // customer already chose a zone
+                      if (match) {
+                        toast.success(`Area set to ${match.name}`, { description: "Change it below if that's not right." });
+                        return match.id;
+                      }
+                      return hasZones && freeTextArea ? OTHER_AREA : cur;
+                    });
+                    if (!match) setAreaText((cur) => (cur.trim() ? cur : geo.area));
+                  }}
+                />
+
+                {hasZones ? (
+                  <Field
+                    id="zoneId"
+                    label={location ? "Your area (optional with your location shared)" : "Your area"}
+                    error={err("zoneId")}
+                  >
+                    <div className="[&>div]:w-full">
+                      <NativeSelect
+                        id="zoneId"
+                        value={zoneId}
+                        onChange={(e) => {
+                          setZoneId(e.target.value);
+                          clearErr("zoneId");
+                        }}
+                        {...aria("zoneId")}
+                      >
+                        <NativeSelectOption value="">Choose your area</NativeSelectOption>
+                        {delivery.zones.map((z) => (
+                          <NativeSelectOption key={z.id} value={z.id}>
+                            {z.name} —{" "}
+                            {z.fee === null ? "fee confirmed on WhatsApp" : z.fee === 0 ? "Free" : formatMoney(z.fee)}
+                            {z.etaText ? ` (${z.etaText})` : ""}
+                          </NativeSelectOption>
+                        ))}
+                        {freeTextArea ? (
+                          <NativeSelectOption value={OTHER_AREA}>My area isn&apos;t listed</NativeSelectOption>
+                        ) : null}
+                      </NativeSelect>
+                    </div>
+                  </Field>
+                ) : null}
                 {zone?.areas ? <p className="-mt-2 text-xs text-muted-foreground">Includes: {zone.areas}</p> : null}
                 {delivery.freeDeliveryOver !== null ? (
                   <p className="-mt-2 text-xs text-muted-foreground">
                     Free delivery on orders of {formatMoney(delivery.freeDeliveryOver)} or more.
                   </p>
                 ) : null}
-                {zoneId === OTHER_AREA ? (
+                {typingArea ? (
                   <Field
                     id="areaText"
-                    label="Your area"
-                    hint="We'll confirm the delivery fee on WhatsApp"
-                    error={err("areaText")}
+                    label={location ? "Your area (optional)" : "Your area"}
+                    hint={
+                      location
+                        ? "Filled from your location — edit it if needed. We confirm the delivery fee on WhatsApp."
+                        : "Town or neighbourhood, e.g. East Legon. We confirm the delivery fee on WhatsApp."
+                    }
+                    error={err("areaText") || (hasZones ? undefined : err("zoneId"))}
                   >
                     <Input
                       id="areaText"
@@ -694,35 +743,11 @@ export function OrderForm({ config }: { config: OrderFormConfig }) {
                         clearErr("zoneId");
                       }}
                       placeholder="Town or neighbourhood"
-                      {...aria("areaText", true)}
+                      autoComplete="address-level2"
+                      {...aria(err("areaText") ? "areaText" : "zoneId", true)}
                     />
                   </Field>
                 ) : null}
-
-                <LocationPicker
-                  value={location}
-                  onChange={(loc) => {
-                    setLocation(loc);
-                    if (loc) clearErr("address");
-                  }}
-                  onResolved={(geo) => {
-                    // Only fill blanks — never overwrite what the customer typed.
-                    setAddress((cur) => (cur.trim() ? cur : geo.address));
-                    if (!zoneId && geo.area) {
-                      const needle = geo.area.toLowerCase();
-                      const match = delivery.zones.find((z) =>
-                        [z.name, ...z.areas.split(/[,;\n]/)]
-                          .map((s) => s.trim().toLowerCase())
-                          .some((s) => s && (s === needle || needle.includes(s) || s.includes(needle))),
-                      );
-                      if (match) {
-                        setZoneId(match.id);
-                        clearErr("zoneId");
-                        toast.success(`Area set to ${match.name}`, { description: "Change it above if that's not right." });
-                      }
-                    }
-                  }}
-                />
                 <Field
                   id="address"
                   label={location ? "Address or landmark (optional)" : "Address or landmark"}

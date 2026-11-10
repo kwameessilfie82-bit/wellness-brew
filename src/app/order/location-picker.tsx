@@ -27,10 +27,40 @@ function getPosition(highAccuracy: boolean): Promise<GeolocationPosition> {
   );
 }
 
-/** Best-effort street address for a pin (OpenStreetMap). Never blocks the order. */
+/**
+ * Best-effort readable address for a pin. Never blocks the order: the pin
+ * itself is saved either way. OpenStreetMap first, BigDataCloud as fallback
+ * (Nominatim rate-limits/blocks some networks).
+ */
 async function reverseGeocode(lat: number, lng: number): Promise<ReverseGeocode | null> {
+  // Run both at once; prefer the more detailed OpenStreetMap answer.
+  const fallback = bigDataCloud(lat, lng);
+  return (await nominatim(lat, lng)) ?? (await fallback);
+}
+
+async function bigDataCloud(lat: number, lng: number): Promise<ReverseGeocode | null> {
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 8000);
+  const timer = setTimeout(() => ctrl.abort(), 10000);
+  try {
+    const res = await fetch(
+      `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`,
+      { signal: ctrl.signal },
+    );
+    if (!res.ok) return null;
+    const j = (await res.json()) as { locality?: string; city?: string; principalSubdivision?: string };
+    const area = j.locality || j.city || "";
+    const parts = [j.locality, j.city !== j.locality ? j.city : "", j.principalSubdivision].filter(Boolean) as string[];
+    return parts.length ? { address: [...new Set(parts)].join(", "), area } : null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function nominatim(lat: number, lng: number): Promise<ReverseGeocode | null> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 4000);
   try {
     const res = await fetch(
       `https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=18&addressdetails=1&lat=${lat}&lon=${lng}`,

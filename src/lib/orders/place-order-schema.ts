@@ -57,7 +57,9 @@ export const placeOrderSchema = z
   })
   .superRefine((v, ctx) => {
     if (v.fulfilment === "delivery") {
-      if (!v.zoneId && !v.areaText) ctx.addIssue({ code: "custom", path: ["zoneId"], message: "Choose your area" });
+      // A map pin locates the customer even when they didn't name an area.
+      if (!v.zoneId && !v.areaText && !v.location)
+        ctx.addIssue({ code: "custom", path: ["zoneId"], message: "Enter your area or use your current location" });
       // A shared map pin is enough for the rider; otherwise we need a written address.
       if (v.address.length < 3 && !v.location) ctx.addIssue({ code: "custom", path: ["address"], message: "Add an address or landmark" });
     } else if (!v.pickupLocationId) {
