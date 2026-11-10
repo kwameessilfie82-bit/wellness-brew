@@ -11,7 +11,7 @@ import { waLink } from "@/lib/orders/message";
 import { round2 } from "@/lib/orders/money";
 import { newToken } from "@/lib/orders/server/ids";
 import { syncOrderInvoice } from "@/lib/orders/server/invoices";
-import { listOrders, type OrderTab, ORDER_TABS } from "@/lib/orders/server/staff-queries";
+import { listOrders, listStaff, type OrderTab, ORDER_TABS } from "@/lib/orders/server/staff-queries";
 import { addEvent, lockOrder, StockShortError, transitionLocked } from "@/lib/orders/server/transitions";
 import { orderLink, paymentDetailsText, siteUrl, staffMessage } from "@/lib/orders/server/view";
 import {
@@ -126,8 +126,17 @@ export async function recordPayment(input: {
     const order = await lockOrder(tx, input.orderId);
     if (!order) return { ok: false, error: "Order not found" } as Fail;
     if (order.version !== input.expectedVersion) return CONFLICT;
+    if (["cancelled", "expired", "returned"].includes(order.status)) {
+      return { ok: false, error: "This order is closed. Reopen it before recording a payment." } as Fail;
+    }
+    if (order.paymentStatus === "refund_due" || order.paymentStatus === "refunded") {
+      return { ok: false, error: "This order has a refund in progress." } as Fail;
+    }
     const paid = round2(parsePrice(order.amountPaid) + amount);
     const total = parsePrice(order.total);
+    if (paid > total + 0.009) {
+      return { ok: false, error: `That's more than the balance due (${round2(total - parsePrice(order.amountPaid))}).` } as Fail;
+    }
     const paymentStatus = paid + 0.004 >= total ? "paid" : "partially_paid";
     const status = isOrderStatus(order.status) ? deriveCompletion(order.status, paymentStatus) : order.status;
     await tx
@@ -255,6 +264,9 @@ export async function updateOrderItems(input: {
   const items = input.items.filter((i) => i.quantity > 0);
   if (items.length === 0) return { ok: false, error: "An order needs at least one item. Cancel it instead." };
   if (items.some((i) => !Number.isInteger(i.quantity) || i.quantity > 10_000)) return { ok: false, error: "Invalid quantity" };
+  if (items.some((i) => i.price !== undefined && (!Number.isFinite(i.price) || i.price < 0 || i.price > 100_000))) {
+    return { ok: false, error: "Invalid price" };
+  }
 
   const products = await db
     .select({ id: productTable.id, name: productTable.name, sku: productTable.sku, price: productTable.price, images: productTable.images })
@@ -340,6 +352,12 @@ export async function updateOrderItems(input: {
 export async function assignOrder(orderId: string, adminUserId: string | null): Promise<Result> {
   const admin = await requireStaff();
   if (!admin) return { ok: false, error: "Not allowed" };
+  if (adminUserId) {
+    const staff = await listStaff();
+    if (!staff.some((s) => s.id === adminUserId)) return { ok: false, error: "Unknown staff member" };
+  }
+  const [exists] = await db.select({ id: storeOrderTable.id }).from(storeOrderTable).where(eq(storeOrderTable.id, orderId)).limit(1);
+  if (!exists) return { ok: false, error: "Order not found" };
   await db.transaction(async (tx) => {
     await tx
       .update(storeOrderTable)
@@ -356,6 +374,8 @@ export async function addOrderNote(orderId: string, text: string): Promise<Resul
   if (!admin) return { ok: false, error: "Not allowed" };
   const note = text.trim().slice(0, 1000);
   if (!note) return { ok: false, error: "Write a note" };
+  const [exists] = await db.select({ id: storeOrderTable.id }).from(storeOrderTable).where(eq(storeOrderTable.id, orderId)).limit(1);
+  if (!exists) return { ok: false, error: "Order not found" };
   await db.transaction((tx) => addEvent(tx, orderId, { type: "staff", id: admin.id }, { type: "note", data: { note } }));
   refresh(orderId);
   return { ok: true };

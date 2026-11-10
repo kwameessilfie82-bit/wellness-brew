@@ -279,8 +279,8 @@ export default async function OrderPage({ params, searchParams }: Props) {
         <CustomerActions
           token={token}
           canCancel={CUSTOMER_CANCELLABLE.includes(status)}
-          canConfirmReceived={status === "out_for_delivery" || status === "ready_for_pickup"}
-          receivedLabel={status === "ready_for_pickup" ? "I've picked up my order" : "I've received my order"}
+          canConfirmReceived={status === "ready_for_pickup"}
+          receivedLabel="I've picked up my order"
         />
 
         <a

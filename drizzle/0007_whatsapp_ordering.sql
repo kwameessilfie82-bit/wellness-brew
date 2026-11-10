@@ -48,6 +48,12 @@ ALTER TABLE "store_order"
   ADD COLUMN IF NOT EXISTS "idempotency_key" text,
   ADD COLUMN IF NOT EXISTS "version" integer NOT NULL DEFAULT 0;
 
+-- Legacy paid orders: record the amount so balance-due math works.
+UPDATE "store_order" SET "amount_paid" = "total"
+  WHERE "channel" = 'web_paystack_legacy' AND "payment_status" = 'paid' AND "amount_paid" = 0;
+UPDATE "store_order" SET "status" = 'out_for_delivery'
+  WHERE "channel" = 'web_paystack_legacy' AND "status" = 'shipped';
+
 -- Legacy Paystack attempts that never completed payment become cancelled.
 UPDATE "store_order"
   SET "status" = 'cancelled', "cancel_reason" = 'legacy_unpaid'
@@ -57,6 +63,11 @@ UPDATE "store_order"
   WHERE "channel" = 'web_paystack_legacy' AND "status" IN ('processing', 'paid');
 UPDATE "store_order" SET "payment_status" = 'unpaid'
   WHERE "payment_status" IS NULL OR "payment_status" IN ('pending', 'failed');
+-- Anything else unknown on a legacy row: close it rather than leave it unmovable.
+UPDATE "store_order" SET "status" = 'cancelled', "cancel_reason" = 'other'
+  WHERE "channel" = 'web_paystack_legacy' AND "status" NOT IN (
+    'awaiting_customer', 'received', 'confirmed', 'preparing', 'ready_for_pickup', 'out_for_delivery',
+    'delivery_failed', 'delivered', 'picked_up', 'completed', 'cancelled', 'expired', 'returned');
 UPDATE "store_order"
   SET "public_token" = replace(gen_random_uuid()::text, '-', '')
   WHERE "public_token" IS NULL;

@@ -160,9 +160,26 @@ export async function transitionLocked(
     patch.deliveredAt = null;
     patch.deliveryProof = null;
   }
+  const hasPaid = order.paymentStatus === "paid" || order.paymentStatus === "partially_paid";
   if (to === "cancelled") {
     patch.cancelReason = opts.reason ?? "other";
-    if (order.paymentStatus === "paid" || order.paymentStatus === "partially_paid") patch.paymentStatus = "refund_due";
+    if (hasPaid) patch.paymentStatus = "refund_due";
+  }
+  if (to === "returned" && hasPaid) patch.paymentStatus = "refund_due";
+  if (opts.undo && from === "cancelled") {
+    // Reopening: a refund that wasn't paid out is no longer due.
+    patch.cancelReason = null;
+    if (order.paymentStatus === "refund_due") {
+      const paid = Number(order.amountPaid);
+      patch.paymentStatus = paid <= 0 ? "unpaid" : paid + 0.004 >= Number(order.total) ? "paid" : "partially_paid";
+    }
+  }
+  // Keep a pending payment-verification flag; any other flag is resolved by moving the order on.
+  if (patch.attentionReason === undefined) {
+    patch.attentionReason =
+      order.attentionReason === "payment_to_verify" && (patch.paymentStatus ?? order.paymentStatus) === "pending_verification"
+        ? order.attentionReason
+        : null;
   }
   if (to !== "awaiting_customer") patch.expiresAt = null;
 
@@ -174,7 +191,6 @@ export async function transitionLocked(
     .set({
       ...patch,
       status: finalStatus,
-      attentionReason: patch.attentionReason ?? null,
       version: order.version + 1,
       updatedAt: new Date(),
     })

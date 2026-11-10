@@ -23,11 +23,13 @@ async function orderIdFor(token: string): Promise<string | null> {
 }
 
 async function guard(token: string, action: string): Promise<string | Result> {
-  if (!(await rateLimit(`cust:${action}:${token}`, 10, 3600))) {
+  // Look the token up first so random guesses don't create limiter rows.
+  const id = await orderIdFor(token);
+  if (!id) return { ok: false, error: "Order not found." };
+  if (!(await rateLimit(`cust:${action}:${id}`, 10, 3600))) {
     return { ok: false, error: "Too many attempts. Please message us on WhatsApp." };
   }
-  const id = await orderIdFor(token);
-  return id ?? { ok: false, error: "Order not found." };
+  return id;
 }
 
 /** Logged when the customer taps "Send on WhatsApp" (hand-off funnel metric). */
@@ -83,9 +85,10 @@ export async function customerReceived(token: string): Promise<Result> {
   return db.transaction(async (tx) => {
     const order = await lockOrder(tx, id);
     if (!order) return { ok: false, error: "Order not found." };
-    const to = order.status === "ready_for_pickup" ? "picked_up" : order.status === "out_for_delivery" ? "delivered" : null;
-    if (!to) return { ok: false, error: "This order isn't out for delivery yet." };
-    const res = await transitionLocked(tx, order, to, { type: "customer" }, { patch: { deliveryProof: "customer" } });
+    // Deliveries are proven by the rider entering the customer's code; customers
+    // can only self-confirm pickups.
+    if (order.status !== "ready_for_pickup") return { ok: false, error: "Give the rider your delivery code to confirm delivery." };
+    const res = await transitionLocked(tx, order, "picked_up", { type: "customer" }, { patch: { deliveryProof: "customer" } });
     return res.ok ? { ok: true } : { ok: false, error: res.error };
   });
 }

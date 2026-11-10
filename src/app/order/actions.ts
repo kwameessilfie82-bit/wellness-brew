@@ -90,7 +90,8 @@ export async function placeOrder(raw: unknown): Promise<PlaceOrderResult> {
     const ip = await clientIp();
     const [ipOk, phoneOk] = await Promise.all([
       // Counts attempts (incl. price-change retries), so leave headroom for real customers.
-      rateLimit(`order:ip:${ip}`, 30, 3600),
+      // Unknown IP would be one shared bucket for everyone: rely on the phone limit instead.
+      ip === "unknown" ? true : rateLimit(`order:ip:${ip}`, 30, 3600),
       rateLimit(`order:phone:${phone}`, 10, 3600),
     ]);
     if (!ipOk || !phoneOk) {

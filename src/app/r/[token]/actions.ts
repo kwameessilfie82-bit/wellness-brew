@@ -10,6 +10,8 @@ import { parsePrice } from "@/lib/format";
 import { round2 } from "@/lib/orders/money";
 import { rateLimit } from "@/lib/orders/server/rate-limit";
 import { addEvent, transitionLocked } from "@/lib/orders/server/transitions";
+import { isOrderStatus, TERMINAL } from "@/lib/orders/status";
+
 type Result = { ok: true } | { ok: false; error: string; locked?: boolean };
 
 const MAX_RIDER_ATTEMPTS = 5;
@@ -20,7 +22,21 @@ async function lockByRiderToken(tx: Parameters<Parameters<typeof db.transaction>
   if (!TOKEN_RE.test(token)) return undefined;
   const [row] = await tx.select().from(storeOrderTable).where(eq(storeOrderTable.riderToken, token)).for("update");
   if (!row || !row.riderTokenExpiresAt || row.riderTokenExpiresAt < new Date()) return undefined;
+  // Closed orders: the link stops working (it exposes the customer's address).
+  if (isOrderStatus(row.status) && TERMINAL.includes(row.status)) return undefined;
   return row;
+}
+
+/** Rate-limit only real tokens, so random guesses can't flood the limiter table. */
+async function limited(token: string, action: string, limit: number): Promise<boolean> {
+  if (!TOKEN_RE.test(token)) return true;
+  const [row] = await db
+    .select({ id: storeOrderTable.id })
+    .from(storeOrderTable)
+    .where(eq(storeOrderTable.riderToken, token))
+    .limit(1);
+  if (!row) return false; // lockByRiderToken will reject it
+  return !(await rateLimit(`rider:${action}:${row.id}`, limit, 3600));
 }
 
 function codesMatch(a: string, b: string): boolean {
@@ -31,7 +47,7 @@ function codesMatch(a: string, b: string): boolean {
 
 /** Rider picked the order up: confirmed/preparing → out for delivery. */
 export async function riderStart(token: string): Promise<Result> {
-  if (!(await rateLimit(`rider:start:${token}`, 10, 3600))) return { ok: false, error: "Too many attempts" };
+  if (await limited(token, "start", 10)) return { ok: false, error: "Too many attempts" };
   return db.transaction(async (tx) => {
     const order = await lockByRiderToken(tx, token);
     if (!order) return { ok: false, error: "This delivery link isn't valid any more. Ask the shop for a new one." };
@@ -46,7 +62,7 @@ export async function riderStart(token: string): Promise<Result> {
 
 /** Rider enters the customer's code → delivered (+ optional cash collected). */
 export async function riderConfirm(token: string, code: string, cashCollected: boolean): Promise<Result> {
-  if (!(await rateLimit(`rider:confirm:${token}`, 20, 3600))) return { ok: false, error: "Too many attempts. Call the shop." };
+  if (await limited(token, "confirm", 20)) return { ok: false, error: "Too many attempts. Call the shop." };
   const entered = code.replace(/\D/g, "").slice(0, 8);
   return db.transaction(async (tx) => {
     const order = await lockByRiderToken(tx, token);
@@ -98,7 +114,7 @@ export async function riderConfirm(token: string, code: string, cashCollected: b
 }
 
 export async function riderFailed(token: string, reason: string): Promise<Result> {
-  if (!(await rateLimit(`rider:fail:${token}`, 10, 3600))) return { ok: false, error: "Too many attempts" };
+  if (await limited(token, "fail", 10)) return { ok: false, error: "Too many attempts" };
   const why = reason.trim().slice(0, 300);
   if (!why) return { ok: false, error: "Say what happened" };
   return db.transaction(async (tx) => {

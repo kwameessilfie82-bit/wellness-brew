@@ -6,7 +6,7 @@ import { orderItemTable, storeOrderTable } from "@/db/schema";
 import { parsePrice } from "@/lib/format";
 import { formatMoney } from "@/lib/orders/money";
 import { formatLocalPhone } from "@/lib/orders/phone";
-import { STATUS_LABELS, isOrderStatus } from "@/lib/orders/status";
+import { STATUS_LABELS, isOrderStatus, TERMINAL } from "@/lib/orders/status";
 import { getPublicSettings } from "@/lib/settings/get";
 import { telLink } from "@/lib/settings/schemas";
 
@@ -30,6 +30,15 @@ export default async function RiderPage({ params }: Props) {
   const { contact } = await getPublicSettings();
   const shopPhone = contact.orderPhone || contact.whatsappNumber;
 
+  const closed = !!order && isOrderStatus(order.status) && TERMINAL.includes(order.status);
+  if (closed) {
+    return (
+      <main className="mx-auto max-w-md p-6 text-center">
+        <h1 className="text-xl font-bold">Delivery closed ✓</h1>
+        <p className="mt-2 text-muted-foreground">This order is finished. Thank you!</p>
+      </main>
+    );
+  }
   if (!order || !order.riderTokenExpiresAt || order.riderTokenExpiresAt < new Date()) {
     return (
       <main className="mx-auto max-w-md p-6 text-center">
