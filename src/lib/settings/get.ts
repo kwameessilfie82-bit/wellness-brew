@@ -28,7 +28,7 @@ export const settingsTag = (section: SettingsSection) => `settings:${section}`;
 export const SETTINGS_ALL_TAG = "settings:all";
 /** Bump when a settings schema changes shape so old cached values (which may
  *  lack new fields) are never served — the data cache outlives deploys. */
-const SETTINGS_CACHE_VERSION = "v3";
+const SETTINGS_CACHE_VERSION = "v4";
 
 async function readRaw(sections: readonly SettingsSection[]) {
   const rows = await db

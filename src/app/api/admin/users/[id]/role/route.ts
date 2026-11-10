@@ -88,7 +88,7 @@ const putHandler = withAdminAuth(
       );
     }
   },
-  "canManageCustomers"
+  "canManageAdmins"
 );
 
 export async function PUT(request: NextRequest, context: { params: Promise<{ id: string }> }) {

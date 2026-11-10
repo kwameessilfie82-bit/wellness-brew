@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { adminRoleTable, adminUserTable } from "@/db/schema";
+import { syncDefaultRolePermissions } from "@/lib/admin-auth";
 import { getCurrentUser } from "@/lib/auth";
 import { eq } from "drizzle-orm";
 
@@ -22,6 +23,9 @@ export async function POST() {
     if (!managerRole) {
       return NextResponse.json({ error: "Manager role not found. Seed roles first." }, { status: 400 });
     }
+
+    // First-run only (no admins exist yet): make sure the role rows match the code.
+    await syncDefaultRolePermissions();
 
     const now = new Date();
     await db.insert(adminUserTable).values({

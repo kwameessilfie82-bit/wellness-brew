@@ -32,7 +32,7 @@ const getHandler = withAdminAuth(
       );
     }
   },
-  "canManageInventory"
+  // no permission list: any active admin
 );
 
 export async function GET(request: NextRequest, context: { params: Promise<Record<string, never>> }) {

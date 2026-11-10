@@ -3,9 +3,11 @@ import "server-only";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
+import { get } from "@vercel/blob";
 import { jsPDF } from "jspdf";
 
 import type { orderItemTable, storeOrderTable } from "@/db/schema";
+import { decodeProxyParam } from "@/lib/blob-url";
 import { parsePrice } from "@/lib/format";
 import { getPublicSettings, getSettings } from "@/lib/settings/get";
 
@@ -21,27 +23,51 @@ const INK: [number, number, number] = [20, 20, 20];
 const MUTED: [number, number, number] = [110, 110, 110];
 const LINE: [number, number, number] = [225, 225, 225];
 
-/** Logo as a PNG data URL (jsPDF can't read webp/svg). Never throws. */
-async function loadLogo(url: string): Promise<{ data: string; w: number; h: number } | null> {
+type LoadedImage = { data: string; w: number; h: number };
+
+const withTimeout = <T,>(p: Promise<T>, ms: number) =>
+  new Promise<T>((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error("timeout")), ms);
+    p.then(resolve, reject).finally(() => clearTimeout(t));
+  });
+
+/** Raw bytes for a /api/media proxy URL, /public path or http(s) URL. */
+async function fetchImageBytes(url: string): Promise<Buffer | null> {
+  const proxy = url.match(/^(?:https?:\/\/[^/]+)?\/api\/media\?(.*)$/);
+  if (proxy) {
+    const u = new URLSearchParams(proxy[1]).get("u");
+    const blobUrl = u ? decodeProxyParam(u) : null;
+    if (!blobUrl) return null;
+    const res = await get(blobUrl, { access: "private", token: process.env.BLOB_READ_WRITE_TOKEN });
+    if (!res || res.statusCode !== 200) return null;
+    return Buffer.from(await new Response(res.stream).arrayBuffer());
+  }
+  if (/^https?:\/\//.test(url)) {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    return Buffer.from(await res.arrayBuffer());
+  }
+  if (url.startsWith("/") && !url.startsWith("/api/")) {
+    const root = path.join(process.cwd(), "public");
+    const file = path.join(root, path.normalize(url).replace(/^([/\\])+/, ""));
+    if (!file.startsWith(root)) return null;
+    return readFile(file);
+  }
+  return null;
+}
+
+/** Image resized + re-encoded for jsPDF (it can't read webp/svg). Never throws. */
+async function loadImage(url: string | null | undefined, maxPx: number, format: "PNG" | "JPEG"): Promise<LoadedImage | null> {
   if (!url) return null;
   try {
-    let buf: Buffer;
-    if (/^https?:\/\//.test(url)) {
-      const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 4000);
-      const res = await fetch(url, { signal: ctrl.signal }).finally(() => clearTimeout(t));
-      if (!res.ok) return null;
-      buf = Buffer.from(await res.arrayBuffer());
-    } else if (url.startsWith("/") && !url.startsWith("/api/")) {
-      const file = path.join(process.cwd(), "public", path.normalize(url).replace(/^([/\\])+/, ""));
-      if (!file.startsWith(path.join(process.cwd(), "public"))) return null;
-      buf = await readFile(file);
-    } else {
-      return null;
-    }
+    const buf = await withTimeout(fetchImageBytes(url), 4000);
+    if (!buf) return null;
     const sharp = (await import("sharp")).default;
-    const png = await sharp(buf).resize({ width: 240, height: 240, fit: "inside" }).png().toBuffer({ resolveWithObject: true });
-    return { data: `data:image/png;base64,${png.data.toString("base64")}`, w: png.info.width, h: png.info.height };
+    let img = sharp(buf).resize({ width: maxPx, height: maxPx, fit: "inside" });
+    img = format === "PNG" ? img.png() : img.flatten({ background: "#ffffff" }).jpeg({ quality: 80 });
+    const out = await img.toBuffer({ resolveWithObject: true });
+    const mime = format === "PNG" ? "image/png" : "image/jpeg";
+    return { data: `data:${mime};base64,${out.data.toString("base64")}`, w: out.info.width, h: out.info.height };
   } catch {
     return null;
   }
@@ -58,7 +84,26 @@ export function invoiceFileName(order: Pick<OrderRow, "orderNumber">) {
  */
 export async function buildOrderInvoicePdf(order: OrderRow, items: ItemRow[]): Promise<Buffer> {
   const [{ brand, contact }, payments] = await Promise.all([getPublicSettings(), getSettings("payments")]);
-  const logo = await loadLogo(brand.logoUrl);
+  return renderOrderInvoicePdf(order, items, { brand, contact, payments });
+}
+
+type PublicSettings = Awaited<ReturnType<typeof getPublicSettings>>;
+type RenderSettings = {
+  brand: PublicSettings["brand"];
+  contact: PublicSettings["contact"];
+  payments: Awaited<ReturnType<typeof getSettings<"payments">>>;
+};
+
+/** Pure drawing, given explicit settings (also lets the layout be exercised without a DB). */
+export async function renderOrderInvoicePdf(order: OrderRow, items: ItemRow[], settings: RenderSettings): Promise<Buffer> {
+  const { brand, contact, payments } = settings;
+  // Logo + every distinct item image, in parallel.
+  const uniqueImages = [...new Set(items.map((i) => i.image).filter((u): u is string => !!u))];
+  const [logo, ...thumbList] = await Promise.all([
+    loadImage(brand.logoUrl, 240, "PNG"),
+    ...uniqueImages.map((u) => loadImage(u, 96, "JPEG")),
+  ]);
+  const thumbs = new Map(uniqueImages.map((u, i) => [u, thumbList[i]]));
 
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const W = doc.internal.pageSize.getWidth();
@@ -71,21 +116,50 @@ export async function buildOrderInvoicePdf(order: OrderRow, items: ItemRow[]): P
   const proforma = !order.confirmedAt && !voided;
   const title = proforma ? "PRO-FORMA INVOICE" : "INVOICE";
 
-  const text = (s: string, x: number, yy: number, opts: { size?: number; bold?: boolean; color?: [number, number, number]; align?: "left" | "right" | "center"; maxWidth?: number } = {}) => {
-    doc.setFont("helvetica", opts.bold ? "bold" : "normal");
-    doc.setFontSize(opts.size ?? 10);
-    doc.setTextColor(...(opts.color ?? INK));
-    doc.text(s, x, yy, { align: opts.align ?? "left", maxWidth: opts.maxWidth });
+  type Opts = { size?: number; bold?: boolean; color?: [number, number, number]; align?: "left" | "right" | "center" };
+  const setFont = (o: Opts) => {
+    doc.setFont("helvetica", o.bold ? "bold" : "normal");
+    doc.setFontSize(o.size ?? 10);
   };
-  const wrap = (s: string, width: number, size = 10) => {
-    doc.setFontSize(size);
-    return doc.splitTextToSize(s, width) as string[];
+  const text = (s: string, x: number, yy: number, opts: Opts = {}) => {
+    setFont(opts);
+    doc.setTextColor(...(opts.color ?? INK));
+    doc.text(s, x, yy, { align: opts.align ?? "left" });
+  };
+  /** Wrap with the right font set first; unbroken tokens wider than `width` are chunked. */
+  const wrap = (s: string, width: number, o: Opts = {}) => {
+    setFont(o);
+    const parts = s.split(/\s+/).flatMap((tok) => {
+      if (doc.getTextWidth(tok) <= width) return [tok];
+      const chunks: string[] = [];
+      let cur = "";
+      for (const ch of tok) {
+        if (cur && doc.getTextWidth(cur + ch) > width) {
+          chunks.push(cur);
+          cur = ch;
+        } else cur += ch;
+      }
+      if (cur) chunks.push(cur);
+      return chunks;
+    });
+    return doc.splitTextToSize(parts.join(" "), width) as string[];
+  };
+  /** Set font, wrap, draw; returns the y after the last line. `yy` is the first baseline. */
+  const line = (s: string, x: number, yy: number, width: number, o: Opts & { lh?: number } = {}) => {
+    const lh = o.lh ?? Math.round((o.size ?? 10) * 1.4);
+    for (const l of wrap(s, width, o)) {
+      text(l, x, yy, o);
+      yy += lh;
+    }
+    return yy;
   };
   const ensure = (needed: number) => {
     if (y + needed > H - M) {
       doc.addPage();
       y = M;
+      return true;
     }
+    return false;
   };
 
   // ── Header: logo + seller (left), title + meta (right) ──
@@ -104,12 +178,7 @@ export async function buildOrderInvoicePdf(order: OrderRow, items: ItemRow[]): P
     payments.invoiceTaxId ? `TIN: ${payments.invoiceTaxId}` : "",
   ].filter(Boolean);
   let sy = y + 28;
-  for (const line of sellerLines) {
-    for (const l of wrap(line, 230, 9)) {
-      text(l, leftX, sy, { size: 9, color: MUTED });
-      sy += 12;
-    }
-  }
+  for (const l of sellerLines) sy = line(l, leftX, sy, 230, { size: 9, color: MUTED, lh: 12 });
 
   text(title, W - M, y + 14, { size: proforma ? 15 : 20, bold: true, color: BRAND_GREEN, align: "right" });
   const date = order.confirmedAt ?? order.createdAt;
@@ -129,90 +198,122 @@ export async function buildOrderInvoicePdf(order: OrderRow, items: ItemRow[]): P
   doc.line(M, y, W - M, y);
   y += 22;
 
-  // ── Bill to / deliver to ──
+  // ── Bill to / deliver to: two fixed columns with a gutter ──
+  const colW = (W - 2 * M - 24) / 2;
+  const shipX = M + colW + 24;
   text("BILL TO", M, y, { size: 8, bold: true, color: MUTED });
-  text(order.fulfilment === "pickup" ? "PICKUP" : "DELIVER TO", W / 2, y, { size: 8, bold: true, color: MUTED });
+  text(order.fulfilment === "pickup" ? "PICKUP" : "DELIVER TO", shipX, y, { size: 8, bold: true, color: MUTED });
   y += 14;
   const billLines = [
     order.customerName,
     order.customerPhoneE164 ? formatLocalPhone(order.customerPhoneE164) : order.customerPhone ?? "",
     order.customerEmail ?? "",
   ].filter(Boolean);
-  const shipLines =
-    order.fulfilment === "pickup"
-      ? [order.pickupLocationName ?? ""]
-      : [
-          order.isGift && order.recipientName ? `${order.recipientName} (gift)` : "",
-          [order.deliveryArea, order.shippingAddress].filter(Boolean).join(", "),
-          order.gpsAddress ? `GPS: ${order.gpsAddress}` : "",
-          order.deliveryWindow ? `Time: ${order.deliveryWindow}` : "",
-        ].filter(Boolean);
   let by = y;
   billLines.forEach((l, i) => {
-    text(l, M, by, { size: i === 0 ? 11 : 10, bold: i === 0 });
-    by += 14;
+    by = line(l, M, by, colW, { size: i === 0 ? 11 : 10, bold: i === 0, lh: 14 });
   });
+
+  const shipRows: [string, string][] =
+    order.fulfilment === "pickup"
+      ? [["Location", order.pickupLocationName ?? ""]]
+      : [
+          ["Area", order.deliveryArea ?? ""],
+          ["Address", order.shippingAddress ?? ""],
+          ["GPS", order.gpsAddress ?? ""],
+          ["Time", order.deliveryWindow ?? ""],
+          ["Gift for", order.isGift ? order.recipientName ?? "" : ""],
+        ];
+  const labelW = 52;
   let dy = y;
-  for (const l of shipLines) {
-    for (const w of wrap(l, W / 2 - M, 10)) {
-      text(w, W / 2, dy, { size: 10 });
-      dy += 14;
-    }
+  for (const [label, value] of shipRows) {
+    if (!value.trim()) continue;
+    text(label, shipX, dy, { size: 9, color: MUTED });
+    dy = line(value, shipX + labelW, dy, colW - labelW, { size: 10, lh: 14 });
   }
   y = Math.max(by, dy) + 16;
 
   // ── Items table ──
   const col = { item: M, qty: W - M - 190, price: W - M - 95, total: W - M };
-  doc.setDrawColor(...BRAND_GREEN);
-  doc.setLineWidth(1.5);
-  text("Item", col.item, y, { size: 9, bold: true });
-  text("Qty", col.qty, y, { size: 9, bold: true, align: "right" });
-  text("Price", col.price, y, { size: 9, bold: true, align: "right" });
-  text("Total", col.total, y, { size: 9, bold: true, align: "right" });
-  y += 8;
-  doc.line(M, y, W - M, y);
-  doc.setLineWidth(0.5);
-  doc.setDrawColor(...LINE);
-  y += 16;
-  for (const it of items) {
-    const lines = wrap(it.productName, col.qty - col.item - 40, 10);
-    ensure(lines.length * 13 + 14);
-    lines.forEach((l, i) => text(l, col.item, y + i * 13, { size: 10 }));
-    const price = parsePrice(it.price);
-    text(String(it.quantity), col.qty, y, { size: 10, align: "right" });
-    text(formatMoney(price), col.price, y, { size: 10, align: "right" });
-    text(formatMoney(price * it.quantity), col.total, y, { size: 10, bold: true, align: "right" });
-    y += lines.length * 13 + 6;
+  const THUMB = 40;
+  const textX = M + THUMB + 10;
+  const nameW = col.qty - 34 - textX;
+  const drawItemsHeader = () => {
+    doc.setDrawColor(...BRAND_GREEN);
+    doc.setLineWidth(1.5);
+    text("Item", col.item, y, { size: 9, bold: true });
+    text("Qty", col.qty, y, { size: 9, bold: true, align: "right" });
+    text("Price", col.price, y, { size: 9, bold: true, align: "right" });
+    text("Total", col.total, y, { size: 9, bold: true, align: "right" });
+    y += 8;
     doc.line(M, y, W - M, y);
-    y += 16;
+    doc.setLineWidth(0.5);
+    doc.setDrawColor(...LINE);
+    y += 12;
+  };
+  drawItemsHeader();
+  for (const it of items) {
+    const nameLines = wrap(it.productName, nameW, { size: 10 });
+    const skuLines = it.sku ? wrap(`SKU: ${it.sku}`, nameW, { size: 8 }) : [];
+    const textH = nameLines.length * 13 + skuLines.length * 11;
+    const rowH = Math.max(THUMB, textH);
+    if (ensure(rowH + 14)) drawItemsHeader();
+
+    const thumb = it.image ? thumbs.get(it.image) : null;
+    if (thumb) {
+      const sc = Math.min(THUMB / thumb.w, THUMB / thumb.h);
+      const w = thumb.w * sc;
+      const h = thumb.h * sc;
+      doc.addImage(thumb.data, "JPEG", M + (THUMB - w) / 2, y + (THUMB - h) / 2, w, h);
+    } else {
+      doc.setFillColor(238, 238, 238);
+      doc.roundedRect(M, y, THUMB, THUMB, 4, 4, "F");
+    }
+    const ty = line(it.productName, textX, y + 10, nameW, { size: 10, lh: 13 });
+    if (it.sku) line(`SKU: ${it.sku}`, textX, ty - 1, nameW, { size: 8, color: MUTED, lh: 11 });
+    const price = parsePrice(it.price);
+    text(String(it.quantity), col.qty, y + 10, { size: 10, align: "right" });
+    text(formatMoney(price), col.price, y + 10, { size: 10, align: "right" });
+    text(formatMoney(price * it.quantity), col.total, y + 10, { size: 10, bold: true, align: "right" });
+    y += rowH + 6;
+    doc.line(M, y, W - M, y);
+    y += 12;
   }
+  y += 6;
 
   // ── Totals ──
-  ensure(120);
   const subtotal = parsePrice(order.subtotal);
   const fee = parsePrice(order.shipping);
   const total = parsePrice(order.total);
   const paid = parsePrice(order.amountPaid);
   const due = Math.max(0, total - paid);
-  const rows: [string, string, boolean?][] = [["Subtotal", formatMoney(subtotal)]];
+  type TotalRow = { label: string; value: string; strong?: boolean; sub?: string };
+  const rows: TotalRow[] = [{ label: "Subtotal", value: formatMoney(subtotal) }];
   if (order.fulfilment === "delivery") {
-    rows.push([
-      `Delivery${order.deliveryArea ? ` (${order.deliveryArea})` : ""}`,
-      order.deliveryFeeConfirmed ? (fee > 0 ? formatMoney(fee) : "Free") : "To be confirmed",
-    ]);
+    rows.push({
+      label: "Delivery",
+      sub: order.deliveryArea ?? undefined,
+      value: order.deliveryFeeConfirmed ? (fee > 0 ? formatMoney(fee) : "Free") : "To be confirmed",
+    });
   }
-  rows.push(["Total", formatMoney(total) + (order.deliveryFeeConfirmed ? "" : " + delivery"), true]);
-  if (paid > 0) rows.push(["Paid", `-${formatMoney(paid)}`]);
-  if (!voided) rows.push(["Balance due", formatMoney(due), true]);
+  rows.push({ label: "Total", value: formatMoney(total), strong: true, sub: order.deliveryFeeConfirmed ? undefined : "+ delivery fee" });
+  if (paid > 0) rows.push({ label: "Paid", value: `-${formatMoney(paid)}` });
+  if (!voided) rows.push({ label: "Balance due", value: formatMoney(due), strong: true });
   const labelX = W - M - 210;
-  for (const [label, value, strong] of rows) {
-    if (strong) {
+  const labelColW = 210 - 90 - 8;
+  ensure(30);
+  for (const r of rows) {
+    const size = r.strong ? 11 : 10;
+    const subLines = r.sub ? wrap(r.sub, labelColW, { size: 8 }) : [];
+    ensure(18 + subLines.length * 11);
+    if (r.strong) {
       doc.setDrawColor(...LINE);
-      doc.line(labelX, y - 11, W - M, y - 11);
+      doc.line(labelX, y - 12, W - M, y - 12);
     }
-    text(label, labelX, y, { size: strong ? 11 : 10, bold: strong, color: strong ? INK : MUTED });
-    text(value, W - M, y, { size: strong ? 11 : 10, bold: strong, align: "right", color: strong && label === "Balance due" && due > 0 ? BRAND_GREEN : INK });
-    y += 18;
+    let ly = line(r.label, labelX, y, labelColW, { size, bold: r.strong, color: r.strong ? INK : MUTED });
+    if (r.sub) ly = line(r.sub, labelX, ly - 2, labelColW, { size: 8, color: MUTED, lh: 11 });
+    text(r.value, W - M, y, { size, bold: r.strong, align: "right", color: r.strong && r.label === "Balance due" && due > 0 ? BRAND_GREEN : INK });
+    y = Math.max(y + 18, ly + 6);
   }
   y += 10;
 
@@ -250,10 +351,9 @@ export async function buildOrderInvoicePdf(order: OrderRow, items: ItemRow[]): P
   // ── Notes ──
   const notes = [order.notes ? `Customer note: ${order.notes}` : "", payments.invoiceNotes].filter(Boolean);
   for (const n of notes) {
-    const lines = wrap(n, W - 2 * M, 9);
+    const lines = wrap(n, W - 2 * M, { size: 9 });
     ensure(lines.length * 12 + 8);
-    lines.forEach((l, i) => text(l, M, y + i * 12, { size: 9, color: MUTED }));
-    y += lines.length * 12 + 8;
+    y = line(n, M, y, W - 2 * M, { size: 9, color: MUTED, lh: 12 }) + 8;
   }
   if (proforma) {
     ensure(20);

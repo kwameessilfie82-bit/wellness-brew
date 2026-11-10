@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { fillTemplate } from "@/lib/orders/message";
 import {
+  RECOMMENDED_TEMPLATES,
   TEMPLATE_PLACEHOLDERS,
   WHATSAPP_TEMPLATE_INFO,
   WHATSAPP_TEMPLATE_KEYS,
@@ -367,16 +368,24 @@ export function DeliverySection({ initial }: { initial: SettingsMap["delivery"] 
 const SAMPLE_VARS: Record<string, string> = {
   orderNumber: "WB-2611-0042",
   name: "Ama",
-  items: "• 2 × Hibiscus Ginger (GHS 50) = GHS 100",
+  customer: "Ama Mensah · 054 073 4749",
+  items: "1. *2 × Hibiscus Ginger*\n   GHS 50 each = GHS 100",
   subtotal: "GHS 100",
   deliveryFee: "East Legon GHS 20",
   total: "GHS 120",
   amountDue: "GHS 120",
   payment: "Mobile Money",
   fulfilment: "Delivery to: East Legon",
+  fulfilmentBlock:
+    "🚚 *DELIVERY*\nArea: East Legon\nAddress: near A&C Mall\nTime: Afternoon\nMap: https://maps.google.com/?q=5.63,-0.15",
+  totalsBlock: "Subtotal: GHS 100\nDelivery: GHS 20 (East Legon)\n*Total: GHS 120*\nPay by: Mobile Money",
+  area: "East Legon",
+  street: "near A&C Mall",
+  mapUrl: "https://maps.google.com/?q=5.63,-0.15",
   address: "East Legon, near A&C Mall",
   window: "Afternoon",
   gift: "",
+  giftFor: "",
   note: "",
   link: "https://www.wellnessgroupgh.com/o/abc123",
   invoiceLink: "https://www.wellnessgroupgh.com/o/abc123/invoice",
@@ -444,11 +453,21 @@ export function WhatsappSection({
                 label={info.label}
                 hint={info.hint || undefined}
                 multiline
-                rows={5}
+                rows={key in RECOMMENDED_TEMPLATES ? 14 : 5}
                 value={text}
                 onChange={(x) => s.set(key, x)}
                 error={s.errors[key]}
               />
+              {key in RECOMMENDED_TEMPLATES && text !== RECOMMENDED_TEMPLATES[key as keyof typeof RECOMMENDED_TEMPLATES] && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => s.set(key, RECOMMENDED_TEMPLATES[key as keyof typeof RECOMMENDED_TEMPLATES])}
+                >
+                  Use recommended layout
+                </Button>
+              )}
               {missing.length > 0 && (
                 <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
                   Missing {missing.join(" and ")}. Orders may not be matched without it.

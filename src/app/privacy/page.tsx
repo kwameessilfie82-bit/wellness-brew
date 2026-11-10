@@ -1,6 +1,16 @@
+import type { Metadata } from "next"
 import { getPublicSettings } from "@/lib/settings/get"
 import { Navigation } from "@/ui/navigation"
 import { Footer } from "@/ui/footer"
+
+export async function generateMetadata(): Promise<Metadata> {
+  const { brand } = await getPublicSettings()
+  return {
+    title: "Privacy Policy",
+    description: "How {brand} collects, uses and protects your personal information when you shop with us.".replace("{brand}", brand.name),
+    alternates: { canonical: "/privacy" },
+  }
+}
 
 export default async function PrivacyPage() {
   const { brand } = await getPublicSettings()

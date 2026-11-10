@@ -75,7 +75,7 @@ const getHandler = withAdminAuth(async () => {
       { status: 500 },
     );
   }
-}, ["canManageInventory", "canManageProducts"]);
+}, "canManageOrders");
 
 export async function GET(
   request: NextRequest,

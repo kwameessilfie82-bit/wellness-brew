@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation";
 
-import { hasPermission, isAdmin } from "@/lib/admin-auth";
+import { requirePagePermission } from "@/lib/admin-auth";
 import {
   listOrders,
   ORDER_TAB_LABELS,
@@ -20,9 +19,7 @@ export default async function OrdersPage({
 }: {
   searchParams: Promise<{ tab?: string; q?: string }>;
 }) {
-  const adminUser = await isAdmin();
-  if (!adminUser) redirect("/auth/sign-in?redirect=/admin/orders");
-  if (!hasPermission(adminUser, "canManageOrders")) redirect("/admin");
+  await requirePagePermission("canManageOrders", "/admin/orders");
 
   const sp = await searchParams;
   const tab: OrderTab = (ORDER_TABS as readonly string[]).includes(sp.tab ?? "") ? (sp.tab as OrderTab) : "needs_action";

@@ -16,7 +16,10 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 
+import type { Metadata } from "next";
+
 import { cn } from "@/lib/cn";
+import { getFeaturedProducts } from "@/lib/products/server";
 import { getPublicSettings, getSettings } from "@/lib/settings/get";
 import { fillBrand, isUnoptimizedImage, type HomepageContent } from "@/lib/settings/schemas";
 import { Footer } from "@/ui/footer";
@@ -41,8 +44,17 @@ const ICONS: Record<HomepageContent["valueProps"][number]["icon"], LucideIcon> =
   message: MessageCircle,
 };
 
+export const metadata: Metadata = { alternates: { canonical: "/" } };
+
 export default async function HomePage() {
-  const [{ brand }, content] = await Promise.all([getPublicSettings(), getSettings("homepage")]);
+  const [{ brand }, content, featured] = await Promise.all([
+    getPublicSettings(),
+    getSettings("homepage"),
+    getFeaturedProducts(4).catch((error) => {
+      console.error("[home] featured products failed:", error);
+      return [];
+    }),
+  ]);
   const f = (text: string) => fillBrand(text, brand.name);
 
   return (
@@ -137,7 +149,7 @@ export default async function HomePage() {
               <p className="mt-2 max-w-xl text-muted-foreground">{f(content.featuredSubtitle)}</p>
             ) : null}
           </div>
-          <FeaturedProducts />
+          <FeaturedProducts initialProducts={featured} />
         </div>
       </section>
 

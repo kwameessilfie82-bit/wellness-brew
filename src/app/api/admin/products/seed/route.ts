@@ -266,7 +266,7 @@ const handler = withAdminAuth(async (_request: NextRequest, adminUser) => {
     console.error("Error seeding products:", error);
     return NextResponse.json({ error: "Failed to seed products" }, { status: 500 });
   }
-}, "canManageProducts");
+}, "canManageAdmins");
 
 export async function POST(_request: NextRequest, context: { params: Promise<Record<string, never>> }) {
   await context.params;

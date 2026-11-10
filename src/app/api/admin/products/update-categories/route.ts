@@ -104,7 +104,7 @@ const handler = withAdminAuth(async (_request: NextRequest, adminUser) => {
       { status: 500 }
     );
   }
-}, "canManageProducts");
+}, "canManageAdmins");
 
 export async function POST(_request: NextRequest, context: { params: Promise<Record<string, never>> }) {
   await context.params;

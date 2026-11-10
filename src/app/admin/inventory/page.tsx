@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation";
 
-import { isAdmin } from "@/lib/admin-auth";
+import { requirePagePermission } from "@/lib/admin-auth";
 import { EnhancedInventoryManagement } from "@/ui/components/admin/enhanced-inventory-management";
 import { AdminPageHeader } from "@/ui/components/admin/admin-page-header";
 import { InventoryStatsBar } from "@/ui/components/admin/inventory-stats-bar";
@@ -13,16 +12,7 @@ import type { Category, Inventory, Product } from "@/db/schema";
 export const dynamic = "force-dynamic";
 
 export default async function InventoryPage() {
-  const adminUser = await isAdmin();
-
-  if (!adminUser) {
-    redirect("/auth/sign-in?redirect=/admin/inventory");
-  }
-
-  const roleName = adminUser.role?.name;
-  if (roleName !== "manager" && roleName !== "admin") {
-    redirect("/auth/not-authorized");
-  }
+  const adminUser = await requirePagePermission("canManageInventory", "/admin/inventory");
 
   // Fetch the first screen of data on the server so products render on first
   // paint instead of after a client-side mount → fetch waterfall.

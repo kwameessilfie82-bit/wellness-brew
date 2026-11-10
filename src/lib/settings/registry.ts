@@ -177,6 +177,37 @@ export const SETTINGS_DEFAULTS: SettingsMap = {
   ...ORDERING_DEFAULTS,
 };
 
+/**
+ * Previous default texts of owner-editable templates, per section/key. A stored
+ * value that equals one of these (ignoring whitespace/line endings) was never
+ * customised, so it resolves to the current default instead of pinning the old one.
+ */
+const LEGACY_DEFAULTS: { [S in SettingsSection]?: Record<string, string[]> } = {
+  whatsapp: {
+    orderMessage: [
+      "Hello {brand} 👋 I'd like to place an order.\nOrder: {orderNumber}\n{items}\nSubtotal: {subtotal}\nDelivery: {deliveryFee}\nTotal: {total}\n{fulfilment}\nPayment: {payment}\nGift: {gift}\nNote: {note}\nName: {name}\nOrder details: {link}\nInvoice (PDF): {invoiceLink}",
+    ],
+    riderDispatch: [
+      "New delivery: {orderNumber}\nArea: {address}\nCustomer: {name}\nCollect: {amountDue}\nOpen this link when you arrive and enter the customer's code: {riderLink}",
+    ],
+  },
+};
+
+const normaliseText = (v: string) => v.replace(/\r\n?/g, "\n").replace(/\s+/g, " ").trim();
+
+/** Swap untouched legacy template texts for the current defaults. */
+function upgradeLegacy(section: SettingsSection, stored: Record<string, unknown>): Record<string, unknown> {
+  const legacy = LEGACY_DEFAULTS[section];
+  if (!legacy) return stored;
+  const defaults = SETTINGS_DEFAULTS[section] as Record<string, unknown>;
+  const next = { ...stored };
+  for (const [key, olds] of Object.entries(legacy)) {
+    const v = next[key];
+    if (typeof v === "string" && olds.some((o) => normaliseText(o) === normaliseText(v))) next[key] = defaults[key];
+  }
+  return next;
+}
+
 /** Merge a stored value over defaults; fall back to defaults if it no longer validates. */
 export function resolveSection<K extends SettingsSection>(
   section: K,
@@ -184,7 +215,10 @@ export function resolveSection<K extends SettingsSection>(
 ): SettingsMap[K] {
   const defaults = SETTINGS_DEFAULTS[section];
   if (!stored || typeof stored !== "object") return defaults;
-  const parsed = SETTINGS_SCHEMAS[section].safeParse({ ...defaults, ...(stored as object) });
+  const parsed = SETTINGS_SCHEMAS[section].safeParse({
+    ...defaults,
+    ...upgradeLegacy(section, stored as Record<string, unknown>),
+  });
   if (!parsed.success) {
     console.warn(`[settings] stored "${section}" no longer validates; using defaults`, parsed.error.issues);
     return defaults;

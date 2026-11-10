@@ -1,9 +1,9 @@
 import { asc, eq } from "drizzle-orm";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 
 import { db } from "@/db";
 import { productTable } from "@/db/schema";
-import { hasPermission, isAdmin } from "@/lib/admin-auth";
+import { requirePagePermission } from "@/lib/admin-auth";
 import { parsePrice } from "@/lib/format";
 import { getOrderDetail, listStaff } from "@/lib/orders/server/staff-queries";
 import { orderLink } from "@/lib/orders/server/view";
@@ -15,9 +15,7 @@ export const dynamic = "force-dynamic";
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const adminUser = await isAdmin();
-  if (!adminUser) redirect(`/auth/sign-in?redirect=/admin/orders/${id}`);
-  if (!hasPermission(adminUser, "canManageOrders")) redirect("/admin");
+  await requirePagePermission("canManageOrders", `/admin/orders/${id}`);
 
   const [detail, staff, products] = await Promise.all([
     getOrderDetail(id),

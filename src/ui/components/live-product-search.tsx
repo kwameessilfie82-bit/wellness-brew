@@ -89,7 +89,7 @@ export function LiveProductSearch({
   };
 
   const selectProduct = (product: StoreProduct) => {
-    router.push(`/shop/${product.id}`);
+    router.push(`/shop/${encodeURIComponent(product.slug || product.id)}`);
     setOpen(false);
     setQuery("");
     onNavigate?.();

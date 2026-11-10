@@ -2,6 +2,10 @@
  * Admin authentication and authorization utilities
  */
 
+import "server-only";
+
+import { redirect } from "next/navigation";
+
 import { db } from "@/db";
 import { getCurrentUser } from "@/lib/auth";
 import {
@@ -266,6 +270,30 @@ export function hasAllPermissions(
 }
 
 /**
+ * Page guard: returns the admin user, or redirects. Not signed in / not an
+ * admin -> sign-in; missing permission -> /admin with a `denied` flag that the
+ * dashboard turns into a toast. `redirect()` throws, so callers can rely on
+ * the returned user having the permission.
+ */
+export async function requirePagePermission(
+  permission: keyof AdminPermissions,
+  returnTo?: string,
+): Promise<AdminUserWithDetails> {
+  const adminUser = await isAdmin();
+  if (!adminUser) {
+    redirect(
+      returnTo
+        ? `/auth/sign-in?redirect=${encodeURIComponent(returnTo)}`
+        : "/auth/sign-in",
+    );
+  }
+  if (!hasPermission(adminUser, permission)) {
+    redirect(`/admin?denied=${permission}`);
+  }
+  return adminUser;
+}
+
+/**
  * Get admin role by name
  */
 export async function getAdminRole(roleName: string) {
@@ -276,6 +304,20 @@ export async function getAdminRole(roleName: string) {
   } catch (error) {
     console.error("Error fetching admin role:", error);
     return null;
+  }
+}
+
+/**
+ * Idempotently force the manager/admin role rows to the ADMIN_PERMISSIONS
+ * constants (permissions live as JSON on the row and can drift).
+ */
+export async function syncDefaultRolePermissions() {
+  const now = new Date();
+  for (const name of ["manager", "admin"] as const) {
+    await db
+      .update(adminRoleTable)
+      .set({ permissions: JSON.stringify(ADMIN_PERMISSIONS[name]), updatedAt: now })
+      .where(eq(adminRoleTable.name, name));
   }
 }
 

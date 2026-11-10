@@ -3,15 +3,18 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { toCardProduct } from "@/lib/products/card";
 import type { StoreProduct } from "@/lib/products/normalize";
 import { Button } from "@/ui/primitives/button";
 import { ProductCard } from "@/ui/product-card";
 
-export function FeaturedProducts() {
-  const [featuredProducts, setFeaturedProducts] = useState<StoreProduct[]>([]);
-  const [loading, setLoading] = useState(true);
+export function FeaturedProducts({ initialProducts }: { initialProducts?: StoreProduct[] }) {
+  const hasInitial = Boolean(initialProducts?.length);
+  const [featuredProducts, setFeaturedProducts] = useState<StoreProduct[]>(initialProducts ?? []);
+  const [loading, setLoading] = useState(!hasInitial);
 
   useEffect(() => {
+    if (hasInitial) return;
     const fetchFeaturedProducts = async () => {
       try {
         const response = await fetch("/api/products/featured");
@@ -27,7 +30,7 @@ export function FeaturedProducts() {
     };
 
     void fetchFeaturedProducts();
-  }, []);
+  }, [hasInitial]);
 
   if (loading) {
     return (
@@ -55,17 +58,7 @@ export function FeaturedProducts() {
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
       {featuredProducts.map((product) => (
-        <ProductCard
-          key={product.id}
-          product={{
-            id: product.id,
-            name: product.name,
-            price: product.price,
-            image: product.image,
-            description: product.shortDescription || product.description || undefined,
-            category: product.categoryName || undefined,
-          }}
-        />
+        <ProductCard key={product.id} product={toCardProduct(product)} />
       ))}
     </div>
   );

@@ -170,7 +170,7 @@ const getHandler = withAdminAuth(
       return NextResponse.json({ error: message }, { status: 500 });
     }
   },
-  ["canViewAnalytics", "canManageInventory", "canManageProducts"],
+  "canViewAnalytics",
 );
 
 export async function GET(

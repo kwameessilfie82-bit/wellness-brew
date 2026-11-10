@@ -1,6 +1,16 @@
+import type { Metadata } from "next"
 import { getPublicSettings } from "@/lib/settings/get"
 import { Navigation } from "@/ui/navigation"
 import { Footer } from "@/ui/footer"
+
+export async function generateMetadata(): Promise<Metadata> {
+  const { brand } = await getPublicSettings()
+  return {
+    title: "Terms of Service",
+    description: "The terms that apply when you browse and order from {brand}.".replace("{brand}", brand.name),
+    alternates: { canonical: "/terms" },
+  }
+}
 
 export default async function TermsPage() {
   const { brand } = await getPublicSettings()

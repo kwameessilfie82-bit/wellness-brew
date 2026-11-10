@@ -80,7 +80,7 @@ export type WhatsappSettings = z.infer<typeof whatsappSchema>;
 export const WHATSAPP_TEMPLATE_INFO: Record<WhatsappTemplateKey, { label: string; hint: string }> = {
   orderMessage: {
     label: "Customer's order message",
-    hint: "Prefilled when the customer taps “Send order on WhatsApp”. Keep {orderNumber} and {link}.",
+    hint: "Prefilled when the customer taps “Send order on WhatsApp”. Keep {orderNumber} and {link}. Lines with an empty value (no gift, no note) are left out.",
   },
   nudge: { label: "Reminder: order not sent", hint: "For orders saved on the website but never sent on WhatsApp." },
   received: { label: "Got your order", hint: "First reply after the order arrives." },
@@ -100,6 +100,7 @@ export const TEMPLATE_PLACEHOLDERS = [
   "brand",
   "orderNumber",
   "name",
+  "customer",
   "items",
   "subtotal",
   "deliveryFee",
@@ -107,9 +108,15 @@ export const TEMPLATE_PLACEHOLDERS = [
   "amountDue",
   "payment",
   "fulfilment",
+  "fulfilmentBlock",
+  "totalsBlock",
+  "area",
+  "street",
+  "mapUrl",
   "address",
   "window",
   "gift",
+  "giftFor",
   "note",
   "link",
   "invoiceLink",
@@ -157,18 +164,23 @@ export const ORDERING_DEFAULTS: {
   whatsapp: {
     orderMessage: [
       "Hello {brand} 👋 I'd like to place an order.",
-      "Order: {orderNumber}",
+      "",
+      "🧾 *ORDER {orderNumber}*",
+      "👤 {customer}",
+      "",
+      "🛒 *ITEMS*",
       "{items}",
-      "Subtotal: {subtotal}",
-      "Delivery: {deliveryFee}",
-      "Total: {total}",
-      "{fulfilment}",
-      "Payment: {payment}",
-      "Gift: {gift}",
-      "Note: {note}",
-      "Name: {name}",
-      "Order details: {link}",
-      "Invoice (PDF): {invoiceLink}",
+      "",
+      "💰 *TOTAL*",
+      "{totalsBlock}",
+      "",
+      "{fulfilmentBlock}",
+      "",
+      "🎁 Gift for: {giftFor}",
+      "📝 Note: {note}",
+      "",
+      "📄 Invoice: {invoiceLink}",
+      "🔗 Order: {link}",
     ].join("\n"),
     nudge:
       "Hi {name}, this is {brand}. We saw your order {orderNumber} on our website but didn't get it on WhatsApp. Would you like us to go ahead? {link}",
@@ -182,8 +194,21 @@ export const ORDERING_DEFAULTS: {
       "Hi {name}, your order {orderNumber} is ready for pickup at {pickupLocation}. See you soon!",
     outForDelivery:
       "Hi {name}, your order {orderNumber} is on the way 🚚 Please give the rider this delivery code: {code}. Track it here: {link}",
-    riderDispatch:
-      "New delivery: {orderNumber}\nArea: {address}\nCustomer: {name}\nCollect: {amountDue}\nOpen this link when you arrive and enter the customer's code: {riderLink}",
+    riderDispatch: [
+      "🚚 *DELIVERY {orderNumber}*",
+      "",
+      "💰 *Collect: {amountDue}*",
+      "",
+      "📍 *WHERE*",
+      "Area: {area}",
+      "Address: {street}",
+      "Map: {mapUrl}",
+      "",
+      "👤 Customer: {name}",
+      "",
+      "🔗 Open this link on arrival and enter the customer's code:",
+      "{riderLink}",
+    ].join("\n"),
     delivered:
       "Hi {name}, your order {orderNumber} has been delivered. Enjoy your tea! We'd love to hear what you think 🌺",
     deliveryFailed:
@@ -192,3 +217,9 @@ export const ORDERING_DEFAULTS: {
     paymentReceived: "Hi {name}, we've received your payment for {orderNumber}. Thank you! Your paid invoice: {invoiceLink}",
   },
 };
+
+/** The recommended layouts, used by the editor's "Use recommended layout" button. */
+export const RECOMMENDED_TEMPLATES = {
+  orderMessage: ORDERING_DEFAULTS.whatsapp.orderMessage,
+  riderDispatch: ORDERING_DEFAULTS.whatsapp.riderDispatch,
+} as const;

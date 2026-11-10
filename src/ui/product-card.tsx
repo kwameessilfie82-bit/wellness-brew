@@ -14,6 +14,7 @@ import { FallbackImage } from "@/ui/components/fallback-image";
 
 interface Product {
   id: number | string;
+  slug?: string;
   name: string;
   price: number;
   image?: string;
@@ -22,6 +23,7 @@ interface Product {
 }
 
 export function ProductCard({ product }: { product: Product }) {
+  const href = `/shop/${encodeURIComponent(String(product.slug || product.id))}`;
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
 
@@ -49,7 +51,7 @@ export function ProductCard({ product }: { product: Product }) {
       )}
     >
       <Link
-        href={`/shop/${product.id}`}
+        href={href}
         className="relative block aspect-[4/5] overflow-hidden bg-muted"
       >
         <FallbackImage
@@ -82,7 +84,7 @@ export function ProductCard({ product }: { product: Product }) {
       </Link>
 
       <div className="flex flex-1 flex-col p-4">
-        <Link href={`/shop/${product.id}`}>
+        <Link href={href}>
           <h3 className="mb-1 line-clamp-2 font-semibold leading-snug transition-colors group-hover:text-primary">
             {product.name}
           </h3>

@@ -96,7 +96,7 @@ const postHandler = withAdminAuth(async (request: NextRequest, adminUser) => {
       { status: 500 },
     );
   }
-}, ["canManageInventory", "canManageProducts"]);
+}, "canManageOrders");
 
 export async function POST(
   request: NextRequest,

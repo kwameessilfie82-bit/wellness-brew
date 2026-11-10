@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
@@ -5,6 +6,11 @@ import { isAdmin } from "@/lib/admin-auth";
 import { AdminSidebar } from "@/ui/components/admin/admin-sidebar";
 import { AdminTopBar } from "@/ui/components/admin/admin-top-bar";
 import { RouteTracker } from "@/ui/components/admin/route-tracker";
+
+export const metadata: Metadata = {
+  title: { default: "Admin", template: "%s | Admin" },
+  robots: { index: false, follow: false, nocache: true },
+};
 
 interface AdminLayoutProps {
   children: React.ReactNode;

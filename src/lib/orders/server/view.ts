@@ -10,7 +10,7 @@ import { getPublicSettings, getSettings } from "@/lib/settings/get";
 import { fillBrand } from "@/lib/settings/schemas";
 
 import { orderMapsUrl } from "../location";
-import { buildOrderMessage, fillTemplateCompact, type MessageItem, type MessageVars } from "../message";
+import { buildOrderMessage, fillTemplateCompact, formatItemLines, type MessageItem, type MessageVars } from "../message";
 import { formatMoney } from "../money";
 import { formatLocalPhone } from "../phone";
 import type { PaymentMethod } from "../status";
@@ -105,33 +105,64 @@ export async function templateVars(order: OrderRow, items: OrderItemRow[], extra
   const fee = parsePrice(order.shipping);
   const total = parsePrice(order.total);
   const due = Math.max(0, total - parsePrice(order.amountPaid));
-  const feeText =
-    order.fulfilment === "pickup"
-      ? ""
-      : !order.deliveryFeeConfirmed
-        ? `${order.deliveryArea ?? ""} (fee to be confirmed)`.trim()
-        : `${order.deliveryArea ? `${order.deliveryArea} ` : ""}${fee > 0 ? formatMoney(fee) : "Free"}`;
-  const pin = order.fulfilment === "pickup" ? null : orderMapsUrl(order);
-  const fulfilmentText =
-    order.fulfilment === "pickup"
-      ? `Pickup: ${order.pickupLocationName ?? ""}`
-      : `Delivery to: ${[order.deliveryArea, order.shippingAddress].filter(Boolean).join(", ")}${order.deliveryWindow ? ` (${order.deliveryWindow})` : ""}${pin ? `\nMap pin: ${pin}` : ""}`;
+  const isPickup = order.fulfilment === "pickup";
+  const area = order.deliveryArea ?? "";
+  const feeText = isPickup
+    ? ""
+    : !order.deliveryFeeConfirmed
+      ? `${area} (fee to be confirmed)`.trim()
+      : `${area ? `${area} ` : ""}${fee > 0 ? formatMoney(fee) : "Free"}`;
+  const pin = isPickup ? null : orderMapsUrl(order);
+  const fulfilmentText = isPickup
+    ? `Pickup: ${order.pickupLocationName ?? ""}`
+    : `Delivery to: ${[order.deliveryArea, order.shippingAddress].filter(Boolean).join(", ")}${order.deliveryWindow ? ` (${order.deliveryWindow})` : ""}${pin ? `\nMap pin: ${pin}` : ""}`;
+  const lines = (...rows: (string | false | null | undefined)[]) => rows.filter(Boolean).join("\n");
+  const fulfilmentBlock = isPickup
+    ? lines("🏬 *PICKUP*", order.pickupLocationName && `Location: ${order.pickupLocationName}`)
+    : lines(
+        "🚚 *DELIVERY*",
+        area && `Area: ${area}`,
+        order.shippingAddress && `Address: ${order.shippingAddress}`,
+        order.gpsAddress && `GPS: ${order.gpsAddress}`,
+        order.deliveryWindow && `Time: ${order.deliveryWindow}`,
+        pin && `Map: ${pin}`,
+      );
+  const totalText = order.deliveryFeeConfirmed || isPickup ? formatMoney(total) : `${formatMoney(total)} + delivery`;
+  const paymentText = order.preferredPayment ? PAYMENT_METHOD_LABELS[order.preferredPayment as PaymentMethod] ?? "" : "";
+  const deliveryLine = isPickup
+    ? ""
+    : `Delivery: ${!order.deliveryFeeConfirmed ? "To be confirmed" : fee > 0 ? formatMoney(fee) : "Free"}${area ? ` (${area})` : ""}`;
+  const totalsBlock = lines(
+    `Subtotal: ${formatMoney(subtotal)}`,
+    deliveryLine,
+    `*Total: ${totalText}*`,
+    paymentText && `Pay by: ${paymentText}`,
+  );
+  const phone = formatLocalPhone(order.customerPhoneE164) || order.customerPhone || "";
+  const giftFor = order.isGift
+    ? `${order.recipientName ?? "someone special"}${order.recipientPhone ? ` (${formatLocalPhone(order.recipientPhone)})` : ""}`
+    : "";
   return {
     brand: brand.name,
     orderNumber: order.orderNumber,
     name: order.customerName.split(/\s+/)[0] ?? order.customerName,
-    items: messageItems(items)
-      .map((i) => `• ${i.quantity} × ${i.name} (${i.unitPrice}) = ${i.lineTotal}`)
-      .join("\n"),
+    customer: [order.customerName, phone].filter(Boolean).join(" · "),
+    items: formatItemLines(messageItems(items)).join("\n"),
     subtotal: formatMoney(subtotal),
     deliveryFee: feeText,
     total: order.deliveryFeeConfirmed ? formatMoney(total) : `${formatMoney(total)} + delivery`,
     amountDue: formatMoney(due),
-    payment: order.preferredPayment ? PAYMENT_METHOD_LABELS[order.preferredPayment as PaymentMethod] ?? "" : "",
+    payment: paymentText,
     fulfilment: fulfilmentText,
+    fulfilmentBlock,
+    totalsBlock,
+    area,
+    street: order.shippingAddress ?? "",
+    mapUrl: pin ?? "",
     address: [order.deliveryArea, order.shippingAddress, order.gpsAddress, pin].filter(Boolean).join(", "),
     window: order.deliveryWindow ?? "",
-    gift: order.isGift ? `Yes, for ${order.recipientName ?? "someone special"}${order.recipientPhone ? ` (${formatLocalPhone(order.recipientPhone)})` : ""}` : "",
+    gift: giftFor ? `Yes, for ${giftFor}` : "",
+    giftFor,
     note: order.notes ?? "",
     link: orderLink(order.publicToken ?? ""),
     invoiceLink: invoiceLink(order.publicToken ?? ""),

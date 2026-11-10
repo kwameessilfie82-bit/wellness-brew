@@ -10,11 +10,30 @@
 export type MessageVars = Record<string, string | number | null | undefined>;
 
 export function fillTemplate(template: string, vars: MessageVars): string {
-  return template
-    .replace(/\{(\w+)\}/g, (whole, key: string) => {
+  const out: string[] = [];
+  for (const line of template.replace(/\r\n?/g, "\n").split("\n")) {
+    let placeholders = 0;
+    let nonEmpty = 0;
+    const filled = line.replace(/\{(\w+)\}/g, (whole, key: string) => {
+      placeholders++;
       const v = vars[key];
-      return v === undefined || v === null ? whole : String(v);
-    })
+      if (v === undefined || v === null) {
+        nonEmpty++;
+        return whole;
+      }
+      const text = String(v);
+      if (text.trim() !== "") nonEmpty++;
+      return text;
+    });
+    // A line made only of empty placeholders (e.g. "{giftBlock}") vanishes.
+    if (placeholders > 0 && nonEmpty === 0) {
+      out.push("");
+      continue;
+    }
+    out.push(filled.replace(/[ \t]+$/, ""));
+  }
+  return out
+    .join("\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
@@ -37,10 +56,13 @@ export function fillTemplateCompact(template: string, vars: MessageVars): string
   return fillTemplate(dropEmptyLines(template, emptyKeys), vars);
 }
 
-export type MessageItem ={ name: string; quantity: number; unitPrice: string; lineTotal: string };
+export type MessageItem = { name: string; quantity: number; unitPrice: string; lineTotal: string };
 
+/** One entry per item, two lines each: "1. *2 × Name*" then "   GHS 40 each = GHS 80". */
 export function formatItemLines(items: MessageItem[]): string[] {
-  return items.map((i) => `• ${i.quantity} × ${i.name} (${i.unitPrice}) = ${i.lineTotal}`);
+  return items.map(
+    (i, n) => `${n + 1}. *${i.quantity} × ${i.name}*\n   ${i.unitPrice} each = ${i.lineTotal}`,
+  );
 }
 
 /** Encoded-length cap for the ?text= parameter (wa.me fails on very long URLs in some clients). */
@@ -48,7 +70,7 @@ export const WA_TEXT_MAX_ENCODED = 1800;
 
 /**
  * Fill the order template. `{items}` expands to item lines, truncated with
- * "+ N more items (see link)" so the encoded message fits `maxEncoded`.
+ * "+ N more items — see order link" so the encoded message fits `maxEncoded`.
  * Lines whose only placeholders are empty (e.g. no gift) are dropped.
  */
 export function buildOrderMessage(
@@ -66,7 +88,7 @@ export function buildOrderMessage(
   const render = (shown: number) => {
     const list = lines.slice(0, shown);
     const rest = lines.length - shown;
-    if (rest > 0) list.push(`+ ${rest} more item${rest === 1 ? "" : "s"} (see link)`);
+    if (rest > 0) list.push(`+ ${rest} more item${rest === 1 ? "" : "s"} — see order link`);
     return fillTemplate(base, { ...vars, items: list.join("\n") });
   };
 

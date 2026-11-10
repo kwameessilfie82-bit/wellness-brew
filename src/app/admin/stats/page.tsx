@@ -1,5 +1,8 @@
 import { redirect } from "next/navigation";
 
-export default function AdminStatsPage() {
+import { requirePagePermission } from "@/lib/admin-auth";
+
+export default async function AdminStatsPage() {
+  await requirePagePermission("canViewAnalytics", "/admin/stats");
   redirect("/admin/analytics");
 }

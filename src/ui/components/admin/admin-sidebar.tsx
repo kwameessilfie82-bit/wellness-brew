@@ -37,7 +37,8 @@ const navigationItems = [
     name: "Dashboard",
     href: "/admin",
     icon: LayoutDashboard,
-    permission: "canViewAnalytics" as const,
+    // Every admin gets a dashboard (operations view); revenue is gated on the page.
+    permission: null,
   },
   {
     name: "Analytics",
@@ -182,7 +183,7 @@ export function AdminSidebar({ adminUser, mobileOnly = false }: AdminSidebarProp
     adminUser.role?.permissions?.[permission] === true;
 
   const filteredNavigation = navigationItems.filter((item) =>
-    hasPermission(item.permission),
+    item.permission === null || hasPermission(item.permission),
   );
 
   if (mobileOnly) {

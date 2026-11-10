@@ -2,12 +2,19 @@ import Image from "next/image";
 
 import { getPublicSettings, getSettings } from "@/lib/settings/get";
 import { fillBrand, isUnoptimizedImage, paragraphs } from "@/lib/settings/schemas";
+import { DEFAULT_OG_IMAGES, metaDescription } from "@/lib/seo/site";
 import { Footer } from "@/ui/footer";
 import { Navigation } from "@/ui/navigation";
 
 export async function generateMetadata() {
   const [{ brand }, about] = await Promise.all([getPublicSettings(), getSettings("about")]);
-  return { title: fillBrand(about.title, brand.name) };
+  const description = metaDescription(fillBrand(about.intro, brand.name) || brand.description);
+  return {
+    title: fillBrand(about.title, brand.name),
+    description,
+    alternates: { canonical: "/about" },
+    openGraph: { url: "/about", title: `${fillBrand(about.title, brand.name)} | ${brand.name}`, description, images: DEFAULT_OG_IMAGES },
+  };
 }
 
 export default async function AboutPage() {

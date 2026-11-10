@@ -16,6 +16,7 @@ import { StatTile } from "@/ui/components/admin/stat";
 import { Button } from "@/ui/primitives/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/primitives/card";
 
+import { DeniedToast } from "./_dashboard/denied-toast";
 import { QuickAccess } from "./_dashboard/quick-access";
 
 export const dynamic = "force-dynamic";
@@ -25,34 +26,35 @@ function greeting(now: Date) {
   return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
 }
 
-export default async function AdminOverviewPage() {
+export default async function AdminOverviewPage({ searchParams }: { searchParams: Promise<{ denied?: string }> }) {
+  const { denied } = await searchParams;
   const adminUser = await isAdmin();
   if (!adminUser) {
     redirect("/auth/sign-in?redirect=/admin");
   }
 
-  // Only managers can access the base /admin dashboard
-  if (adminUser.role?.name === "admin") {
-    redirect("/admin/inventory");
-  }
-  if (adminUser.role?.name !== "manager") {
+  const perms = adminUser.role?.permissions ?? {};
+  // Everyone with an admin-area role sees the dashboard; money is manager-only
+  // (canViewAnalytics), so the revenue queries only run for them.
+  if (!Object.values(perms).some((v) => v === true)) {
     redirect("/auth/not-authorized");
   }
+  const canViewAnalytics = perms.canViewAnalytics === true;
 
   const [snap, counts, recent, low] = await Promise.all([
-    dashboardSnapshot(),
+    canViewAnalytics ? dashboardSnapshot() : Promise.resolve(null),
     orderTabCounts(),
     recentOrders(8),
     lowStockItems(6),
   ]);
 
-  const perms = adminUser.role?.permissions ?? {};
   const permissions = (Object.keys(perms) as AdminPermission[]).filter((k) => perms[k as keyof typeof perms] === true);
   const now = new Date();
   const firstName = adminUser.user?.name?.split(/\s+/)[0] ?? "";
 
   return (
     <div className="space-y-8">
+      {denied ? <DeniedToast denied={denied} /> : null}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-foreground sm:text-3xl">
@@ -60,56 +62,88 @@ export default async function AdminOverviewPage() {
             {firstName ? `, ${firstName}` : ""}
           </h1>
           <p className="mt-1 text-muted-foreground">
-            {now.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })} · here&apos;s
-            what needs you today.
+            {now.toLocaleDateString("en-GB", {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+              timeZone: "UTC",
+            })}{" "}
+            · here&apos;s what needs you today.
           </p>
         </div>
-        <Button asChild variant="outline">
-          <Link href="/admin/analytics">
-            <BarChart3 className="mr-2 h-4 w-4" />
-            Full analytics
-          </Link>
-        </Button>
+        {canViewAnalytics ? (
+          <Button asChild variant="outline">
+            <Link href="/admin/analytics">
+              <BarChart3 className="mr-2 h-4 w-4" />
+              Full analytics
+            </Link>
+          </Button>
+        ) : null}
       </div>
 
       {/* Headline numbers */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-        <StatTile
-          label="Orders needing action"
-          value={String(counts.needs_action)}
-          hint={snap.ordersToday ? `${snap.ordersToday} new today` : "No new orders today"}
-          href="/admin/orders?tab=needs_action"
-          tone={counts.needs_action > 0 ? "attention" : "default"}
-        />
-        <StatTile
-          label="Sales today"
-          value={formatMoney(snap.today.revenue)}
-          hint={`${snap.today.sales} sale${snap.today.sales === 1 ? "" : "s"}`}
-        />
-        <StatTile
-          label="Last 7 days"
-          value={formatMoney(snap.thisWeek.revenue)}
-          change={snap.weekChange}
-          hint="vs the 7 days before"
-          href="/admin/analytics?range=7"
-        />
-        <StatTile
-          label="Owed to you"
-          value={formatMoney(snap.owed)}
-          hint={`${snap.owedCount} delivered, not fully paid`}
-          href="/admin/orders?tab=delivered_unpaid"
-          tone={snap.owed > 0 ? "attention" : "default"}
-        />
-        <StatTile
-          label="Low / out of stock"
-          value={`${snap.lowStock} / ${snap.outOfStock}`}
-          hint="active products"
-          href="/admin/inventory"
-          tone={snap.outOfStock > 0 ? "attention" : "default"}
-        />
-      </div>
+      {snap ? (
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+          <StatTile
+            label="Orders needing action"
+            value={String(counts.needs_action)}
+            hint={snap.ordersToday ? `${snap.ordersToday} new today` : "No new orders today"}
+            href="/admin/orders?tab=needs_action"
+            tone={counts.needs_action > 0 ? "attention" : "default"}
+          />
+          <StatTile
+            label="Sales today"
+            value={formatMoney(snap.today.revenue)}
+            hint={`${snap.today.sales} sale${snap.today.sales === 1 ? "" : "s"}`}
+          />
+          <StatTile
+            label="Last 7 days"
+            value={formatMoney(snap.thisWeek.revenue)}
+            change={snap.weekChange}
+            hint="vs the 7 days before"
+            href="/admin/analytics?range=7"
+          />
+          <StatTile
+            label="Owed to you"
+            value={formatMoney(snap.owed)}
+            hint={`${snap.owedCount} delivered, not fully paid`}
+            href="/admin/orders?tab=delivered_unpaid"
+            tone={snap.owed > 0 ? "attention" : "default"}
+          />
+          <StatTile
+            label="Low / out of stock"
+            value={`${snap.lowStock} / ${snap.outOfStock}`}
+            hint="active products"
+            href="/admin/inventory"
+            tone={snap.outOfStock > 0 ? "attention" : "default"}
+          />
+        </div>
+      ) : (
+        // Operations view: order counts only, no money.
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <StatTile
+            label="Needs action"
+            value={String(counts.needs_action)}
+            hint="To confirm or check"
+            href="/admin/orders?tab=needs_action"
+            tone={counts.needs_action > 0 ? "attention" : "default"}
+          />
+          <StatTile
+            label="In progress"
+            value={String(counts.active)}
+            hint="Confirmed, preparing or out for delivery"
+            href="/admin/orders?tab=active"
+          />
+          <StatTile
+            label="Delivered, awaiting payment"
+            value={String(counts.delivered_unpaid)}
+            hint="Handed over, not yet closed"
+            href="/admin/orders?tab=delivered_unpaid"
+          />
+        </div>
+      )}
 
-      {snap.toVerify > 0 || snap.refundDue > 0 ? (
+      {snap && (snap.toVerify > 0 || snap.refundDue > 0) ? (
         <div className="flex flex-wrap gap-2">
           {snap.toVerify > 0 ? (
             <Link
@@ -150,7 +184,9 @@ export default async function AdminOverviewPage() {
           </CardHeader>
           <CardContent className="p-0">
             {recent.length === 0 ? (
-              <p className="px-6 pb-6 text-sm text-muted-foreground">No orders yet. They&apos;ll show up here as customers order.</p>
+              <p className="px-6 pb-6 text-sm text-muted-foreground">
+                No orders yet. They&apos;ll show up here as customers order.
+              </p>
             ) : (
               <ul className="divide-y" data-testid="recent-orders">
                 {recent.map((r) => (
@@ -169,10 +205,14 @@ export default async function AdminOverviewPage() {
                         <span className={cn("rounded-md px-2 py-0.5 text-xs font-medium", statusTone(r.status))}>
                           {isOrderStatus(r.status) ? STATUS_LABELS[r.status] : r.status}
                         </span>
-                        <span className={cn("rounded-md px-2 py-0.5 text-xs font-medium", paymentTone(r.paymentStatus))}>
+                        <span
+                          className={cn("rounded-md px-2 py-0.5 text-xs font-medium", paymentTone(r.paymentStatus))}
+                        >
                           {isPaymentStatus(r.paymentStatus) ? PAYMENT_STATUS_LABELS[r.paymentStatus] : r.paymentStatus}
                         </span>
-                        <span className="text-xs text-muted-foreground">{relativeTime(r.createdAt.toISOString(), now.getTime())}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {relativeTime(r.createdAt.toISOString(), now.getTime())}
+                        </span>
                       </span>
                     </Link>
                   </li>
@@ -183,17 +223,19 @@ export default async function AdminOverviewPage() {
         </Card>
 
         <div className="space-y-6 xl:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Sales, last 14 days</CardTitle>
-              <CardDescription>
-                {formatMoney(snap.series.reduce((s, d) => s + d.revenue, 0))} from invoices & confirmed orders
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <BarSeries data={snap.series} dataKey="revenue" kind="money" label="Sales" height={180} />
-            </CardContent>
-          </Card>
+          {snap ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Sales, last 14 days</CardTitle>
+                <CardDescription>
+                  {formatMoney(snap.series.reduce((s, d) => s + d.revenue, 0))} from invoices & confirmed orders
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <BarSeries data={snap.series} dataKey="revenue" kind="money" label="Sales" height={180} />
+              </CardContent>
+            </Card>
+          ) : null}
 
           <Card>
             <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">

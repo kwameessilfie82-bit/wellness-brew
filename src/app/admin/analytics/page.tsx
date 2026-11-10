@@ -1,7 +1,6 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
-import { isAdmin } from "@/lib/admin-auth";
+import { requirePagePermission } from "@/lib/admin-auth";
 import { businessAnalytics, parseRange, RANGES } from "@/lib/analytics/server";
 import { cn } from "@/lib/cn";
 import { formatMoney } from "@/lib/orders/money";
@@ -33,9 +32,7 @@ function duration(mins: number | null) {
 }
 
 export default async function AnalyticsPage({ searchParams }: { searchParams: Promise<{ range?: string }> }) {
-  const adminUser = await isAdmin();
-  if (!adminUser) redirect("/auth/sign-in?redirect=/admin/analytics");
-  if (adminUser.role?.permissions?.canViewAnalytics !== true) redirect("/auth/not-authorized");
+  await requirePagePermission("canViewAnalytics", "/admin/analytics");
 
   const days = parseRange((await searchParams).range);
   const a = await businessAnalytics(days);

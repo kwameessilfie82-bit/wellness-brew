@@ -2,7 +2,7 @@ import { NextResponse, NextRequest } from "next/server";
 import { db } from "@/db";
 import { adminRoleTable } from "@/db/schema";
 import { withAdminAuth } from "@/lib/admin-middleware";
-import { ADMIN_PERMISSIONS } from "@/lib/admin-auth";
+import { ADMIN_PERMISSIONS, syncDefaultRolePermissions } from "@/lib/admin-auth";
 import { eq } from "drizzle-orm";
 
 type RoleSeed = {
@@ -73,6 +73,9 @@ async function seedRoles(adminUserId?: string) {
       })
       .where(eq(adminRoleTable.id, r.id));
   }
+
+  // Idempotent drift fix: manager/admin rows always match ADMIN_PERMISSIONS.
+  await syncDefaultRolePermissions();
 
   const totalAfter = (await db.query.adminRoleTable.findMany()).length;
 
