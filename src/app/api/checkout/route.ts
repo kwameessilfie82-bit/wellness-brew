@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { and, eq, inArray } from "drizzle-orm";
 
+import { db } from "@/db";
+import { productTable } from "@/db/schema";
 import { getAppBaseUrl } from "@/lib/app-url";
 import { getCurrentUser } from "@/lib/auth";
+import { getProductThumbnail, parsePrice } from "@/lib/format";
 import { formatGhanaPhone } from "@/lib/ghana";
 import {
   initializePaystackTransaction,
@@ -9,6 +13,8 @@ import {
 } from "@/lib/paystack";
 import { updateUserProfile } from "@/lib/queries/profile";
 import { createStoreOrder } from "@/lib/queries/orders";
+
+const DELIVERY_FEE = 0;
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,16 +27,8 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const {
-      customerName,
-      customerPhone,
-      deliveryAddress,
-      paymentMethod,
-      subtotal,
-      deliveryFee,
-      total,
-      items,
-    } = body;
+    const { customerName, customerPhone, deliveryAddress, paymentMethod, items } =
+      body;
 
     if (
       !customerName?.trim() ||
@@ -54,15 +52,69 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const phone = formatGhanaPhone(customerPhone);
-    const orderTotal = Number(total);
-    const orderSubtotal = Number(subtotal);
-    const orderDelivery = Number(deliveryFee) || 0;
+    // Validate quantities and collect product ids
+    const requested = new Map<string, number>();
+    for (const item of items as { id: unknown; quantity: unknown }[]) {
+      const id = String(item.id ?? "");
+      const quantity = Number(item.quantity);
+      if (!id || !Number.isInteger(quantity) || quantity < 1 || quantity > 999) {
+        return NextResponse.json(
+          { error: "Invalid cart item quantity" },
+          { status: 400 },
+        );
+      }
+      requested.set(id, (requested.get(id) ?? 0) + quantity);
+    }
 
-    if (orderTotal <= 0) {
+    // Price everything from the database — never trust client-side prices
+    const productIds = [...requested.keys()];
+    const products = await db
+      .select({
+        id: productTable.id,
+        name: productTable.name,
+        sku: productTable.sku,
+        price: productTable.price,
+        images: productTable.images,
+      })
+      .from(productTable)
+      .where(
+        and(
+          inArray(productTable.id, productIds),
+          eq(productTable.isActive, true),
+        ),
+      );
+
+    if (products.length !== productIds.length) {
+      return NextResponse.json(
+        {
+          error:
+            "Some items in your cart are no longer available. Please review your cart.",
+        },
+        { status: 400 },
+      );
+    }
+
+    const orderItems = products.map((product) => ({
+      productId: product.id,
+      name: product.name,
+      sku: product.sku,
+      price: parsePrice(product.price),
+      quantity: requested.get(product.id)!,
+      image: getProductThumbnail(product.images),
+    }));
+
+    const orderSubtotal =
+      Math.round(
+        orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0) *
+          100,
+      ) / 100;
+    const orderTotal = orderSubtotal + DELIVERY_FEE;
+
+    if (!Number.isFinite(orderTotal) || orderTotal <= 0) {
       return NextResponse.json({ error: "Invalid order total" }, { status: 400 });
     }
 
+    const phone = formatGhanaPhone(customerPhone);
     const paymentReference = `WB-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 
     const order = await createStoreOrder({
@@ -82,26 +134,10 @@ export async function POST(request: NextRequest) {
       paymentReference,
       status: "pending_payment",
       subtotal: orderSubtotal,
-      shipping: orderDelivery,
+      shipping: DELIVERY_FEE,
       tax: 0,
       total: orderTotal,
-      items: items.map(
-        (item: {
-          id: string;
-          name: string;
-          sku?: string;
-          price: number;
-          quantity: number;
-          image?: string;
-        }) => ({
-          productId: String(item.id),
-          name: item.name,
-          sku: item.sku,
-          price: Number(item.price),
-          quantity: Number(item.quantity),
-          image: item.image,
-        }),
-      ),
+      items: orderItems,
     });
 
     await updateUserProfile(user.id, {

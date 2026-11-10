@@ -12,7 +12,7 @@ import { formatPrice } from "@/lib/format"
 
 export default function CartPage() {
   const router = useRouter()
-  const { items, removeItem, updateQuantity, totalPrice, clearCart } = useCart()
+  const { items, removeItem, updateQuantity, totalPrice, totalItems, clearCart } = useCart()
 
   return (
     <div className="min-h-screen">
@@ -41,7 +41,9 @@ export default function CartPage() {
               {/* Cart Items */}
               <div className="lg:col-span-2 space-y-4">
                 <div className="flex items-center justify-between mb-4">
-                  <p className="text-sm text-muted-foreground">{items.length} items in cart</p>
+                  <p className="text-sm text-muted-foreground">
+                    {totalItems} {totalItems === 1 ? "item" : "items"} in cart
+                  </p>
                   <Button variant="ghost" size="sm" onClick={clearCart}>
                     Clear Cart
                   </Button>

@@ -2,12 +2,12 @@ import "server-only";
 
 import { and, desc, eq, ilike, or, type SQL } from "drizzle-orm";
 
+import { randomUUID } from "node:crypto";
+
 import { db } from "@/db";
 import {
   inventoryTable,
-  inventoryTransactionTable,
   orderItemTable,
-  productTable,
   storeOrderTable,
 } from "@/db/schema";
 
@@ -39,8 +39,9 @@ export type CreateOrderInput = {
 
 export async function createStoreOrder(input: CreateOrderInput) {
   const now = new Date();
-  const orderId = `ord-${Date.now()}`;
-  const orderNumber = `WB-${Date.now().toString(36).toUpperCase()}`;
+  const suffix = randomUUID().slice(0, 8);
+  const orderId = `ord-${Date.now()}-${suffix}`;
+  const orderNumber = `WB-${Date.now().toString(36).toUpperCase()}${suffix.slice(0, 4).toUpperCase()}`;
 
   await db.transaction(async (tx) => {
     await tx.insert(storeOrderTable).values({
@@ -65,8 +66,18 @@ export async function createStoreOrder(input: CreateOrderInput) {
     });
 
     for (const item of input.items) {
+      const inv = await tx.query.inventoryTable.findFirst({
+        where: eq(inventoryTable.productId, item.productId),
+      });
+
+      if (inv && inv.quantityAvailable < item.quantity) {
+        throw new Error(
+          `Not enough stock for ${item.name} — only ${inv.quantityAvailable} left`,
+        );
+      }
+
       await tx.insert(orderItemTable).values({
-        id: `oi-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        id: `oi-${randomUUID()}`,
         orderId,
         productId: item.productId,
         productName: item.name,
@@ -74,10 +85,6 @@ export async function createStoreOrder(input: CreateOrderInput) {
         price: String(item.price),
         quantity: item.quantity,
         image: item.image ?? null,
-      });
-
-      const inv = await tx.query.inventoryTable.findFirst({
-        where: eq(inventoryTable.productId, item.productId),
       });
 
       if (inv) {
