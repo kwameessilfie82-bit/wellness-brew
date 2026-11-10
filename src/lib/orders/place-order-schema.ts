@@ -31,6 +31,16 @@ export const placeOrderSchema = z
     areaText: t(120).optional().default(""),
     address: t(500).optional().default(""),
     gpsAddress: t(20).optional().default(""),
+    /** Map pin from the browser's geolocation ("Use my current location"). */
+    location: z
+      .object({
+        lat: z.number().min(-90).max(90),
+        lng: z.number().min(-180).max(180),
+        accuracy: z.number().min(0).max(1_000_000),
+      })
+      .nullable()
+      .optional()
+      .default(null),
     pickupLocationId: t(64).optional().default(""),
     deliveryWindow: t(80).optional().default(""),
     preferredPayment: z.enum(PAYMENT_METHODS),
@@ -48,7 +58,8 @@ export const placeOrderSchema = z
   .superRefine((v, ctx) => {
     if (v.fulfilment === "delivery") {
       if (!v.zoneId && !v.areaText) ctx.addIssue({ code: "custom", path: ["zoneId"], message: "Choose your area" });
-      if (v.address.length < 3) ctx.addIssue({ code: "custom", path: ["address"], message: "Add an address or landmark" });
+      // A shared map pin is enough for the rider; otherwise we need a written address.
+      if (v.address.length < 3 && !v.location) ctx.addIssue({ code: "custom", path: ["address"], message: "Add an address or landmark" });
     } else if (!v.pickupLocationId) {
       ctx.addIssue({ code: "custom", path: ["pickupLocationId"], message: "Choose a pickup point" });
     }

@@ -23,6 +23,7 @@ import { Footer } from "@/ui/footer";
 import { Navigation } from "@/ui/navigation";
 import { Button } from "@/ui/primitives/button";
 
+import { BlendShowcase } from "./_home/blend-showcase";
 import { FeaturedProducts } from "./_home/featured-products";
 
 const ICONS: Record<HomepageContent["valueProps"][number]["icon"], LucideIcon> = {
@@ -113,6 +114,13 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      <BlendShowcase
+        items={content.showcase}
+        eyebrow={f(content.showcaseEyebrow)}
+        title={f(content.showcaseTitle)}
+        subtitle={f(content.showcaseSubtitle)}
+      />
 
       <section className="relative bg-background py-16 md:py-24">
         <div className="section-container">

@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { db } from "@/db";
 import { orderItemTable, storeOrderTable } from "@/db/schema";
 import { parsePrice } from "@/lib/format";
+import { accuracyLabel, directionsUrl } from "@/lib/orders/location";
 import { formatMoney } from "@/lib/orders/money";
 import { formatLocalPhone } from "@/lib/orders/phone";
 import { STATUS_LABELS, isOrderStatus, TERMINAL } from "@/lib/orders/status";
@@ -63,6 +64,9 @@ export default async function RiderPage({ params }: Props) {
   const recipientName = order.isGift && order.recipientName ? order.recipientName : order.customerName;
   const address = [order.shippingAddress, order.deliveryArea].filter(Boolean).join(", ");
   const mapQuery = order.gpsAddress || address;
+  // A device pin is the most precise thing we have: route straight to it.
+  const pin =
+    order.deliveryLat !== null && order.deliveryLng !== null ? directionsUrl(order.deliveryLat, order.deliveryLng) : null;
   const status = isOrderStatus(order.status) ? order.status : "confirmed";
 
   return (
@@ -78,6 +82,11 @@ export default async function RiderPage({ params }: Props) {
         {order.isGift ? <p className="text-sm text-muted-foreground">Gift from {order.customerName}</p> : null}
         <p className="mt-2">{address || "No address given"}</p>
         {order.gpsAddress ? <p className="text-sm text-muted-foreground">GPS: {order.gpsAddress}</p> : null}
+        {pin ? (
+          <p className="text-sm text-muted-foreground">
+            Customer shared their location{order.locationAccuracyM ? ` (${accuracyLabel(order.locationAccuracyM)})` : ""} — tap Map for directions.
+          </p>
+        ) : null}
         {order.deliveryWindow ? <p className="text-sm text-muted-foreground">Time: {order.deliveryWindow}</p> : null}
         <div className="mt-3 grid grid-cols-3 gap-2 text-center text-sm">
           {recipientPhone ? (
@@ -95,9 +104,9 @@ export default async function RiderPage({ params }: Props) {
               </a>
             </>
           ) : null}
-          {mapQuery ? (
+          {mapQuery || pin ? (
             <a
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`}
+              href={pin ?? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="rounded-lg border py-2 font-medium"

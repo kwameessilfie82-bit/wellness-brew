@@ -7,6 +7,8 @@ import { useState } from "react";
 
 import { useSiteSettings } from "@/lib/settings/site-settings-context";
 import { signInWithEmail, signInWithGoogle } from "@/lib/auth-client";
+
+import { prepareDevLogin } from "../dev-login-action";
 import { GoogleIcon } from "@/ui/components/icons/google";
 import { Button } from "@/ui/primitives/button";
 import { Card, CardContent } from "@/ui/primitives/card";
@@ -16,7 +18,7 @@ import { PasswordInput } from "@/ui/primitives/password-input";
 import { Separator } from "@/ui/primitives/separator";
 import { Loader2 } from "lucide-react";
 
-export function SignInPageClient() {
+export function SignInPageClient({ devLogin = false }: { devLogin?: boolean }) {
   const { brand } = useSiteSettings();
   const searchParams = useSearchParams();
   const next = searchParams.get("next") || "/";
@@ -38,6 +40,20 @@ export function SignInPageClient() {
       setError(
         err instanceof Error ? err.message : "Failed to sign in with email",
       );
+      setEmailLoading(false);
+    }
+  };
+
+  const handleDevLogin = async () => {
+    setError("");
+    setEmailLoading(true);
+    try {
+      const res = await prepareDevLogin();
+      if (!res.ok) throw new Error(res.error);
+      await signInWithEmail(res.email, res.password);
+      window.location.href = next === "/" ? "/admin" : next;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Dev login failed");
       setEmailLoading(false);
     }
   };
@@ -126,6 +142,19 @@ export function SignInPageClient() {
                   "Sign in"
                 )}
               </Button>
+              {devLogin ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  className="w-full border-dashed border-amber-500 text-amber-700 dark:text-amber-400"
+                  disabled={emailLoading}
+                  onClick={handleDevLogin}
+                  data-testid="dev-login"
+                >
+                  Dev only: sign in as owner
+                </Button>
+              ) : null}
             </form>
 
             <div className="my-6 flex items-center gap-3">

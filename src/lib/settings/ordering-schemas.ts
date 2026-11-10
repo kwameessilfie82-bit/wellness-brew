@@ -112,6 +112,7 @@ export const TEMPLATE_PLACEHOLDERS = [
   "gift",
   "note",
   "link",
+  "invoiceLink",
   "code",
   "riderLink",
   "paymentDetails",
@@ -167,15 +168,16 @@ export const ORDERING_DEFAULTS: {
       "Note: {note}",
       "Name: {name}",
       "Order details: {link}",
+      "Invoice (PDF): {invoiceLink}",
     ].join("\n"),
     nudge:
       "Hi {name}, this is {brand}. We saw your order {orderNumber} on our website but didn't get it on WhatsApp. Would you like us to go ahead? {link}",
     received:
       "Hi {name}, thanks for your order {orderNumber}! We're checking stock and delivery and will confirm shortly.",
     paymentDetails:
-      "Hi {name}, your order {orderNumber} comes to {amountDue}.\n\n{paymentDetails}\n\nPlease use {orderNumber} as the reference and send us a screenshot once paid. Thank you!",
+      "Hi {name}, your order {orderNumber} comes to {amountDue}.\n\n{paymentDetails}\n\nPlease use {orderNumber} as the reference and send us a screenshot once paid. Your invoice: {invoiceLink}\n\nThank you!",
     confirmed:
-      "Hi {name}, your order {orderNumber} is confirmed ✅ Total: {total}. Track it here: {link}",
+      "Hi {name}, your order {orderNumber} is confirmed ✅ Total: {total}.\nInvoice (PDF): {invoiceLink}\nTrack it here: {link}",
     readyForPickup:
       "Hi {name}, your order {orderNumber} is ready for pickup at {pickupLocation}. See you soon!",
     outForDelivery:
@@ -187,6 +189,6 @@ export const ORDERING_DEFAULTS: {
     deliveryFailed:
       "Hi {name}, our rider couldn't reach you with order {orderNumber}. When is a good time to deliver?",
     cancelled: "Hi {name}, your order {orderNumber} has been cancelled. {reason}",
-    paymentReceived: "Hi {name}, we've received your payment for {orderNumber}. Thank you!",
+    paymentReceived: "Hi {name}, we've received your payment for {orderNumber}. Thank you! Your paid invoice: {invoiceLink}",
   },
 };

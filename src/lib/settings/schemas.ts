@@ -216,6 +216,20 @@ export const homepageSchema = z.object({
       }),
     )
     .max(6),
+  /** Animated "meet the blends" image strip. Empty list hides it. */
+  showcaseEyebrow: str(60),
+  showcaseTitle: str(120),
+  showcaseSubtitle: str(300),
+  showcase: z
+    .array(
+      z.object({
+        id,
+        url: optionalUrl.refine((v) => v !== "", { message: "Image is required" }),
+        title: str(80),
+        href: optionalUrl,
+      }),
+    )
+    .max(12),
   closingTitle: str(120),
   closingText: str(300),
   closingCtaLabel: str(40),

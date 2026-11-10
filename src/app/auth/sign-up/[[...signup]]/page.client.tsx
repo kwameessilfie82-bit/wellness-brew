@@ -1,6 +1,8 @@
 "use client";
 
 import Image from "next/image";
+
+import { BrewSlideshow, type Slide } from "@/ui/components/brew-slideshow";
 // import Link from "next/link";
 import { useState } from "react";
 
@@ -19,7 +21,7 @@ import { Label } from "@/ui/primitives/label";
 import { Separator } from "@/ui/primitives/separator";
 import { Loader2 } from "lucide-react";
 
-export function SignUpPageClient() {
+export function SignUpPageClient({ slides = [] }: { slides?: Slide[] }) {
   const { brand } = useSiteSettings();
   const { user } = useCurrentUser();
   const [error, setError] = useState("");
@@ -114,17 +116,21 @@ export function SignUpPageClient() {
           md:block
         `}
       >
-        <Image
-          alt="Variety of health and nutrition products"
-          className="object-cover"
-          fill
-          priority
-          sizes="(max-width: 768px) 0vw, 50vw"
-          src="/variety-gift.jpg"
-        />
+        {slides.length > 0 ? (
+          <BrewSlideshow slides={slides} />
+        ) : (
+          <Image
+            alt={`${brand.name} teas`}
+            className="object-cover"
+            fill
+            priority
+            sizes="(max-width: 768px) 0vw, 50vw"
+            src="/variety-gift.jpg"
+          />
+        )}
         <div
           className={`
-            absolute inset-0 bg-gradient-to-t from-background/80 to-transparent
+            pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent
           `}
         />
         <div className="absolute bottom-8 left-8 z-10 text-white">

@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 
 import { isAdmin } from "@/lib/admin-auth";
 import { AdminSidebar } from "@/ui/components/admin/admin-sidebar";
 import { AdminTopBar } from "@/ui/components/admin/admin-top-bar";
+import { RouteTracker } from "@/ui/components/admin/route-tracker";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -17,6 +19,9 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
 
   return (
     <div className="flex min-h-screen bg-background">
+      <Suspense fallback={null}>
+        <RouteTracker userId={adminUser.userId} />
+      </Suspense>
       <AdminSidebar adminUser={adminUser} />
       <div className="flex min-w-0 flex-1 flex-col">
         <AdminTopBar adminUser={adminUser} />

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
+  BarChart3,
   LayoutDashboard,
   FolderOpen,
   Warehouse,
@@ -36,6 +37,12 @@ const navigationItems = [
     name: "Dashboard",
     href: "/admin",
     icon: LayoutDashboard,
+    permission: "canViewAnalytics" as const,
+  },
+  {
+    name: "Analytics",
+    href: "/admin/analytics",
+    icon: BarChart3,
     permission: "canViewAnalytics" as const,
   },
   {

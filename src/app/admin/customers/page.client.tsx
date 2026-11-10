@@ -290,63 +290,31 @@ const CustomersPageClient: React.FC<CustomersPageClientProps> = ({
         </div>
       </div>
 
-      {/* User Statistics - Mobile Optimized */}
+      {/* User statistics: one card style, tinted per role, readable in light and dark */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
-        <Card className="group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-primary/30 bg-gradient-to-br from-background to-background/80">
-          <CardContent className="p-4">
-            <div className="flex flex-col items-center text-center space-y-3">
-              <div className="text-2xl sm:text-3xl font-bold text-primary group-hover:scale-110 transition-transform duration-300">
-                {userStats.total}
+        {[
+          { label: "Total Users", value: userStats.total, Icon: Users, tone: "text-primary", tint: "from-primary/10" },
+          { label: "Managers", value: userStats.managers, Icon: UserCog, tone: "text-blue-600 dark:text-blue-400", tint: "from-blue-500/10" },
+          { label: "Admins", value: userStats.admins, Icon: UserCheck, tone: "text-green-600 dark:text-green-400", tint: "from-green-500/10" },
+          { label: "Customers", value: userStats.customers, Icon: UserIcon, tone: "text-orange-600 dark:text-orange-400", tint: "from-orange-500/10" },
+        ].map(({ label, value, Icon, tone, tint }) => (
+          <Card
+            key={label}
+            className={`group border-border/60 bg-card bg-gradient-to-br ${tint} to-transparent transition-all duration-300 hover:shadow-lg`}
+          >
+            <CardContent className="p-4">
+              <div className="flex flex-col items-center space-y-3 text-center">
+                <div className={`text-2xl font-bold transition-transform duration-300 group-hover:scale-110 sm:text-3xl ${tone}`}>
+                  {value}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Icon className={`h-4 w-4 ${tone}`} />
+                  <div className="text-xs font-medium text-muted-foreground sm:text-sm">{label}</div>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                <div className="text-xs sm:text-sm font-medium text-muted-foreground">Total Users</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-blue-300 bg-gradient-to-br from-background to-blue-50/20">
-          <CardContent className="p-4">
-            <div className="flex flex-col items-center text-center space-y-3">
-              <div className="text-2xl sm:text-3xl font-bold text-blue-600 group-hover:scale-110 transition-transform duration-300">
-                {userStats.managers}
-              </div>
-              <div className="flex items-center gap-2">
-                <UserCog className="h-4 w-4 text-blue-500" />
-                <div className="text-xs sm:text-sm font-medium text-muted-foreground">Managers</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-green-300 bg-gradient-to-br from-background to-green-50/20">
-          <CardContent className="p-4">
-            <div className="flex flex-col items-center text-center space-y-3">
-              <div className="text-2xl sm:text-3xl font-bold text-green-600 group-hover:scale-110 transition-transform duration-300">
-                {userStats.admins}
-              </div>
-              <div className="flex items-center gap-2">
-                <UserCheck className="h-4 w-4 text-green-500" />
-                <div className="text-xs sm:text-sm font-medium text-muted-foreground">Admins</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-orange-300 bg-gradient-to-br from-background to-orange-50/20">
-          <CardContent className="p-4">
-            <div className="flex flex-col items-center text-center space-y-3">
-              <div className="text-2xl sm:text-3xl font-bold text-orange-600 group-hover:scale-110 transition-transform duration-300">
-                {userStats.customers}
-              </div>
-              <div className="flex items-center gap-2">
-                <UserIcon className="h-4 w-4 text-orange-500" />
-                <div className="text-xs sm:text-sm font-medium text-muted-foreground">Customers</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Search */}

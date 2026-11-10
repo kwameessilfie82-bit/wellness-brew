@@ -10,6 +10,7 @@ import React, {
 } from "react";
 import { toast } from "sonner";
 
+import { refreshCartItems } from "@/app/order/cart-actions";
 import { parsePrice } from "@/lib/format";
 import {
   readCartFromStorage,
@@ -65,6 +66,51 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     setItems(cart);
     hasRestoredRef.current = true;
     setIsHydrated(true);
+
+    // Reconcile with the live catalogue: drop products that were deleted or
+    // switched off, and refresh names/prices/images that changed since.
+    if (cart.length === 0) return;
+    let cancelled = false;
+    refreshCartItems(cart.map((i) => String(i.id)))
+      .then((fresh) => {
+        if (cancelled) return;
+        const byId = new Map(fresh.map((p) => [p.id, p]));
+        // Computed from the stored snapshot (not inside the updater, which may run twice).
+        const removed = cart.filter((i) => !byId.has(String(i.id))).length;
+        const repriced = cart.filter((i) => {
+          const p = byId.get(String(i.id));
+          return p && Math.abs(p.price - i.price) > 0.004;
+        });
+        setItems((prev) => {
+          const next: CartItem[] = [];
+          for (const item of prev) {
+            const p = byId.get(String(item.id));
+            if (!p) continue;
+            next.push({ ...item, name: p.name, price: p.price, image: p.image ?? item.image });
+          }
+          return next;
+        });
+        if (repriced.length > 0) {
+          toast.info(
+            repriced.length === 1
+              ? `The price of ${byId.get(String(repriced[0].id))?.name ?? "an item"} has changed. Your cart shows the current price.`
+              : `Prices of ${repriced.length} items have changed. Your cart shows the current prices.`,
+          );
+        }
+        if (removed > 0) {
+          toast.info(
+            removed === 1
+              ? "An item in your cart is no longer available and was removed."
+              : `${removed} items in your cart are no longer available and were removed.`,
+          );
+        }
+      })
+      .catch(() => {
+        // Offline or server error: keep the cart; /order re-validates anyway.
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {

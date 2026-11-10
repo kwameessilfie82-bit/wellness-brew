@@ -291,6 +291,10 @@ export async function placeOrder(raw: unknown): Promise<PlaceOrderResult> {
           deliveryZoneId,
           deliveryArea,
           gpsAddress: input.gpsAddress || null,
+          deliveryLat: input.fulfilment === "delivery" && input.location ? input.location.lat : null,
+          deliveryLng: input.fulfilment === "delivery" && input.location ? input.location.lng : null,
+          locationAccuracyM:
+            input.fulfilment === "delivery" && input.location ? Math.round(input.location.accuracy) : null,
           deliveryFeeConfirmed: feeConfirmed,
           pickupLocationId,
           pickupLocationName,

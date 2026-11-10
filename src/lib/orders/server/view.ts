@@ -9,6 +9,7 @@ import { parsePrice } from "@/lib/format";
 import { getPublicSettings, getSettings } from "@/lib/settings/get";
 import { fillBrand } from "@/lib/settings/schemas";
 
+import { orderMapsUrl } from "../location";
 import { buildOrderMessage, fillTemplateCompact, type MessageItem, type MessageVars } from "../message";
 import { formatMoney } from "../money";
 import { formatLocalPhone } from "../phone";
@@ -50,6 +51,10 @@ export function siteUrl(): string {
     (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "") ||
     getAppBaseUrl();
   return raw.replace(/\/+$/, "");
+}
+
+export function invoiceLink(token: string) {
+  return `${siteUrl()}/o/${token}/invoice`;
 }
 
 export function orderLink(token: string) {
@@ -106,10 +111,11 @@ export async function templateVars(order: OrderRow, items: OrderItemRow[], extra
       : !order.deliveryFeeConfirmed
         ? `${order.deliveryArea ?? ""} (fee to be confirmed)`.trim()
         : `${order.deliveryArea ? `${order.deliveryArea} ` : ""}${fee > 0 ? formatMoney(fee) : "Free"}`;
+  const pin = order.fulfilment === "pickup" ? null : orderMapsUrl(order);
   const fulfilmentText =
     order.fulfilment === "pickup"
       ? `Pickup: ${order.pickupLocationName ?? ""}`
-      : `Delivery to: ${[order.deliveryArea, order.shippingAddress].filter(Boolean).join(", ")}${order.deliveryWindow ? ` (${order.deliveryWindow})` : ""}`;
+      : `Delivery to: ${[order.deliveryArea, order.shippingAddress].filter(Boolean).join(", ")}${order.deliveryWindow ? ` (${order.deliveryWindow})` : ""}${pin ? `\nMap pin: ${pin}` : ""}`;
   return {
     brand: brand.name,
     orderNumber: order.orderNumber,
@@ -123,11 +129,12 @@ export async function templateVars(order: OrderRow, items: OrderItemRow[], extra
     amountDue: formatMoney(due),
     payment: order.preferredPayment ? PAYMENT_METHOD_LABELS[order.preferredPayment as PaymentMethod] ?? "" : "",
     fulfilment: fulfilmentText,
-    address: [order.deliveryArea, order.shippingAddress, order.gpsAddress].filter(Boolean).join(", "),
+    address: [order.deliveryArea, order.shippingAddress, order.gpsAddress, pin].filter(Boolean).join(", "),
     window: order.deliveryWindow ?? "",
     gift: order.isGift ? `Yes, for ${order.recipientName ?? "someone special"}${order.recipientPhone ? ` (${formatLocalPhone(order.recipientPhone)})` : ""}` : "",
     note: order.notes ?? "",
     link: orderLink(order.publicToken ?? ""),
+    invoiceLink: invoiceLink(order.publicToken ?? ""),
     code: order.deliveryCode ?? "",
     pickupLocation: order.pickupLocationName ?? "",
     hours: contact.businessHours,

@@ -1,4 +1,4 @@
-import { Check, Clock, MapPin, MessageCircle, Package, Phone } from "lucide-react";
+import { Check, Clock, Download, FileText, MapPin, MessageCircle, Package, Phone } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import QRCode from "qrcode";
@@ -247,6 +247,24 @@ export default async function OrderPage({ params, searchParams }: Props) {
               </div>
             ) : null}
           </dl>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <a
+              href={`/o/${token}/invoice`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-medium hover:bg-muted"
+              data-testid="invoice-link"
+            >
+              <FileText className="h-4 w-4" />
+              {order.confirmedAt ? "View invoice (PDF)" : "View pro-forma invoice (PDF)"}
+            </a>
+            <a
+              href={`/o/${token}/invoice?download=1`}
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm text-muted-foreground hover:bg-muted"
+            >
+              <Download className="h-4 w-4" /> Download
+            </a>
+          </div>
         </section>
 
         <section className="mt-6 grid gap-4 rounded-2xl border bg-card p-5 text-sm sm:grid-cols-2">

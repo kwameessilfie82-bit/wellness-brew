@@ -488,7 +488,15 @@ export function SettingsClient({
           Business details used across the website and invoices. Changes go live as soon as you save.
         </p>
       </div>
-      <Tabs defaultValue={tab}>
+      <Tabs
+        defaultValue={tab}
+        onValueChange={(v) => {
+          // Keep the tab in the URL: refresh-safe, shareable, and the dashboard learns which tabs you use.
+          const url = new URL(window.location.href);
+          url.searchParams.set("tab", v);
+          window.history.replaceState(null, "", url);
+        }}
+      >
         <TabsList className="flex h-auto flex-wrap justify-start">
           {(Object.keys(SECTION_LABELS) as SettingsSection[]).map((k) => (
             <TabsTrigger key={k} value={k}>

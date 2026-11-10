@@ -26,6 +26,9 @@ import {
 
 export const settingsTag = (section: SettingsSection) => `settings:${section}`;
 export const SETTINGS_ALL_TAG = "settings:all";
+/** Bump when a settings schema changes shape so old cached values (which may
+ *  lack new fields) are never served — the data cache outlives deploys. */
+const SETTINGS_CACHE_VERSION = "v3";
 
 async function readRaw(sections: readonly SettingsSection[]) {
   const rows = await db
@@ -38,7 +41,7 @@ async function readRaw(sections: readonly SettingsSection[]) {
 const cachedSection = <K extends SettingsSection>(section: K) =>
   unstable_cache(
     async () => resolveSection(section, (await readRaw([section])).get(section)),
-    ["site-settings", section],
+    ["site-settings", SETTINGS_CACHE_VERSION, section],
     { tags: [settingsTag(section), SETTINGS_ALL_TAG] },
   );
 
@@ -58,7 +61,7 @@ const cachedPublic = unstable_cache(
       PUBLIC_SECTIONS.map((k) => [k, resolveSection(k, raw.get(k))]),
     ) as PublicSettings;
   },
-  ["site-settings", "public", "v2"],
+  ["site-settings", "public", SETTINGS_CACHE_VERSION],
   { tags: [...PUBLIC_SECTIONS.map(settingsTag), SETTINGS_ALL_TAG] },
 );
 

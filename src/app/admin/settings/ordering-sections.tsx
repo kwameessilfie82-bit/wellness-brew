@@ -379,6 +379,7 @@ const SAMPLE_VARS: Record<string, string> = {
   gift: "",
   note: "",
   link: "https://www.wellnessgroupgh.com/o/abc123",
+  invoiceLink: "https://www.wellnessgroupgh.com/o/abc123/invoice",
   code: "4821",
   riderLink: "https://www.wellnessgroupgh.com/r/xyz",
   paymentDetails: "MTN MoMo · Merchant ID 123456",

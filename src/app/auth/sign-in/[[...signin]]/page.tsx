@@ -20,7 +20,7 @@ export default async function SignInPage({
 
   return (
     <Suspense fallback={null}>
-      <SignInPageClient />
+      <SignInPageClient devLogin={process.env.NODE_ENV === "development"} />
     </Suspense>
   );
 }

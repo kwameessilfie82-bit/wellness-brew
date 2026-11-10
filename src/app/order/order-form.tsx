@@ -24,6 +24,7 @@ import { Switch } from "@/ui/primitives/switch";
 import { Textarea } from "@/ui/primitives/textarea";
 
 import { placeOrder } from "./actions";
+import { LocationPicker, type PickedLocation } from "./location-picker";
 
 export type OrderFormConfig = {
   ordering: {
@@ -136,6 +137,7 @@ export function OrderForm({ config }: { config: OrderFormConfig }) {
   const [areaText, setAreaText] = useState("");
   const [address, setAddress] = useState(prefill?.address ?? "");
   const [gpsAddress, setGpsAddress] = useState("");
+  const [location, setLocation] = useState<PickedLocation | null>(null);
   const [deliveryWindow, setDeliveryWindow] = useState("");
   const [isGift, setIsGift] = useState(false);
   const [recipientName, setRecipientName] = useState("");
@@ -280,6 +282,7 @@ export function OrderForm({ config }: { config: OrderFormConfig }) {
           areaText: fulfilment === "delivery" && otherArea ? areaText : "",
           address: fulfilment === "delivery" ? address : "",
           gpsAddress: fulfilment === "delivery" ? gpsAddress : "",
+          location: fulfilment === "delivery" ? location : null,
           pickupLocationId: fulfilment === "pickup" ? pickupLocationId : "",
           deliveryWindow: fulfilment === "delivery" ? deliveryWindow : "",
           preferredPayment: (payment || "momo") as PaymentMethod,
@@ -696,10 +699,38 @@ export function OrderForm({ config }: { config: OrderFormConfig }) {
                   </Field>
                 ) : null}
 
+                <LocationPicker
+                  value={location}
+                  onChange={(loc) => {
+                    setLocation(loc);
+                    if (loc) clearErr("address");
+                  }}
+                  onResolved={(geo) => {
+                    // Only fill blanks — never overwrite what the customer typed.
+                    setAddress((cur) => (cur.trim() ? cur : geo.address));
+                    if (!zoneId && geo.area) {
+                      const needle = geo.area.toLowerCase();
+                      const match = delivery.zones.find((z) =>
+                        [z.name, ...z.areas.split(/[,;\n]/)]
+                          .map((s) => s.trim().toLowerCase())
+                          .some((s) => s && (s === needle || needle.includes(s) || s.includes(needle))),
+                      );
+                      if (match) {
+                        setZoneId(match.id);
+                        clearErr("zoneId");
+                        toast.success(`Area set to ${match.name}`, { description: "Change it above if that's not right." });
+                      }
+                    }
+                  }}
+                />
                 <Field
                   id="address"
-                  label="Address or landmark"
-                  hint="House number, street, or a landmark the rider can find"
+                  label={location ? "Address or landmark (optional)" : "Address or landmark"}
+                  hint={
+                    location
+                      ? "Your map pin is shared with the rider. A landmark still helps."
+                      : "House number, street, or a landmark the rider can find"
+                  }
                   error={err("address")}
                 >
                   <Textarea

@@ -71,7 +71,7 @@ export function HomepageSection({
 
   const text = (
     label: string,
-    field: Exclude<keyof typeof v, "valueProps">,
+    field: Exclude<keyof typeof v, "valueProps" | "showcase">,
     extra?: { hint?: string; multiline?: boolean; copy?: boolean },
   ) => (
     <TextField
@@ -84,7 +84,7 @@ export function HomepageSection({
       bannedPhrases={extra?.copy === false ? undefined : bannedPhrases}
     />
   );
-  const link = (label: string, field: Exclude<keyof typeof v, "valueProps">) =>
+  const link = (label: string, field: Exclude<keyof typeof v, "valueProps" | "showcase">) =>
     text(label, field, { copy: false });
 
   return (
@@ -169,6 +169,67 @@ export function HomepageSection({
           }
         >
           <Plus className="mr-1 h-4 w-4" /> Add value point ({props.length}/{MAX_VALUE_PROPS})
+        </Button>
+      </div>
+
+      <GroupTitle>Blend showcase (animated image strip)</GroupTitle>
+      <div className={grid}>
+        {text("Eyebrow", "showcaseEyebrow")}
+        {text("Title", "showcaseTitle")}
+        <div className="sm:col-span-2">{text("Subtitle", "showcaseSubtitle")}</div>
+      </div>
+      <div className="mt-4 space-y-4">
+        {v.showcase.length === 0 && <p className="text-sm text-muted-foreground">No images — the strip is hidden.</p>}
+        {v.showcase.map((img, i) => {
+          const update = (patch: Partial<(typeof v.showcase)[number]>) =>
+            s.set(
+              "showcase",
+              v.showcase.map((x, j) => (j === i ? { ...x, ...patch } : x)),
+            );
+          return (
+            <div key={img.id} className="rounded-lg border p-4">
+              <div className="mb-3 flex justify-end">
+                <ListControls
+                  index={i}
+                  length={v.showcase.length}
+                  onMove={(a, b) => s.set("showcase", move(v.showcase, a, b))}
+                  onRemove={(j) => s.set("showcase", v.showcase.filter((_, k) => k !== j))}
+                />
+              </div>
+              <div className={grid}>
+                <ImageField
+                  label="Image"
+                  value={img.url}
+                  onChange={(x) => update({ url: x })}
+                  error={s.errors[`showcase.${i}.url`]}
+                />
+                <div className="space-y-4">
+                  <TextField
+                    label="Caption"
+                    value={img.title}
+                    onChange={(x) => update({ title: x })}
+                    error={s.errors[`showcase.${i}.title`]}
+                    bannedPhrases={bannedPhrases}
+                  />
+                  <TextField
+                    label="Link (optional)"
+                    hint="e.g. /shop or a product page"
+                    value={img.href}
+                    onChange={(x) => update({ href: x })}
+                    error={s.errors[`showcase.${i}.href`]}
+                  />
+                </div>
+              </div>
+            </div>
+          );
+        })}
+        <Button
+          type="button"
+          variant="outline"
+          disabled={v.showcase.length >= 12}
+          onClick={() => s.set("showcase", [...v.showcase, { id: crypto.randomUUID(), url: "", title: "", href: "/shop" }])}
+        >
+          <Plus className="mr-1 h-4 w-4" /> Add image ({v.showcase.length}/12)
         </Button>
       </div>
 

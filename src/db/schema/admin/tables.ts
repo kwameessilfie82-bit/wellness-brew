@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   decimal,
+  doublePrecision,
   index,
   integer,
   jsonb,
@@ -168,6 +169,10 @@ export const storeOrderTable = pgTable(
     deliveryZoneId: text("delivery_zone_id"),
     deliveryArea: text("delivery_area"),
     gpsAddress: text("gps_address"),
+    /** Map pin the customer shared from their device. */
+    deliveryLat: doublePrecision("delivery_lat"),
+    deliveryLng: doublePrecision("delivery_lng"),
+    locationAccuracyM: integer("location_accuracy_m"),
     deliveryFeeConfirmed: boolean("delivery_fee_confirmed").notNull().default(true),
     pickupLocationId: text("pickup_location_id"),
     pickupLocationName: text("pickup_location_name"),

@@ -2,12 +2,13 @@
 
 import { useState, useTransition } from "react";
 
-import { Copy, ExternalLink, MessageCircle, Phone } from "lucide-react";
+import { Copy, Download, ExternalLink, MessageCircle, Phone } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { cn } from "@/lib/cn";
+import { accuracyLabel, mapsUrl } from "@/lib/orders/location";
 import { formatMoney, round2 } from "@/lib/orders/money";
 import { formatLocalPhone } from "@/lib/orders/phone";
 import {
@@ -67,6 +68,9 @@ type Order = {
   shippingAddress: string | null;
   deliveryArea: string | null;
   gpsAddress: string | null;
+  deliveryLat: number | null;
+  deliveryLng: number | null;
+  locationAccuracyM: number | null;
   deliveryFeeConfirmed: boolean;
   pickupLocationName: string | null;
   deliveryWindow: string | null;
@@ -278,6 +282,15 @@ export function OrderDetail(props: Props) {
               ))}
             </NativeSelect>
           </Card>
+          {customerLink ? (
+            <InvoiceCard
+              invoiceUrl={`${customerLink}/invoice`}
+              orderNumber={order.orderNumber}
+              customerName={order.customerName}
+              phone={order.customerPhoneE164}
+              confirmed={!["awaiting_customer", "received"].includes(order.status)}
+            />
+          ) : null}
           <LinkCard orderId={order.id} customerLink={customerLink} pending={pending} run={run} />
         </div>
       </div>
@@ -578,6 +591,21 @@ function CustomerCard({ order, otherOrders, isDelivery }: { order: Order; otherO
             <Row label="Area">{order.deliveryArea ?? "—"}</Row>
             <Row label="Address">{order.shippingAddress ?? "—"}</Row>
             {order.gpsAddress ? <Row label="GPS">{order.gpsAddress}</Row> : null}
+            {order.deliveryLat !== null && order.deliveryLng !== null ? (
+              <Row label="Map pin">
+                <a
+                  href={mapsUrl(order.deliveryLat, order.deliveryLng)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-primary underline-offset-2 hover:underline"
+                >
+                  Open in Google Maps <ExternalLink className="h-3 w-3" />
+                </a>
+                {order.locationAccuracyM ? (
+                  <span className="text-muted-foreground"> · {accuracyLabel(order.locationAccuracyM)}</span>
+                ) : null}
+              </Row>
+            ) : null}
             {order.deliveryWindow ? <Row label="Window">{order.deliveryWindow}</Row> : null}
           </>
         ) : (
@@ -992,6 +1020,76 @@ function DeliveryCard({ order, pending, run }: { order: Order; pending: boolean;
 }
 
 /* ───────────── customer link ───────────── */
+
+/**
+ * The order's PDF invoice. On phones "Send PDF on WhatsApp" attaches the actual
+ * file through the share sheet; elsewhere it opens a chat with the PDF link.
+ */
+function InvoiceCard({
+  invoiceUrl,
+  orderNumber,
+  customerName,
+  phone,
+  confirmed,
+}: {
+  invoiceUrl: string;
+  orderNumber: string;
+  customerName: string;
+  phone: string | null;
+  confirmed: boolean;
+}) {
+  const [sharing, setSharing] = useState(false);
+  const first = customerName.split(/\s+/)[0] ?? customerName;
+  const message = `Hi ${first}, here is your ${confirmed ? "invoice" : "pro-forma invoice"} for order ${orderNumber}: ${invoiceUrl}`;
+  const waChat = () => {
+    const digits = (phone ?? "").replace(/\D/g, "");
+    window.open(`https://wa.me/${digits}?text=${encodeURIComponent(message)}`, "_blank", "noopener");
+  };
+
+  const share = async () => {
+    setSharing(true);
+    try {
+      const res = await fetch(`${invoiceUrl}?download=1`, { cache: "no-store" });
+      if (!res.ok) throw new Error("pdf");
+      const file = new File([await res.blob()], `Invoice-${orderNumber}.pdf`, { type: "application/pdf" });
+      if (typeof navigator !== "undefined" && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: `Invoice ${orderNumber}`, text: message });
+      } else {
+        waChat();
+      }
+    } catch (e) {
+      // User closed the share sheet → nothing to do. Anything else → link fallback.
+      if (!(e instanceof DOMException && e.name === "AbortError")) waChat();
+    } finally {
+      setSharing(false);
+    }
+  };
+
+  return (
+    <Card title="Invoice">
+      <p className="text-sm text-muted-foreground">
+        {confirmed
+          ? "PDF invoice with your payment details. It updates automatically when the order changes."
+          : "Pro-forma until you confirm the order (prices and fee can still change)."}
+      </p>
+      <Button type="button" className="h-11 w-full bg-[#25D366] text-white hover:bg-[#1ebe5a]" onClick={share} disabled={sharing}>
+        <MessageCircle /> {sharing ? "Preparing PDF…" : "Send PDF on WhatsApp"}
+      </Button>
+      <div className="flex gap-2">
+        <Button asChild variant="outline" className="h-11 flex-1">
+          <a href={invoiceUrl} target="_blank" rel="noreferrer">
+            <ExternalLink /> View
+          </a>
+        </Button>
+        <Button asChild variant="outline" className="h-11 flex-1">
+          <a href={`${invoiceUrl}?download=1`} download>
+            <Download /> Download
+          </a>
+        </Button>
+      </div>
+    </Card>
+  );
+}
 
 function LinkCard({
   orderId,
