@@ -118,7 +118,7 @@ export function HandoffPanel(props: {
       {mobile === false ? (
         <div className="mt-4 flex items-center gap-4 rounded-xl bg-background p-3">
           <div
-            className="h-[120px] w-[120px] shrink-0 [&>svg]:h-full [&>svg]:w-full"
+            className="h-[176px] w-[176px] shrink-0 rounded-md bg-white p-1 [&>svg]:h-full [&>svg]:w-full"
             aria-label="QR code to open the order message on your phone"
             role="img"
             dangerouslySetInnerHTML={{ __html: props.qrSvg }}

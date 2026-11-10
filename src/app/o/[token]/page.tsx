@@ -1,5 +1,6 @@
 import { Check, Clock, Download, FileText, MapPin, MessageCircle, Package, Phone } from "lucide-react";
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import QRCode from "qrcode";
 
@@ -34,6 +35,13 @@ import { Navigation } from "@/ui/navigation";
 import { AutoRefresh, CustomerActions, HandoffPanel, PaidForm, RestoreCart } from "./order-client";
 
 export const dynamic = "force-dynamic";
+
+async function requestOrigin() {
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "www.wellnessgroupgh.com";
+  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
+  return `${proto}://${host}`;
+}
 
 type Props = { params: Promise<{ token: string }>; searchParams: Promise<{ new?: string }> };
 
@@ -76,7 +84,15 @@ export default async function OrderPage({ params, searchParams }: Props) {
 
   const message = awaiting ? await customerHandoffMessage(order, items) : "";
   const sendUrl = awaiting ? waLink(businessNumber, message) : "";
-  const qrSvg = awaiting ? await QRCode.toString(sendUrl, { type: "svg", margin: 1, width: 180 }) : "";
+  // QR encodes a short redirect (not the full wa.me text) so it stays coarse enough to scan off a screen.
+  const qrSvg = awaiting
+    ? await QRCode.toString(`${await requestOrigin()}/o/${token}/wa`, {
+        type: "svg",
+        margin: 2,
+        errorCorrectionLevel: "M",
+        color: { dark: "#000000", light: "#ffffff" },
+      })
+    : "";
   const helpUrl = waLink(businessNumber, `Hi ${brand.name}, it's about my order ${order.orderNumber}.`);
 
   const subtotal = parsePrice(order.subtotal);
