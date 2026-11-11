@@ -10,6 +10,7 @@ import type { orderItemTable, storeOrderTable } from "@/db/schema";
 import { decodeProxyParam } from "@/lib/blob-url";
 import { parsePrice } from "@/lib/format";
 import { getPublicSettings, getSettings } from "@/lib/settings/get";
+import { brandLogos } from "@/lib/settings/schemas";
 
 import { formatMoney } from "../money";
 import { formatLocalPhone } from "../phone";
@@ -100,7 +101,7 @@ export async function renderOrderInvoicePdf(order: OrderRow, items: ItemRow[], s
   // Logo + every distinct item image, in parallel.
   const uniqueImages = [...new Set(items.map((i) => i.image).filter((u): u is string => !!u))];
   const [logo, ...thumbList] = await Promise.all([
-    loadImage(brand.logoUrl, 240, "PNG"),
+    loadImage(brandLogos(brand).light, 240, "PNG"),
     ...uniqueImages.map((u) => loadImage(u, 96, "JPEG")),
   ]);
   const thumbs = new Map(uniqueImages.map((u, i) => [u, thumbList[i]]));

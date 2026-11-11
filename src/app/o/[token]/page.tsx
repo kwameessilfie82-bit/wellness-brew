@@ -7,6 +7,7 @@ import QRCode from "qrcode";
 import { cn } from "@/lib/cn";
 import { parsePrice } from "@/lib/format";
 import { waDeepLink, waLink } from "@/lib/orders/message";
+import { DELIVERY_CHARGES_NOTE } from "@/lib/orders/delivery-copy";
 import { formatMoney } from "@/lib/orders/money";
 import { maskPhone } from "@/lib/orders/phone";
 import {
@@ -101,6 +102,7 @@ export default async function OrderPage({ params, searchParams }: Props) {
   const paid = parsePrice(order.amountPaid);
   const due = Math.max(0, total - paid);
   const isCod = order.preferredPayment === "cash_on_delivery";
+  const feePending = fulfilment === "delivery" && !order.deliveryFeeConfirmed;
   const confirmedOrLater = STOCK_HELD.includes(status);
   const showPaymentDetails =
     confirmedOrLater && !isCod && order.paymentStatus !== "paid" && order.paymentStatus !== "refunded";
@@ -243,19 +245,17 @@ export default async function OrderPage({ params, searchParams }: Props) {
               <dt className="text-muted-foreground">Subtotal</dt>
               <dd>{formatMoney(subtotal)}</dd>
             </div>
-            {fulfilment === "delivery" ? (
+            {fulfilment === "delivery" && order.deliveryFeeConfirmed ? (
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">Delivery{order.deliveryArea ? ` (${order.deliveryArea})` : ""}</dt>
-                <dd>{order.deliveryFeeConfirmed ? (fee > 0 ? formatMoney(fee) : "Free") : "Confirmed on WhatsApp"}</dd>
+                <dd>{fee > 0 ? formatMoney(fee) : "Free"}</dd>
               </div>
             ) : null}
             <div className="flex justify-between text-base font-semibold">
-              <dt>Total</dt>
-              <dd>
-                {formatMoney(total)}
-                {order.deliveryFeeConfirmed ? "" : " + delivery"}
-              </dd>
+              <dt>{feePending ? "Items total" : "Total"}</dt>
+              <dd>{formatMoney(total)}</dd>
             </div>
+            {feePending ? <p className="text-xs text-muted-foreground">{DELIVERY_CHARGES_NOTE}</p> : null}
             {paid > 0 ? (
               <div className="flex justify-between text-muted-foreground">
                 <dt>Paid</dt>
@@ -291,7 +291,7 @@ export default async function OrderPage({ params, searchParams }: Props) {
             <p className="mt-1 text-muted-foreground">
               {fulfilment === "pickup"
                 ? order.pickupLocationName
-                : [order.deliveryArea, order.deliveryWindow].filter(Boolean).join(" · ")}
+                : [order.deliveryArea, order.deliveryWindow].filter(Boolean).join(" · ") || "Location shared on WhatsApp"}
             </p>
             {order.isGift ? <p className="mt-1 text-muted-foreground">Gift order</p> : null}
           </div>

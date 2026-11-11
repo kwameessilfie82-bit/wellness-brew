@@ -5,6 +5,7 @@ import { formatCurrency, formatDate } from "@/lib/invoice-utils"
 import { Card, CardContent } from "@/ui/primitives/card"
 import { Separator } from "@/ui/primitives/separator"
 import Image from "next/image"
+import { brandLogos } from "@/lib/settings/schemas"
 import { useSiteSettings } from "@/lib/settings/site-settings-context"
 
 interface InvoicePreviewProps {
@@ -25,9 +26,9 @@ export function InvoicePreview({ data, invoiceTitle = "", chequesPayableTo = "" 
           {/* Logo and Seller Info (Left) */}
           <div className="flex items-start gap-4">
             <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
-              {brand.logoUrl ? (
+              {brandLogos(brand).light ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={brand.logoUrl} alt={`${brand.name} logo`} width={60} height={60} />
+                <img src={brandLogos(brand).light} alt={`${brand.name} logo`} width={60} height={60} />
               ) : null}
             </div>
             <div className="text-sm text-muted-foreground space-y-1">

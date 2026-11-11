@@ -1,5 +1,5 @@
 import type { StoreProduct } from "@/lib/products/normalize";
-import type { PublicSettings } from "@/lib/settings/schemas";
+import { brandLogos, type PublicSettings } from "@/lib/settings/schemas";
 
 import { absoluteImage, absoluteUrl, SITE_URL } from "./site";
 
@@ -49,8 +49,8 @@ export function organizationLd(settings: PublicSettings): Json {
     name: brand.name,
     ...(brand.legalName ? { legalName: brand.legalName } : {}),
     url: SITE_URL,
-    logo: absoluteImage(brand.logoUrl) ?? absoluteUrl("/leafyvibestea.png"),
-    image: absoluteImage(brand.logoUrl) ?? absoluteUrl("/leafyvibestea.png"),
+    logo: absoluteUrl(brandLogos(brand).light),
+    image: absoluteUrl(brandLogos(brand).light),
     description: brand.description,
     ...(telephone ? { telephone } : {}),
     ...(email ? { email } : {}),
@@ -95,12 +95,63 @@ export function productPath(p: Pick<StoreProduct, "slug" | "id">): string {
   return `/shop/${encodeURIComponent(p.slug || p.id)}`;
 }
 
-export function productLd(product: StoreProduct, brandName: string): Json {
+/**
+ * Delivery and returns facts for merchant-listing structured data. Delivery is
+ * agreed on WhatsApp, so the rate is only published as a range when priced
+ * delivery zones exist in Settings → Delivery. Returns mirror the Terms page
+ * (§6: unopened products within 30 days).
+ */
+const HANDLING_DAYS = { min: 0, max: 1 };
+const TRANSIT_DAYS = { min: 0, max: 2 };
+const RETURN_DAYS = 30;
+
+export type ShippingFacts = { zoneFees: (number | null)[] };
+
+function shippingDetailsLd(shipping?: ShippingFacts): Json {
+  const fees = (shipping?.zoneFees ?? []).filter((f): f is number => typeof f === "number" && f >= 0);
+  const rate: Json | null = fees.length
+    ? {
+        "@type": "MonetaryAmount",
+        currency: "GHS",
+        ...(Math.min(...fees) === Math.max(...fees)
+          ? { value: Math.min(...fees).toFixed(2) }
+          : { minValue: Math.min(...fees).toFixed(2), maxValue: Math.max(...fees).toFixed(2) }),
+      }
+    : null;
+  return {
+    "@type": "OfferShippingDetails",
+    ...(rate ? { shippingRate: rate } : {}),
+    shippingDestination: { "@type": "DefinedRegion", addressCountry: "GH" },
+    deliveryTime: {
+      "@type": "ShippingDeliveryTime",
+      handlingTime: { "@type": "QuantitativeValue", minValue: HANDLING_DAYS.min, maxValue: HANDLING_DAYS.max, unitCode: "DAY" },
+      transitTime: { "@type": "QuantitativeValue", minValue: TRANSIT_DAYS.min, maxValue: TRANSIT_DAYS.max, unitCode: "DAY" },
+    },
+  };
+}
+
+const RETURN_POLICY_LD: Json = {
+  "@type": "MerchantReturnPolicy",
+  applicableCountry: "GH",
+  returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
+  merchantReturnDays: RETURN_DAYS,
+  returnMethod: "https://schema.org/ReturnByMail",
+  returnFees: "https://schema.org/ReturnFeesCustomerResponsibility",
+  merchantReturnLink: absoluteUrl("/terms"),
+};
+
+export function productLd(
+  product: StoreProduct & { updatedAt?: Date | null },
+  brandName: string,
+  shipping?: ShippingFacts,
+): Json {
   const url = absoluteUrl(productPath(product));
   const images = product.images.map((i) => absoluteImage(i)).filter(Boolean) as string[];
   const image = images.length ? images : [absoluteImage(product.image)].filter(Boolean);
   const nextYear = new Date();
   nextYear.setFullYear(nextYear.getFullYear() + 1);
+  // The current price has applied since the product was last edited.
+  const validFrom = (product.updatedAt ?? new Date()).toISOString();
   return {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -117,10 +168,13 @@ export function productLd(product: StoreProduct, brandName: string): Json {
       url,
       price: product.price.toFixed(2),
       priceCurrency: "GHS",
+      validFrom,
       priceValidUntil: nextYear.toISOString().slice(0, 10),
       availability:
         product.quantityAvailable > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
       itemCondition: "https://schema.org/NewCondition",
+      shippingDetails: shippingDetailsLd(shipping),
+      hasMerchantReturnPolicy: RETURN_POLICY_LD,
       seller: { "@id": ORG_ID },
     },
   };

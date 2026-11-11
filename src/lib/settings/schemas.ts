@@ -269,6 +269,10 @@ export type SettingsSection = keyof SettingsMap;
 export const PUBLIC_SECTIONS = ["brand", "contact", "locations", "social", "compliance"] as const;
 export type PublicSettings = Pick<SettingsMap, (typeof PUBLIC_SECTIONS)[number]>;
 
+/** Wellness Brew logo: light version (white background) and dark version (black background). */
+export const DEFAULT_LOGO_LIGHT = "/logo-light.png";
+export const DEFAULT_LOGO_DARK = "/logo-dark.png";
+
 // Public defaults: values the site shipped with before the dashboard existed.
 // Payments defaults live server-side in ./registry.ts.
 export const PUBLIC_DEFAULTS: PublicSettings = {
@@ -278,8 +282,8 @@ export const PUBLIC_DEFAULTS: PublicSettings = {
     tagline: "Your journey to wellness starts with the perfect cup.",
     promise: "",
     description: "Discover premium teas, wellness blends, and teaware.",
-    logoUrl: "/leafyvibestea.png",
-    logoDarkUrl: "",
+    logoUrl: DEFAULT_LOGO_LIGHT,
+    logoDarkUrl: DEFAULT_LOGO_DARK,
     faviconUrl: "",
   },
   contact: {
@@ -335,6 +339,17 @@ export function whatsappLink(number: string, text?: string): string {
   let digits = number.replace(/\D/g, "");
   if (digits.startsWith("0")) digits = `233${digits.slice(1)}`;
   return `https://wa.me/${digits}${text ? `?text=${encodeURIComponent(text)}` : ""}`;
+}
+
+/** Old placeholder logo; settings still pointing at it get the new logos. */
+const LEGACY_LOGOS = new Set(["", "/leafyvibestea.png"]);
+
+/** Resolve the logo pair to show. A custom upload in Settings wins; otherwise the default pair. */
+export function brandLogos(brand: { logoUrl?: string | null; logoDarkUrl?: string | null }): { light: string; dark: string } {
+  const custom = !LEGACY_LOGOS.has(brand.logoUrl ?? "");
+  const light = custom ? (brand.logoUrl as string) : DEFAULT_LOGO_LIGHT;
+  const dark = brand.logoDarkUrl && !LEGACY_LOGOS.has(brand.logoDarkUrl) ? brand.logoDarkUrl : custom ? light : DEFAULT_LOGO_DARK;
+  return { light, dark };
 }
 
 export function telLink(number: string): string {

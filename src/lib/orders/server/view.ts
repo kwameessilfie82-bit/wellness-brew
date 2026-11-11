@@ -126,6 +126,8 @@ export async function templateVars(order: OrderRow, items: OrderItemRow[], extra
         order.gpsAddress && `GPS: ${order.gpsAddress}`,
         order.deliveryWindow && `Time: ${order.deliveryWindow}`,
         pin && `Map: ${pin}`,
+        // Quick checkout collects no address: the customer shares it in this chat.
+        !area && !order.shippingAddress && !pin && "I'll share my delivery location here.",
       );
   const totalText = order.deliveryFeeConfirmed || isPickup ? formatMoney(total) : `${formatMoney(total)} + delivery`;
   const paymentText = order.preferredPayment ? PAYMENT_METHOD_LABELS[order.preferredPayment as PaymentMethod] ?? "" : "";

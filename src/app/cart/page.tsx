@@ -10,6 +10,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useTransition } from "react"
 import { formatPrice } from "@/lib/format"
+import { DELIVERY_CHARGES_NOTE } from "@/lib/orders/delivery-copy"
 
 export default function CartPage() {
   const router = useRouter()
@@ -98,21 +99,12 @@ export default function CartPage() {
               <div className="lg:col-span-1">
                 <div className="border border-border rounded-lg p-6 sticky top-24">
                   <h2 className="text-2xl font-serif font-bold mb-6">Order Summary</h2>
-                  <div className="space-y-3 mb-6">
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Subtotal</span>
-                      <span className="font-medium">{formatPrice(totalPrice)}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Delivery</span>
-                      <span className="font-medium">Confirmed on WhatsApp</span>
-                    </div>
-                  </div>
-                  <div className="border-t border-border pt-4 mb-6">
+                  <div className="mb-6">
                     <div className="flex items-center justify-between text-xl font-bold">
-                      <span>Total</span>
+                      <span>Items total</span>
                       <span>{formatPrice(totalPrice)}</span>
                     </div>
+                    <p className="mt-2 text-sm text-muted-foreground">{DELIVERY_CHARGES_NOTE}</p>
                   </div>
                   <Button
                     size="lg"
@@ -124,7 +116,7 @@ export default function CartPage() {
                     Order on WhatsApp
                   </Button>
                   <p className="mt-2 mb-3 text-center text-xs text-muted-foreground">
-                    Confirm and pay on WhatsApp — no account needed.
+                    Just your name and number, then WhatsApp opens.
                   </p>
                   <Button size="lg" variant="outline" className="w-full bg-transparent" asChild>
                     <Link href="/shop">Continue Shopping</Link>

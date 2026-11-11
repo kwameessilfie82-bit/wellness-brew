@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 
 import { formatPrice } from "@/lib/format";
+import { DELIVERY_CHARGES_NOTE } from "@/lib/orders/delivery-copy";
 import { toCardProduct } from "@/lib/products/card";
 import {
   getActiveProductSlugs,
@@ -13,7 +14,7 @@ import {
 } from "@/lib/products/server";
 import { breadcrumbLd, JsonLd, productLd, productPath } from "@/lib/seo/json-ld";
 import { metaDescription } from "@/lib/seo/site";
-import { getPublicSettings } from "@/lib/settings/get";
+import { getPublicSettings, getSettings } from "@/lib/settings/get";
 import { FallbackImage } from "@/ui/components/fallback-image";
 import { Footer } from "@/ui/footer";
 import { Navigation } from "@/ui/navigation";
@@ -75,10 +76,12 @@ export default async function ProductDetailPage({ params }: Props) {
   if (!product) notFound();
   if (byId && product.slug) permanentRedirect(productPath(product));
 
-  const [{ brand, compliance }, related] = await Promise.all([
+  const [{ brand, compliance }, related, delivery] = await Promise.all([
     getPublicSettings(),
     getRelatedProducts(product.id, product.categoryId),
+    getSettings("delivery"),
   ]);
+  const shipping = { zoneFees: delivery.zones.filter((z) => z.isActive).map((z) => z.fee) };
   const inStock = product.quantityAvailable > 0;
   const categoryHref = product.categoryName
     ? `/shop?category=${encodeURIComponent(product.categorySlug || product.categoryName)}`
@@ -92,7 +95,7 @@ export default async function ProductDetailPage({ params }: Props) {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <JsonLd data={[productLd(product, brand.name), breadcrumbLd(crumbs)]} />
+      <JsonLd data={[productLd(product, brand.name, shipping), breadcrumbLd(crumbs)]} />
       <Navigation />
 
       <nav aria-label="Breadcrumb" className="section-container py-6 text-sm text-muted-foreground animate-fade-in-up">
@@ -149,6 +152,7 @@ export default async function ProductDetailPage({ params }: Props) {
                 <p className="text-lg text-muted-foreground line-through">{formatPrice(product.originalPrice)}</p>
               ) : null}
               <Badge variant={inStock ? "default" : "destructive"}>{inStock ? "In stock" : "Out of stock"}</Badge>
+              <p className="w-full text-sm text-muted-foreground">{DELIVERY_CHARGES_NOTE}</p>
             </div>
 
             <ProductPurchase

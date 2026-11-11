@@ -16,9 +16,8 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     lang: "en-GH",
     categories: ["food", "shopping", "health"],
     icons: [
-      { src: "/icon/192", sizes: "192x192", type: "image/png" },
-      { src: "/icon/512", sizes: "512x512", type: "image/png" },
-      { src: "/icon/512", sizes: "512x512", type: "image/png", purpose: "maskable" },
+      { src: "/android-chrome-192x192.png", sizes: "192x192", type: "image/png" },
+      { src: "/android-chrome-512x512.png", sizes: "512x512", type: "image/png" },
     ],
   };
 }

@@ -4,6 +4,7 @@ import { formatPrice } from "@/lib/format";
 import { getProductById, getProductBySlug } from "@/lib/products/server";
 import { BRAND_CREAM, BRAND_GREEN, imageDataUrl, OG_SIZE } from "@/lib/seo/og-image";
 import { getPublicSettings } from "@/lib/settings/get";
+import { brandLogos } from "@/lib/settings/schemas";
 
 export const size = OG_SIZE;
 export const contentType = "image/png";
@@ -19,7 +20,7 @@ export default async function ProductOgImage({ params }: { params: Promise<{ slu
   ]);
   const [photo, logo] = await Promise.all([
     imageDataUrl(product?.image, 900),
-    imageDataUrl(brand.logoUrl || "/leafyvibestea.png", 240),
+    imageDataUrl(brandLogos(brand).light, 240),
   ]);
 
   return new ImageResponse(

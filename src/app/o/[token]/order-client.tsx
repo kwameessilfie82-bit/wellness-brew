@@ -73,7 +73,7 @@ export function HandoffPanel(props: {
       const id = window.setTimeout(() => {
         open();
         setOpening(false);
-      }, 1200);
+      }, 300);
       // Drop ?new=1 so Back / refresh doesn't re-trigger the redirect.
       window.history.replaceState(null, "", window.location.pathname);
       return () => window.clearTimeout(id);
@@ -97,7 +97,7 @@ export function HandoffPanel(props: {
     <section className="mt-6 rounded-2xl border-2 border-[#25D366] bg-[#25D366]/5 p-5">
       <h2 className="font-semibold">Last step: send your order on WhatsApp</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        Your order is saved, but we only see it once you send the message. We'll confirm stock, delivery and payment there.
+        Your order is saved, but we only see it once you send the message. We'll sort out delivery and payment with you there.
       </p>
       {opening ? <p className="mt-3 text-sm font-medium">Opening WhatsApp…</p> : null}
       <Button type="button" size="lg" className={`mt-4 h-12 w-full rounded-full text-base ${WA_GREEN}`} loading={opening} onClick={open} data-testid="send-whatsapp">

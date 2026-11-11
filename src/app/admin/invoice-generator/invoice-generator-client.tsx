@@ -16,7 +16,7 @@ import {
   calculateTotal,
 } from "@/lib/invoice-utils"
 import { Download, Share2, Save } from "lucide-react"
-import type { BrandSettings, ContactSettings, PaymentsSettings } from "@/lib/settings/schemas"
+import { brandLogos, type BrandSettings, type ContactSettings, type PaymentsSettings } from "@/lib/settings/schemas"
 
 function buildBankDetails(p: PaymentsSettings): string {
   if (!p.bankName && !p.bankAccountNumber && !p.bankAccountName) return ""
@@ -814,9 +814,9 @@ export function InvoiceGeneratorClient({ payments, brand, contact }: InvoiceGene
           {/* Logo and Title Section */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
             <div className="w-12 h-12 lg:w-12 lg:h-12 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
-              {brand.logoUrl ? (
+              {brandLogos(brand).light ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={brand.logoUrl} alt={`${brand.name} logo`} width={110} height={110} className="object-cover" />
+                <img src={brandLogos(brand).light} alt={`${brand.name} logo`} width={110} height={110} className="object-cover" />
               ) : null}
             </div>
             <div className="min-w-0 flex-1">

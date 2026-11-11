@@ -25,7 +25,8 @@ export const placeOrderSchema = z
       .refine((v) => v === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), "Invalid email")
       .optional()
       .default(""),
-    fulfilment: z.enum(FULFILMENTS),
+    /** Quick checkout sends only name + phone: delivery is arranged on WhatsApp. */
+    fulfilment: z.enum(FULFILMENTS).optional().default("delivery"),
     zoneId: t(64).optional().default(""),
     /** Free-text area when the customer's area isn't in the zone list. */
     areaText: t(120).optional().default(""),
@@ -43,26 +44,23 @@ export const placeOrderSchema = z
       .default(null),
     pickupLocationId: t(64).optional().default(""),
     deliveryWindow: t(80).optional().default(""),
-    preferredPayment: z.enum(PAYMENT_METHODS),
+    /** Agreed on WhatsApp when not given. */
+    preferredPayment: z.enum(PAYMENT_METHODS).nullable().optional().default(null),
     note: t(500).optional().default(""),
     isGift: z.boolean().optional().default(false),
     recipientName: t(120).optional().default(""),
     recipientPhone: t(30).optional().default(""),
     giftMessage: t(300).optional().default(""),
-    consent: z.literal(true, { message: "Please agree to be contacted on WhatsApp" }),
+    /** Sending the order on WhatsApp is the consent; kept optional for older clients. */
+    consent: z.boolean().optional(),
     acceptPriceChanges: z.boolean().optional().default(false),
     allowDuplicate: z.boolean().optional().default(false),
     /** Honeypot: humans never see or fill this. */
     website: z.string().max(200).optional().default(""),
   })
   .superRefine((v, ctx) => {
-    if (v.fulfilment === "delivery") {
-      // A map pin locates the customer even when they didn't name an area.
-      if (!v.zoneId && !v.areaText && !v.location)
-        ctx.addIssue({ code: "custom", path: ["zoneId"], message: "Enter your area or use your current location" });
-      // A shared map pin is enough for the rider; otherwise we need a written address.
-      if (v.address.length < 3 && !v.location) ctx.addIssue({ code: "custom", path: ["address"], message: "Add an address or landmark" });
-    } else if (!v.pickupLocationId) {
+    // Delivery details are optional: the customer shares their location on WhatsApp.
+    if (v.fulfilment === "pickup" && !v.pickupLocationId) {
       ctx.addIssue({ code: "custom", path: ["pickupLocationId"], message: "Choose a pickup point" });
     }
     if (v.isGift && v.fulfilment === "delivery") {

@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
+import { brandLogos } from "@/lib/settings/schemas";
 import { useSiteSettings } from "@/lib/settings/site-settings-context";
 import { signInWithEmail, signInWithGoogle } from "@/lib/auth-client";
 
@@ -19,6 +20,7 @@ import { Separator } from "@/ui/primitives/separator";
 
 export function SignInPageClient({ devLogin = false }: { devLogin?: boolean }) {
   const { brand } = useSiteSettings();
+  const logos = brandLogos(brand);
   const searchParams = useSearchParams();
   const next = searchParams.get("next") || "/";
   const [error, setError] = useState("");
@@ -91,7 +93,8 @@ export function SignInPageClient({ devLogin = false }: { devLogin?: boolean }) {
         <Card className="w-full max-w-md border-border/60 shadow-lg">
           <CardContent className="pt-8 pb-8">
             <div className="flex flex-col items-center text-center space-y-2">
-                {brand.logoUrl ? <Image src={brand.logoUrl} alt="" width={120} height={120} unoptimized loading="eager" style={{ width: 120, height: "auto" }} /> : null}
+                <Image src={logos.light} alt="" width={120} height={120} unoptimized loading="eager" className="dark:hidden" style={{ width: 120, height: "auto" }} />
+                <Image src={logos.dark} alt="" width={120} height={120} unoptimized loading="eager" className="hidden rounded-lg dark:block" style={{ width: 120, height: "auto" }} />
 
               <h1 className="text-2xl font-bold">Welcome back</h1>
               <p className="text-sm text-muted-foreground max-w-sm">

@@ -12,6 +12,7 @@ import { Skeleton } from "@/ui/primitives/skeleton";
 import { NavigationUserInfo } from "@/ui/components/navigation-user-info";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
+import { brandLogos } from "@/lib/settings/schemas";
 import { useSiteSettings } from "@/lib/settings/site-settings-context";
 
 const navLinks = [
@@ -24,6 +25,7 @@ const navLinks = [
 export function Navigation() {
   const pathname = usePathname();
   const { brand } = useSiteSettings();
+  const logos = brandLogos(brand);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -37,10 +39,10 @@ export function Navigation() {
           href="/"
           className="font-serif text-xl font-bold tracking-tight text-brand md:text-2xl"
         >
-          {brand.logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={brand.logoUrl} alt="" className="mr-2 inline-block h-8 w-8 rounded-full object-cover align-middle" />
-          ) : null}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={logos.light} alt="" className="mr-2 inline-block h-10 w-10 object-contain align-middle dark:hidden" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={logos.dark} alt="" className="mr-2 hidden h-10 w-10 rounded-md object-contain align-middle dark:inline-block" />
           {brand.name}
         </Link>
 

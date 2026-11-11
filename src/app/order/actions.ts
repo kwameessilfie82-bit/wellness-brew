@@ -184,16 +184,17 @@ export async function placeOrder(raw: unknown): Promise<PlaceOrderResult> {
         deliveryArea = zone.name;
         if (zone.fee === null) feeConfirmed = false;
         else deliveryFee = zone.fee;
-      } else if (freeTextOk && (input.areaText || input.location)) {
-        deliveryArea = input.areaText || "Shared location (map pin)";
-        feeConfirmed = false;
-      } else {
+      } else if (input.zoneId && !freeTextOk) {
         return {
           ok: false,
           code: "validation",
           error: "Please check the highlighted fields.",
           fieldErrors: { zoneId: "Choose your area from the list" },
         };
+      } else {
+        // No area given (quick checkout): location and fee are agreed on WhatsApp.
+        deliveryArea = input.areaText || (input.location ? "Shared location (map pin)" : null);
+        feeConfirmed = false;
       }
       if (delivery.freeDeliveryOver !== null && subtotal >= delivery.freeDeliveryOver) {
         deliveryFee = 0;
@@ -215,6 +216,7 @@ export async function placeOrder(raw: unknown): Promise<PlaceOrderResult> {
       pickupLocationName = loc.name;
     }
     const preferredOk =
+      input.preferredPayment === null ||
       (input.preferredPayment === "momo" && ordering.momoEnabled) ||
       (input.preferredPayment === "bank" && ordering.bankEnabled) ||
       (input.preferredPayment === "cash_on_delivery" && ordering.codEnabled);

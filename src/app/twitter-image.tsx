@@ -2,6 +2,7 @@ import { ImageResponse } from "next/og";
 
 import { BRAND_CREAM, BRAND_GREEN, imageDataUrl, OG_SIZE } from "@/lib/seo/og-image";
 import { getPublicSettings } from "@/lib/settings/get";
+import { brandLogos } from "@/lib/settings/schemas";
 
 export const size = OG_SIZE;
 export const contentType = "image/png";
@@ -11,7 +12,7 @@ export const revalidate = 3600;
 export default async function OpengraphImage() {
   const { brand } = await getPublicSettings();
   const [logo, hero] = await Promise.all([
-    imageDataUrl(brand.logoUrl || "/leafyvibestea.png", 320),
+    imageDataUrl(brandLogos(brand).light, 320),
     imageDataUrl("/hibiscus.png", 700),
   ]);
   return new ImageResponse(

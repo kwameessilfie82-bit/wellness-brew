@@ -9,6 +9,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/ui/primitives/sh
 import { Button } from "@/ui/primitives/button"
 import { useCart } from "@/lib/cart-context"
 import { formatPrice } from "@/lib/format"
+import { DELIVERY_CHARGES_NOTE } from "@/lib/orders/delivery-copy"
 import { ScrollArea } from "@/ui/primitives/scroll-area"
 
 interface CartSheetProps {
@@ -127,7 +128,7 @@ export function CartSheet({ open, onOpenChange }: CartSheetProps) {
                 <span>{formatPrice(totalPrice)}</span>
               </div>
               <p className="text-sm text-muted-foreground">
-                Delivery fee is confirmed on the next step
+                {DELIVERY_CHARGES_NOTE}
               </p>
               <Button
                 onClick={handleCheckout}
@@ -139,7 +140,7 @@ export function CartSheet({ open, onOpenChange }: CartSheetProps) {
                 Order on WhatsApp
               </Button>
               <p className="text-center text-xs text-muted-foreground">
-                Confirm and pay on WhatsApp — no account needed.
+                Just your name and number, then WhatsApp opens.
               </p>
               <Button
                 onClick={() => onOpenChange(false)}
