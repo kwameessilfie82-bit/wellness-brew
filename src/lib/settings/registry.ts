@@ -88,6 +88,7 @@ export const SETTINGS_DEFAULTS: SettingsMap = {
   ...PUBLIC_DEFAULTS,
   payments: {
     momoProvider: "MTN",
+    momoNumber: "",
     momoMerchantId: "974356",
     momoMerchantName: "PillJoint Pharmacy Limited",
     momoReference: "leafyvibestea",

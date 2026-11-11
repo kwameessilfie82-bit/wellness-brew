@@ -11,6 +11,7 @@ import { expireStaleOrders } from "@/lib/orders/server/housekeeping";
 import { AdminPageHeader } from "@/ui/components/admin/admin-page-header";
 
 import { OrdersInbox } from "./orders-inbox";
+import { ExportButton } from "@/ui/components/admin/export-button";
 
 export const dynamic = "force-dynamic";
 
@@ -50,7 +51,9 @@ export default async function OrdersPage({
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <AdminPageHeader title="Orders" description="Orders placed on the website and finished on WhatsApp." />
+      <AdminPageHeader title="Orders" description="Orders placed on the website and finished on WhatsApp.">
+        <ExportButton dataset="orders" choosePeriod />
+      </AdminPageHeader>
       <OrdersInbox
         tab={tab}
         q={q}

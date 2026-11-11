@@ -16,6 +16,7 @@ import { DataTableColumnHeader } from "@/ui/primitives/data-table/data-table-col
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/primitives/select";
 import { Input } from "@/ui/primitives/input";
 import { Card, CardContent } from "@/ui/primitives/card";
+import { ExportButton } from "@/ui/components/admin/export-button";
 
 import type { UserWithRole } from "./page.types";
 import type { AdminUserWithDetails } from "@/db/schema";
@@ -302,8 +303,11 @@ const CustomersPageClient: React.FC<CustomersPageClientProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Users</h1>
-        <div className="text-sm text-muted-foreground">
-          {filteredUsers.length} of {userStats.total} users
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-muted-foreground">
+            {filteredUsers.length} of {userStats.total} users
+          </span>
+          <ExportButton dataset="customers" label="Export customers" />
         </div>
       </div>
 

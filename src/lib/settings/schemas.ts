@@ -48,6 +48,8 @@ export type BrandSettings = z.infer<typeof brandSchema>;
 export const contactSchema = z.object({
   orderPhone: phone.min(1, "Primary order number is required"),
   whatsappNumber: phone,
+  /** Number for questions (not orders); shown on the contact page and footer. */
+  enquiryPhone: phone,
   otherPhones: z
     .array(z.object({ id, label: str(60), number: phone }))
     .max(10),
@@ -110,6 +112,8 @@ export type SocialProfile = SocialSettings["items"][number];
 // ── Payments & invoices ──────────────────────────────────────────────────
 export const paymentsSchema = z.object({
   momoProvider: str(60),
+  /** Mobile Money number customers send payment to. */
+  momoNumber: phone,
   momoMerchantId: str(60),
   momoMerchantName: str(120),
   momoReference: str(60),
@@ -267,7 +271,14 @@ export type SettingsMap = {
 };
 export type SettingsSection = keyof SettingsMap;
 export const PUBLIC_SECTIONS = ["brand", "contact", "locations", "social", "compliance"] as const;
-export type PublicSettings = Pick<SettingsMap, (typeof PUBLIC_SECTIONS)[number]>;
+/** The only Payments fields allowed on the public site (bank details stay private). */
+export type PublicPayment = { momoNumber: string; momoProvider: string; momoMerchantName: string };
+export type PublicSettings = Pick<SettingsMap, (typeof PUBLIC_SECTIONS)[number]> & { payment: PublicPayment };
+export const pickPublicPayment = (p: PaymentsSettings): PublicPayment => ({
+  momoNumber: p.momoNumber,
+  momoProvider: p.momoProvider,
+  momoMerchantName: p.momoMerchantName,
+});
 
 /** Wellness Brew logo: light version (white background) and dark version (black background). */
 export const DEFAULT_LOGO_LIGHT = "/logo-light.png";
@@ -276,6 +287,7 @@ export const DEFAULT_LOGO_DARK = "/logo-dark.png";
 // Public defaults: values the site shipped with before the dashboard existed.
 // Payments defaults live server-side in ./registry.ts.
 export const PUBLIC_DEFAULTS: PublicSettings = {
+  payment: { momoNumber: "", momoProvider: "", momoMerchantName: "" },
   brand: {
     name: "Wellness Brew",
     legalName: "",
@@ -289,6 +301,7 @@ export const PUBLIC_DEFAULTS: PublicSettings = {
   contact: {
     orderPhone: "+233 55 398 1862",
     whatsappNumber: "+233 54 073 4749",
+    enquiryPhone: "",
     otherPhones: [],
     emailOrders: "",
     emailHello: "info@leafyvibestea.com",

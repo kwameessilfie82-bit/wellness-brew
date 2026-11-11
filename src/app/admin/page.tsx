@@ -14,6 +14,7 @@ import { paymentTone, relativeTime, statusTone } from "@/lib/orders/ui";
 import { BarSeries } from "@/ui/components/admin/charts";
 import { StatTile } from "@/ui/components/admin/stat";
 import { Button } from "@/ui/primitives/button";
+import { ExportButton } from "@/ui/components/admin/export-button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/primitives/card";
 
 import { DeniedToast } from "./_dashboard/denied-toast";
@@ -71,14 +72,17 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
             · here&apos;s what needs you today.
           </p>
         </div>
-        {canViewAnalytics ? (
-          <Button asChild variant="outline">
-            <Link href="/admin/analytics">
-              <BarChart3 className="mr-2 h-4 w-4" />
-              Full analytics
-            </Link>
-          </Button>
-        ) : null}
+        <div className="flex flex-wrap gap-2">
+          <ExportButton dataset="all" label="Export all data" choosePeriod />
+          {canViewAnalytics ? (
+            <Button asChild variant="outline">
+              <Link href="/admin/analytics">
+                <BarChart3 className="mr-2 h-4 w-4" />
+                Full analytics
+              </Link>
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       {/* Headline numbers */}

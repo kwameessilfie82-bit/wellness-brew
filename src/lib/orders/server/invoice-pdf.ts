@@ -327,6 +327,7 @@ export async function renderOrderInvoicePdf(order: OrderRow, items: ItemRow[], s
   ].filter(Boolean) as string[];
   const momo = [
     payments.momoProvider && `Provider: ${payments.momoProvider}`,
+    payments.momoNumber && `MoMo number: ${payments.momoNumber}`,
     payments.momoMerchantName && `Name: ${payments.momoMerchantName}`,
     payments.momoMerchantId && `Merchant ID / number: ${payments.momoMerchantId}`,
     payments.momoContactLine && `Contact: ${payments.momoContactLine}`,

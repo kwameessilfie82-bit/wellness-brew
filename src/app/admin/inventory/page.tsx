@@ -2,6 +2,7 @@
 import { requirePagePermission } from "@/lib/admin-auth";
 import { EnhancedInventoryManagement } from "@/ui/components/admin/enhanced-inventory-management";
 import { AdminPageHeader } from "@/ui/components/admin/admin-page-header";
+import { ExportButton } from "@/ui/components/admin/export-button";
 import { InventoryStatsBar } from "@/ui/components/admin/inventory-stats-bar";
 import { getSettings } from "@/lib/settings/get";
 import { fetchCategoriesForInventory } from "@/lib/queries/categories";
@@ -32,7 +33,9 @@ export default async function InventoryPage() {
       <AdminPageHeader
         title="Product catalog & inventory"
         description="Full control over what customers see — products, stock, pricing, and availability."
-      />
+      >
+        <ExportButton dataset="inventory" />
+      </AdminPageHeader>
       <InventoryStatsBar initialStats={stats} />
       <div className="admin-panel">
         {/* The list/query shapes are structural subsets of the Drizzle models;

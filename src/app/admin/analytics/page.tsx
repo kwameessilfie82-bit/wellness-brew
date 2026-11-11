@@ -9,6 +9,7 @@ import { CANCEL_REASON_LABELS } from "@/lib/orders/status";
 import { BarSeries } from "@/ui/components/admin/charts";
 import { RankedBars, StatTile } from "@/ui/components/admin/stat";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/primitives/card";
+import { ExportButton } from "@/ui/components/admin/export-button";
 
 export const dynamic = "force-dynamic";
 
@@ -71,6 +72,10 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
             </Link>
           ))}
         </nav>
+        <div className="flex flex-wrap gap-2">
+          <ExportButton dataset="analytics" days={days} label={`Export ${periodLabel}`} />
+          <ExportButton dataset="invoices" label="Export sales invoices" choosePeriod />
+        </div>
       </div>
 
       {/* Money */}

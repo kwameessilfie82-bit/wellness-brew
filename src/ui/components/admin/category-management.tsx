@@ -6,6 +6,7 @@ import { Loader2, Plus, Search } from "lucide-react";
 import { compressImageFile } from "@/lib/image-compress";
 
 import { Button } from "@/ui/primitives/button";
+import { ExportButton } from "@/ui/components/admin/export-button";
 import { Input } from "@/ui/primitives/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/primitives/card";
 import { Badge } from "@/ui/primitives/badge";
@@ -291,6 +292,8 @@ export function CategoryManagement({ }: CategoryManagementProps) {
             Manage your product categories and organization
           </p>
         </div>
+        <div className="flex flex-wrap gap-2">
+        <ExportButton dataset="categories" />
         <Dialog open={isCreateDialogOpen} onOpenChange={(open) => { if (!isCreating) setIsCreateDialogOpen(open); }}>
           <DialogTrigger asChild>
             <Button>
@@ -386,6 +389,7 @@ export function CategoryManagement({ }: CategoryManagementProps) {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Search and Filters */}

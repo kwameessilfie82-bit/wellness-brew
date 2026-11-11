@@ -31,9 +31,10 @@ function buildBankDetails(p: PaymentsSettings): string {
 }
 
 function buildMobileDetails(p: PaymentsSettings): string {
-  if (!p.momoProvider && !p.momoMerchantId && !p.momoMerchantName && !p.momoContactLine) return ""
+  if (!p.momoProvider && !p.momoNumber && !p.momoMerchantId && !p.momoMerchantName && !p.momoContactLine) return ""
   return [
     p.momoProvider ? `Provider: ${p.momoProvider}` : "",
+    p.momoNumber ? `MoMo Number: ${p.momoNumber}` : "",
     p.momoMerchantId ? `Merchant ID: ${p.momoMerchantId}` : "",
     p.momoMerchantName ? `Merchant Name: ${p.momoMerchantName}` : "",
     p.momoReference ? `Reference: ${p.momoReference}` : "",

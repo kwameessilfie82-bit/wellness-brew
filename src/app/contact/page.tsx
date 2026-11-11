@@ -6,7 +6,7 @@ import { Button } from "@/ui/primitives/button"
 import { Input } from "@/ui/primitives/input"
 import { Textarea } from "@/ui/primitives/textarea"
 import { Label } from "@/ui/primitives/label"
-import { Clock, Mail, Phone, MapPin } from "lucide-react"
+import { Clock, Mail, Phone, MapPin, Wallet } from "lucide-react"
 import { telLink } from "@/lib/settings/schemas"
 import { useSiteSettings } from "@/lib/settings/site-settings-context"
 
@@ -18,7 +18,7 @@ const LOCATION_TYPE_LABELS = {
 } as const
 
 export default function ContactPage() {
-  const { contact, locations } = useSiteSettings()
+  const { contact, locations, payment } = useSiteSettings()
   const publicLocations = locations.items.filter((l) => l.isPublic)
 
   return (
@@ -86,8 +86,15 @@ export default function ContactPage() {
                   <div>
                     <h3 className="font-semibold text-lg mb-1">Phone</h3>
                     <p className="text-muted-foreground">
+                      Orders:{" "}
                       <a href={telLink(contact.orderPhone)} className="hover:text-brand">{contact.orderPhone}</a>
                     </p>
+                    {contact.enquiryPhone ? (
+                      <p className="text-muted-foreground">
+                        Enquiries:{" "}
+                        <a href={telLink(contact.enquiryPhone)} className="hover:text-brand">{contact.enquiryPhone}</a>
+                      </p>
+                    ) : null}
                     {contact.otherPhones
                       .filter((p) => p.number)
                       .map((p) => (
@@ -98,6 +105,24 @@ export default function ContactPage() {
                       ))}
                   </div>
                 </div>
+                {payment.momoNumber ? (
+                  <div className="flex gap-4">
+                    <Wallet className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
+                    <div>
+                      <h3 className="font-semibold text-lg mb-1">Payment</h3>
+                      <p className="text-muted-foreground">
+                        {payment.momoProvider || "Mobile"} Mobile Money:{" "}
+                        <span className="font-medium text-foreground">{payment.momoNumber}</span>
+                      </p>
+                      {payment.momoMerchantName ? (
+                        <p className="text-muted-foreground">Name: {payment.momoMerchantName}</p>
+                      ) : null}
+                      <p className="text-sm text-muted-foreground">
+                        Please confirm your order on WhatsApp before paying, and use your order number as the reference.
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
                 {contact.businessHours || contact.responseTime ? (
                   <div className="flex gap-4">
                     <Clock className="w-6 h-6 text-primary flex-shrink-0 mt-1" />

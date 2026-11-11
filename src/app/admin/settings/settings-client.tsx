@@ -144,6 +144,14 @@ function ContactSection({ initial }: { initial: SettingsMap["contact"] }) {
           error={s.errors.whatsappNumber}
           placeholder="+233 …"
         />
+        <TextField
+          label="Enquiry number"
+          hint="For questions and general enquiries. Shown on the contact page and in the footer."
+          value={v.enquiryPhone}
+          onChange={(x) => s.set("enquiryPhone", x)}
+          error={s.errors.enquiryPhone}
+          placeholder="+233 …"
+        />
         <TextField label="Orders email" type="email" value={v.emailOrders} onChange={(x) => s.set("emailOrders", x)} error={s.errors.emailOrders} />
         <TextField label="General email" type="email" value={v.emailHello} onChange={(x) => s.set("emailHello", x)} error={s.errors.emailHello} />
         <TextField label="Corporate / B2B email" type="email" value={v.emailB2B} onChange={(x) => s.set("emailB2B", x)} error={s.errors.emailB2B} />
@@ -393,6 +401,7 @@ function PaymentsSection({ initial }: { initial: SettingsMap["payments"] }) {
       <h3 className="mb-3 text-sm font-semibold">Mobile Money</h3>
       <div className={grid}>
         {t("Provider", "momoProvider")}
+        {t("Payment number", "momoNumber", { hint: "The MoMo number customers send money to. Shown on the website (footer and contact page), invoices and payment messages." })}
         {t("Merchant ID", "momoMerchantId")}
         {t("Merchant name", "momoMerchantName")}
         {t("Payment reference", "momoReference")}
@@ -483,7 +492,14 @@ export function SettingsClient({
   history: SettingHistoryEntry[];
   initialTab?: string;
 }) {
-  const tab = initialTab && TAB_VALUES.includes(initialTab) ? initialTab : "brand";
+  const [tab, setTab] = useState(initialTab && TAB_VALUES.includes(initialTab) ? initialTab : "brand");
+  const changeTab = (v: string) => {
+    setTab(v);
+    // Keep the tab in the URL: refresh-safe, shareable, and the dashboard learns which tabs you use.
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", v);
+    window.history.replaceState(null, "", url);
+  };
   // Copy warnings use the SAVED banned list.
   const banned = initial.claims.bannedPhrases;
   return (
@@ -494,16 +510,24 @@ export function SettingsClient({
           Business details used across the website and invoices. Changes go live as soon as you save.
         </p>
       </div>
-      <Tabs
-        defaultValue={tab}
-        onValueChange={(v) => {
-          // Keep the tab in the URL: refresh-safe, shareable, and the dashboard learns which tabs you use.
-          const url = new URL(window.location.href);
-          url.searchParams.set("tab", v);
-          window.history.replaceState(null, "", url);
-        }}
-      >
-        <TabsList className="flex h-auto flex-wrap justify-start">
+      <Tabs value={tab} onValueChange={changeTab}>
+        {/* Phones: one dropdown instead of 13 wrapped tabs. */}
+        <div className="md:hidden">
+          <label htmlFor="settings-section" className="mb-1.5 block text-sm font-medium">
+            Section
+          </label>
+          <div className="[&>div]:w-full">
+            <NativeSelect id="settings-section" value={tab} onChange={(e) => changeTab(e.target.value)} className="h-11">
+              {(Object.keys(SECTION_LABELS) as SettingsSection[]).map((k) => (
+                <NativeSelectOption key={k} value={k}>
+                  {SECTION_LABELS[k]}
+                </NativeSelectOption>
+              ))}
+              <NativeSelectOption value="history">History</NativeSelectOption>
+            </NativeSelect>
+          </div>
+        </div>
+        <TabsList className="hidden h-auto flex-wrap justify-start md:flex">
           {(Object.keys(SECTION_LABELS) as SettingsSection[]).map((k) => (
             <TabsTrigger key={k} value={k}>
               {SECTION_LABELS[k]}

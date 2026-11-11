@@ -29,7 +29,7 @@ const PLATFORM_NAMES: Record<string, string> = {
 }
 
 export function Footer() {
-  const { brand, contact, social, compliance } = useSiteSettings()
+  const { brand, contact, social, compliance, payment } = useSiteSettings()
   const registrations = compliance.registrations.filter((r) => r.status === "approved" && r.number)
   const footerSocial = social.items.filter((s) => s.showInFooter)
   return (
@@ -44,8 +44,22 @@ export function Footer() {
                 href={telLink(contact.orderPhone)}
                 className="mt-2 block text-sm text-muted-foreground transition hover:text-brand"
               >
-                {contact.orderPhone}
+                Orders: {contact.orderPhone}
               </a>
+            ) : null}
+            {contact.enquiryPhone ? (
+              <a
+                href={telLink(contact.enquiryPhone)}
+                className="block text-sm text-muted-foreground transition hover:text-brand"
+              >
+                Enquiries: {contact.enquiryPhone}
+              </a>
+            ) : null}
+            {payment.momoNumber ? (
+              <p className="text-sm text-muted-foreground">
+                Pay ({payment.momoProvider || "MoMo"}): <span className="font-medium text-foreground">{payment.momoNumber}</span>
+                {payment.momoMerchantName ? <span className="block text-xs">Name: {payment.momoMerchantName}</span> : null}
+              </p>
             ) : null}
             {contact.emailHello ? (
               <a

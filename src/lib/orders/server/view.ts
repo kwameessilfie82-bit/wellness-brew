@@ -72,12 +72,13 @@ export function messageItems(items: OrderItemRow[]): MessageItem[] {
 export async function paymentDetailsText(): Promise<string> {
   const [payments, ordering] = await Promise.all([getSettings("payments"), getSettings("ordering")]);
   const parts: string[] = [];
-  if (ordering.momoEnabled && payments.momoMerchantId) {
+  if (ordering.momoEnabled && (payments.momoNumber || payments.momoMerchantId)) {
     parts.push(
       [
         `${payments.momoProvider || "MoMo"} Mobile Money`,
+        payments.momoNumber && `MoMo number: ${payments.momoNumber}`,
         payments.momoMerchantName && `Name: ${payments.momoMerchantName}`,
-        `Merchant ID: ${payments.momoMerchantId}`,
+        payments.momoMerchantId && `Merchant ID: ${payments.momoMerchantId}`,
       ]
         .filter(Boolean)
         .join("\n"),

@@ -59,6 +59,7 @@
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.44.6",
     "embla-carousel-react": "^8.6.0",
+    "exceljs": "^4.4.0",
     "execa": "^9.6.0",
     "geist": "^1.5.1",
     "html2canvas": "^1.4.1",

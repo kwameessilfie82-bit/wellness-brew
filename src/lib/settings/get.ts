@@ -19,6 +19,7 @@ import { resolveSection, SETTINGS_DEFAULTS, SETTINGS_SECTIONS } from "./registry
 import {
   PUBLIC_DEFAULTS,
   PUBLIC_SECTIONS,
+  pickPublicPayment,
   type PublicSettings,
   type SettingsMap,
   type SettingsSection,
@@ -28,7 +29,7 @@ export const settingsTag = (section: SettingsSection) => `settings:${section}`;
 export const SETTINGS_ALL_TAG = "settings:all";
 /** Bump when a settings schema changes shape so old cached values (which may
  *  lack new fields) are never served — the data cache outlives deploys. */
-const SETTINGS_CACHE_VERSION = "v4";
+const SETTINGS_CACHE_VERSION = "v6";
 
 async function readRaw(sections: readonly SettingsSection[]) {
   const rows = await db
@@ -56,13 +57,13 @@ export async function getSettings<K extends SettingsSection>(section: K): Promis
 
 const cachedPublic = unstable_cache(
   async (): Promise<PublicSettings> => {
-    const raw = await readRaw(PUBLIC_SECTIONS);
-    return Object.fromEntries(
-      PUBLIC_SECTIONS.map((k) => [k, resolveSection(k, raw.get(k))]),
-    ) as PublicSettings;
+    const raw = await readRaw([...PUBLIC_SECTIONS, "payments"]);
+    const sections = Object.fromEntries(PUBLIC_SECTIONS.map((k) => [k, resolveSection(k, raw.get(k))]));
+    // Only the MoMo number/provider/name leave the server; bank details stay private.
+    return { ...sections, payment: pickPublicPayment(resolveSection("payments", raw.get("payments"))) } as PublicSettings;
   },
   ["site-settings", "public", SETTINGS_CACHE_VERSION],
-  { tags: [...PUBLIC_SECTIONS.map(settingsTag), SETTINGS_ALL_TAG] },
+  { tags: [...PUBLIC_SECTIONS.map(settingsTag), settingsTag("payments"), SETTINGS_ALL_TAG] },
 );
 
 /** All public sections in one query, for the root layout. */
