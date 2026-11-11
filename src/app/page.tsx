@@ -19,6 +19,8 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 import { cn } from "@/lib/cn";
+import { siteFdaNumber } from "@/lib/compliance/fda";
+import { FdaBadge } from "@/ui/components/fda-badge";
 import { getFeaturedProducts } from "@/lib/products/server";
 import { getPublicSettings, getSettings } from "@/lib/settings/get";
 import { fillBrand, isUnoptimizedImage, type HomepageContent } from "@/lib/settings/schemas";
@@ -47,7 +49,7 @@ const ICONS: Record<HomepageContent["valueProps"][number]["icon"], LucideIcon> =
 export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 export default async function HomePage() {
-  const [{ brand }, content, featured] = await Promise.all([
+  const [{ brand, compliance }, content, featured] = await Promise.all([
     getPublicSettings(),
     getSettings("homepage"),
     getFeaturedProducts(4).catch((error) => {
@@ -89,6 +91,7 @@ export default async function HomePage() {
                   {f(content.subtitle)}
                 </p>
               ) : null}
+              <FdaBadge number={siteFdaNumber(compliance)} className="mb-8" />
               <div className="flex flex-col gap-3 sm:flex-row">
                 {content.primaryCtaLabel && content.primaryCtaHref ? (
                   <Link href={content.primaryCtaHref}>

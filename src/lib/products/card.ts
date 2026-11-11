@@ -10,5 +10,6 @@ export function toCardProduct(p: StoreProduct) {
     image: p.image,
     description: p.shortDescription || p.description || undefined,
     category: p.categoryName || undefined,
+    fdaRegNumber: p.fdaRegNumber || undefined,
   };
 }

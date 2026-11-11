@@ -11,6 +11,9 @@ import { useWishlist } from "@/lib/wishlist-context";
 import { cn } from "@/lib/cn";
 import { Button } from "@/ui/primitives/button";
 import { FallbackImage } from "@/ui/components/fallback-image";
+import { FdaBadge } from "@/ui/components/fda-badge";
+import { productFdaNumber } from "@/lib/compliance/fda";
+import { useSiteSettings } from "@/lib/settings/site-settings-context";
 
 interface Product {
   id: number | string;
@@ -20,12 +23,15 @@ interface Product {
   image?: string;
   description?: string;
   category?: string;
+  fdaRegNumber?: string;
 }
 
 export function ProductCard({ product }: { product: Product }) {
   const href = `/shop/${encodeURIComponent(String(product.slug || product.id))}`;
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
+  const { compliance } = useSiteSettings();
+  const fdaNumber = productFdaNumber(product.fdaRegNumber, compliance);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -94,6 +100,7 @@ export function ProductCard({ product }: { product: Product }) {
             </p>
           ) : null}
         </Link>
+        <FdaBadge number={fdaNumber} size="sm" className="mb-2 self-start" />
 
         <div className="mt-auto flex items-center justify-between gap-2 pt-2">
           <p className="text-lg font-bold text-brand">{formatPrice(product.price)}</p>

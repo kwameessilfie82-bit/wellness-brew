@@ -144,6 +144,7 @@ export function productLd(
   product: StoreProduct & { updatedAt?: Date | null },
   brandName: string,
   shipping?: ShippingFacts,
+  fdaNumber?: string | null,
 ): Json {
   const url = absoluteUrl(productPath(product));
   const images = product.images.map((i) => absoluteImage(i)).filter(Boolean) as string[];
@@ -162,6 +163,13 @@ export function productLd(
     sku: product.sku || undefined,
     brand: { "@type": "Brand", name: product.manufacturer || brandName },
     ...(product.categoryName ? { category: product.categoryName } : {}),
+    ...(fdaNumber
+      ? {
+          additionalProperty: [
+            { "@type": "PropertyValue", name: "FDA Ghana registration number", value: fdaNumber },
+          ],
+        }
+      : {}),
     url,
     offers: {
       "@type": "Offer",

@@ -9,6 +9,7 @@ import { jsPDF } from "jspdf";
 import type { orderItemTable, storeOrderTable } from "@/db/schema";
 import { decodeProxyParam } from "@/lib/blob-url";
 import { parsePrice } from "@/lib/format";
+import { siteFdaNumber } from "@/lib/compliance/fda";
 import { getPublicSettings, getSettings } from "@/lib/settings/get";
 import { brandLogos } from "@/lib/settings/schemas";
 
@@ -84,8 +85,8 @@ export function invoiceFileName(order: Pick<OrderRow, "orderNumber">) {
  * cancelled/expired orders are stamped so an old file can't pass as current.
  */
 export async function buildOrderInvoicePdf(order: OrderRow, items: ItemRow[]): Promise<Buffer> {
-  const [{ brand, contact }, payments] = await Promise.all([getPublicSettings(), getSettings("payments")]);
-  return renderOrderInvoicePdf(order, items, { brand, contact, payments });
+  const [{ brand, contact, compliance }, payments] = await Promise.all([getPublicSettings(), getSettings("payments")]);
+  return renderOrderInvoicePdf(order, items, { brand, contact, payments, fdaNumber: siteFdaNumber(compliance) });
 }
 
 type PublicSettings = Awaited<ReturnType<typeof getPublicSettings>>;
@@ -93,6 +94,8 @@ type RenderSettings = {
   brand: PublicSettings["brand"];
   contact: PublicSettings["contact"];
   payments: Awaited<ReturnType<typeof getSettings<"payments">>>;
+  /** Site-wide FDA Ghana registration number; printed in the footer when set. */
+  fdaNumber?: string | null;
 };
 
 /** Pure drawing, given explicit settings (also lets the layout be exercised without a DB). */
@@ -379,6 +382,9 @@ export async function renderOrderInvoicePdf(order: OrderRow, items: ItemRow[], s
     }
     text(`Thank you for choosing ${brand.name}.`, M, H - 28, { size: 8, color: MUTED });
     text(`${order.orderNumber} · page ${p} of ${pages}`, W - M, H - 28, { size: 8, color: MUTED, align: "right" });
+    if (settings.fdaNumber) {
+      text(`FDA Ghana registered · Reg. No. ${settings.fdaNumber}`, W / 2, H - 16, { size: 8, color: MUTED, align: "center" });
+    }
   }
 
   return Buffer.from(doc.output("arraybuffer"));

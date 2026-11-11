@@ -4,6 +4,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 
 import { formatPrice } from "@/lib/format";
 import { DELIVERY_CHARGES_NOTE } from "@/lib/orders/delivery-copy";
+import { productFdaNumber } from "@/lib/compliance/fda";
 import { toCardProduct } from "@/lib/products/card";
 import {
   getActiveProductSlugs,
@@ -16,6 +17,7 @@ import { breadcrumbLd, JsonLd, productLd, productPath } from "@/lib/seo/json-ld"
 import { metaDescription } from "@/lib/seo/site";
 import { getPublicSettings, getSettings } from "@/lib/settings/get";
 import { FallbackImage } from "@/ui/components/fallback-image";
+import { FdaBadge } from "@/ui/components/fda-badge";
 import { Footer } from "@/ui/footer";
 import { Navigation } from "@/ui/navigation";
 import { Badge } from "@/ui/primitives/badge";
@@ -83,6 +85,7 @@ export default async function ProductDetailPage({ params }: Props) {
   ]);
   const shipping = { zoneFees: delivery.zones.filter((z) => z.isActive).map((z) => z.fee) };
   const inStock = product.quantityAvailable > 0;
+  const fdaNumber = productFdaNumber(product.fdaRegNumber, compliance);
   const categoryHref = product.categoryName
     ? `/shop?category=${encodeURIComponent(product.categorySlug || product.categoryName)}`
     : null;
@@ -95,7 +98,7 @@ export default async function ProductDetailPage({ params }: Props) {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <JsonLd data={[productLd(product, brand.name, shipping), breadcrumbLd(crumbs)]} />
+      <JsonLd data={[productLd(product, brand.name, shipping, fdaNumber), breadcrumbLd(crumbs)]} />
       <Navigation />
 
       <nav aria-label="Breadcrumb" className="section-container py-6 text-sm text-muted-foreground animate-fade-in-up">
@@ -152,6 +155,7 @@ export default async function ProductDetailPage({ params }: Props) {
                 <p className="text-lg text-muted-foreground line-through">{formatPrice(product.originalPrice)}</p>
               ) : null}
               <Badge variant={inStock ? "default" : "destructive"}>{inStock ? "In stock" : "Out of stock"}</Badge>
+              <FdaBadge number={fdaNumber} />
               <p className="w-full text-sm text-muted-foreground">{DELIVERY_CHARGES_NOTE}</p>
             </div>
 

@@ -26,6 +26,7 @@ const productColumns = {
   images: productTable.images,
   isFeatured: productTable.isFeatured,
   manufacturer: productTable.manufacturer,
+  fdaRegNumber: productTable.fdaRegNumber,
   categoryId: productTable.categoryId,
   categoryName: categoryTable.name,
   categorySlug: categoryTable.slug,

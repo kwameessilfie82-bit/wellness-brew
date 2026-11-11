@@ -126,6 +126,7 @@ const postHandler = withAdminAuth(
           distributorPrice,
           sku,
           barcode,
+          fdaRegNumber,
           images,
           isActive = true,
           isFeatured = false,
@@ -196,6 +197,7 @@ const postHandler = withAdminAuth(
           distributorPrice: distributorPrice !== undefined && distributorPrice !== "" && !isNaN(Number(distributorPrice)) ? Number(distributorPrice).toString() : null,
           sku: finalSku,
           barcode: barcode || "",
+          fdaRegNumber: typeof fdaRegNumber === "string" && fdaRegNumber.trim() ? fdaRegNumber.trim().slice(0, 60) : null,
           images: Array.isArray(images)
             ? JSON.stringify(images)
             : (() => {

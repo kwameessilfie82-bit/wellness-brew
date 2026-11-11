@@ -61,6 +61,7 @@ const putHandler = withAdminAuth(
         distributorPrice,
         sku,
         barcode,
+        fdaRegNumber,
         images,
         isActive,
         isFeatured,
@@ -145,6 +146,10 @@ const putHandler = withAdminAuth(
         distributorPrice: body.distributorPrice !== undefined ? (distributorPrice !== "" && !isNaN(Number(distributorPrice)) ? Number(distributorPrice).toString() : null) : existingProduct.distributorPrice,
         sku: sku || existingProduct.sku,
         barcode: barcode !== undefined ? barcode : existingProduct.barcode,
+        fdaRegNumber:
+          fdaRegNumber !== undefined
+            ? (typeof fdaRegNumber === "string" && fdaRegNumber.trim() ? fdaRegNumber.trim().slice(0, 60) : null)
+            : existingProduct.fdaRegNumber,
         images:
           images !== undefined
             ? (Array.isArray(images)

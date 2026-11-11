@@ -98,6 +98,7 @@ export async function GET(request: NextRequest) {
         isActive: productTable.isActive,
         isFeatured: productTable.isFeatured,
         manufacturer: productTable.manufacturer,
+        fdaRegNumber: productTable.fdaRegNumber,
         categoryId: productTable.categoryId,
         categoryName: categoryTable.name,
         createdAt: productTable.createdAt,

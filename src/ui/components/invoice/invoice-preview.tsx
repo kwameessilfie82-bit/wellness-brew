@@ -7,6 +7,7 @@ import { Separator } from "@/ui/primitives/separator"
 import Image from "next/image"
 import { brandLogos } from "@/lib/settings/schemas"
 import { useSiteSettings } from "@/lib/settings/site-settings-context"
+import { siteFdaNumber } from "@/lib/compliance/fda"
 
 interface InvoicePreviewProps {
   data: InvoiceData
@@ -15,7 +16,8 @@ interface InvoicePreviewProps {
 }
 
 export function InvoicePreview({ data, invoiceTitle = "", chequesPayableTo = "" }: InvoicePreviewProps) {
-  const { brand } = useSiteSettings()
+  const { brand, compliance } = useSiteSettings()
+  const fdaNumber = siteFdaNumber(compliance)
   return (
     <Card className="w-full max-w-4xl mx-auto print:shadow-none">
 
@@ -221,6 +223,9 @@ export function InvoicePreview({ data, invoiceTitle = "", chequesPayableTo = "" 
 
           <div className="text-center pt-4">
             <p className="text-xs text-muted-foreground">Thank you for your business!</p>
+            {fdaNumber ? (
+              <p className="mt-1 text-xs text-muted-foreground">FDA Ghana registered · Reg. No. {fdaNumber}</p>
+            ) : null}
           </div>
         </div>
       </CardContent>

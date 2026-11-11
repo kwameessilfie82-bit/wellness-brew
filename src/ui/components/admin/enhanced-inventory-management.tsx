@@ -91,6 +91,7 @@ export function EnhancedInventoryManagement({
     distributorPrice: "",
     sku: "",
     barcode: "",
+    fdaRegNumber: "",
     images: "",
     isActive: true,
     isFeatured: false,
@@ -375,7 +376,7 @@ export function EnhancedInventoryManagement({
           categoryId: "", price: "", originalPrice: "", sku: "",
           customerPrice: "", retailPrice: "", wholesalePrice: "",
           wholesalePrice2: "", distributorPrice: "",
-          barcode: "", images: "", isActive: true, isFeatured: false,
+          barcode: "", fdaRegNumber: "", images: "", isActive: true, isFeatured: false,
           requiresPrescription: false, weight: "", manufacturer: "",
           expiryDate: "", batchNumber: "", tags: "", seoTitle: "", seoDescription: "",
         });
@@ -575,6 +576,16 @@ export function EnhancedInventoryManagement({
                     placeholder="Enter barcode"
                   />
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="fdaRegNumber">FDA Ghana reg. number</Label>
+                <Input
+                  id="fdaRegNumber"
+                  value={newProduct.fdaRegNumber}
+                  onChange={(e) => setNewProduct({...newProduct, fdaRegNumber: e.target.value})}
+                  placeholder="Leave empty to use the site-wide registration"
+                  maxLength={60}
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -780,6 +791,16 @@ export function EnhancedInventoryManagement({
                       placeholder="Enter barcode"
                     />
                   </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-fdaRegNumber">FDA Ghana reg. number</Label>
+                  <Input
+                    id="edit-fdaRegNumber"
+                    value={editingProduct.fdaRegNumber || ""}
+                    onChange={(e) => setEditingProduct({...editingProduct, fdaRegNumber: e.target.value})}
+                    placeholder="Leave empty to use the site-wide registration"
+                    maxLength={60}
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">

@@ -20,6 +20,8 @@ export type StoreProduct = {
   quantityAvailable: number;
   isFeatured: boolean;
   manufacturer: string | null;
+  /** Per-product FDA Ghana registration number (falls back to the site-wide one at render). */
+  fdaRegNumber: string | null;
 };
 
 function listFriendlyImages(images: unknown): string[] {
@@ -56,6 +58,7 @@ export function normalizeStoreProduct(
     quantityAvailable: Number(raw.quantityAvailable ?? 0),
     isFeatured: Boolean(raw.isFeatured),
     manufacturer: raw.manufacturer ? String(raw.manufacturer) : null,
+    fdaRegNumber: raw.fdaRegNumber ? String(raw.fdaRegNumber).trim() || null : null,
   };
 }
 

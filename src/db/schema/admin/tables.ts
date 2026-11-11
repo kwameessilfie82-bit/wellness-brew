@@ -76,6 +76,8 @@ export const productTable = pgTable("product", {
   distributorPrice: decimal("distributor_price", { precision: 10, scale: 2 }),
   sku: text("sku").notNull().unique(),
   barcode: text("barcode"),
+  // FDA Ghana registration number for this product; empty → site-wide registration.
+  fdaRegNumber: text("fda_reg_number"),
   images: text("images").notNull().default('[]'), // JSON array of image URLs
   isActive: boolean("is_active").notNull().default(true),
   isFeatured: boolean("is_featured").notNull().default(false),
