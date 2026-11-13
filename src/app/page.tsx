@@ -30,6 +30,7 @@ import { Button } from "@/ui/primitives/button";
 
 import { BlendShowcase } from "./_home/blend-showcase";
 import { FeaturedProducts } from "./_home/featured-products";
+import { PourHero } from "./_home/pour/pour-hero";
 
 const ICONS: Record<HomepageContent["valueProps"][number]["icon"], LucideIcon> = {
   award: Award,
@@ -63,21 +64,33 @@ export default async function HomePage() {
     <div className="flex min-h-screen flex-col">
       <Navigation />
 
-      <section className="relative overflow-hidden bg-background pb-20 pt-20 md:pb-28 md:pt-32">
-        <div className="hero-glow" aria-hidden />
-        <div className="hero-pattern" aria-hidden />
-        <div className="hero-bottom-blend" aria-hidden />
-
-        <div className="section-container relative z-10">
-          <div className="grid items-center gap-12 md:grid-cols-2">
-            <div className="max-w-2xl animate-fade-in-up">
+      <PourHero
+        fallback={
+          content.heroImageUrl ? (
+            <div className="relative h-[380px] md:h-[520px]">
+              <div className="relative h-full overflow-hidden rounded-3xl border border-border/60 bg-white shadow-2xl">
+                <Image
+                  src={content.heroImageUrl}
+                  alt={f(content.heroImageAlt)}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="object-contain"
+                  priority
+                  unoptimized={isUnoptimizedImage(content.heroImageUrl)}
+                />
+              </div>
+            </div>
+          ) : null
+        }
+      >
+            <div className="animate-fade-in-up text-center md:text-left">
               {content.badge ? (
-                <div className="badge-brand mb-6">
-                  <Sparkles className="h-4 w-4" />
+                <div className="badge-brand mb-4 text-xs sm:text-sm md:mb-6">
+                  <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   {f(content.badge)}
                 </div>
               ) : null}
-              <h1 className="mb-6 font-serif text-5xl font-bold leading-[1.1] tracking-tight text-heading md:text-6xl lg:text-7xl">
+              <h1 className="mb-4 text-balance font-serif text-[2.6rem] font-bold leading-[1.05] tracking-tight text-heading sm:text-5xl md:mb-6 md:text-6xl md:leading-[1.1] lg:text-7xl">
                 {f(content.titleLead)}
                 {content.titleHighlight ? (
                   <>
@@ -87,57 +100,40 @@ export default async function HomePage() {
                 ) : null}
               </h1>
               {content.subtitle ? (
-                <p className="mb-8 text-lg leading-relaxed text-muted-foreground md:text-xl">
+                <p className="mx-auto mb-6 max-w-md text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg md:mx-0 md:mb-8 md:max-w-xl md:text-xl">
                   {f(content.subtitle)}
                 </p>
               ) : null}
-              <FdaBadge number={siteFdaNumber(compliance)} className="mb-8" />
-              <div className="flex flex-col gap-3 sm:flex-row">
+              <FdaBadge number={siteFdaNumber(compliance)} className="mb-6 md:mb-8" />
+              <div className="mx-auto grid max-w-md grid-cols-2 gap-3 sm:flex sm:max-w-none sm:justify-center md:mx-0 md:justify-start">
                 {content.primaryCtaLabel && content.primaryCtaHref ? (
-                  <Link href={content.primaryCtaHref}>
-                    <Button size="lg" className="h-12 rounded-full px-8 text-base">
-                      {content.primaryCtaLabel}
-                    </Button>
-                  </Link>
+                  <Button
+                    asChild
+                    size="lg"
+                    className={cn(
+                      "h-12 rounded-full px-4 text-sm sm:px-8 sm:text-base",
+                      !(content.secondaryCtaLabel && content.secondaryCtaHref) && "col-span-2",
+                    )}
+                  >
+                    <Link href={content.primaryCtaHref}>{content.primaryCtaLabel}</Link>
+                  </Button>
                 ) : null}
                 {content.secondaryCtaLabel && content.secondaryCtaHref ? (
-                  <Link href={content.secondaryCtaHref}>
-                    <Button size="lg" variant="outline" className="h-12 rounded-full px-8 text-base">
-                      {content.secondaryCtaLabel}
-                    </Button>
-                  </Link>
+                  <Button
+                    asChild
+                    size="lg"
+                    variant="outline"
+                    className="h-12 rounded-full px-4 text-sm sm:px-8 sm:text-base"
+                  >
+                    <Link href={content.secondaryCtaHref}>{content.secondaryCtaLabel}</Link>
+                  </Button>
                 ) : null}
               </div>
             </div>
+      </PourHero>
 
-            {content.heroImageUrl ? (
-              <div className="relative h-[380px] animate-fade-in-up-delay-2 md:h-[520px]">
-                <div className="absolute -inset-4 rounded-3xl bg-gradient-to-br from-primary/20 to-accent/20 blur-2xl" />
-                <div className="relative h-full overflow-hidden rounded-3xl border border-border/60 bg-white shadow-2xl">
-                  <Image
-                    src={content.heroImageUrl}
-                    alt={f(content.heroImageAlt)}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                    className="object-contain"
-                    priority
-                    unoptimized={isUnoptimizedImage(content.heroImageUrl)}
-                  />
-                </div>
-              </div>
-            ) : null}
-          </div>
-        </div>
-      </section>
-
-      <BlendShowcase
-        items={content.showcase}
-        eyebrow={f(content.showcaseEyebrow)}
-        title={f(content.showcaseTitle)}
-        subtitle={f(content.showcaseSubtitle)}
-      />
-
-      <section className="relative bg-background py-16 md:py-24">
+      {/* Products first: the page exists to sell tea. */}
+      <section className="relative bg-background py-12 md:py-20">
         <div className="section-container">
           <div className="mb-12 animate-fade-in-up">
             {content.featuredEyebrow ? (
@@ -155,6 +151,13 @@ export default async function HomePage() {
           <FeaturedProducts initialProducts={featured} />
         </div>
       </section>
+
+      <BlendShowcase
+        items={content.showcase}
+        eyebrow={f(content.showcaseEyebrow)}
+        title={f(content.showcaseTitle)}
+        subtitle={f(content.showcaseSubtitle)}
+      />
 
       {content.valueProps.length > 0 ? (
         <section className="border-y border-border/60 bg-secondary/40 py-20">
