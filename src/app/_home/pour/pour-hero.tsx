@@ -101,7 +101,7 @@ export function PourHero({ children, fallback }: { children: ReactNode; fallback
       {/* Faint tropical canopy behind everything. Light: a soft green wash on cream.
           Dark: the same photo, deeper, reading as night forest. Swap BG_DARK for a
           dedicated (licensed) dark image when one is available. */}
-      <div className="pointer-events-none absolute inset-0" aria-hidden>
+      <div className="pointer-events-none absolute inset-0 [mask-image:linear-gradient(to_bottom,black_70%,transparent)]" aria-hidden>
         <Image
           src={BG_LIGHT}
           alt=""
@@ -129,7 +129,8 @@ export function PourHero({ children, fallback }: { children: ReactNode; fallback
       {animated ? (
         <div
           className={cn(
-            "pointer-events-none absolute inset-0 z-[3] transition-opacity duration-[1600ms]",
+            // Fade the bottom edge so ingredients dissolve into the next section instead of being cut off.
+            "pointer-events-none absolute inset-0 z-[3] transition-opacity duration-[1600ms] [mask-image:linear-gradient(to_bottom,black_78%,transparent)]",
             ready ? "opacity-100" : "opacity-0",
           )}
           aria-hidden
