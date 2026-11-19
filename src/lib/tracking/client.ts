@@ -15,6 +15,8 @@ export type TrackParams = {
   value?: number;
   currency?: string;
   variant?: string;
+  /** Shared with a server-side CAPI event for de-duplication. */
+  eventId?: string;
   /** Extra GA4 params. */
   [key: string]: unknown;
 };
@@ -66,8 +68,8 @@ function readUtm(): Utm {
  */
 export function track(name: SiteEventName, params: TrackParams = {}): void {
   try {
-    const eventId = crypto.randomUUID();
-    const { productId, productName, value, currency = "GHS", variant, ...rest } = params;
+    const { productId, productName, value, currency = "GHS", variant, eventId: givenId, ...rest } = params;
+    const eventId = typeof givenId === "string" ? givenId : crypto.randomUUID();
     const ga = GA4_NAMES[name] ?? name;
     window.gtag?.("event", ga, {
       ...rest,
@@ -89,7 +91,7 @@ export function track(name: SiteEventName, params: TrackParams = {}): void {
     if (!STORED_EVENTS.includes(name)) return;
     const body = JSON.stringify({
       name,
-      eventId,
+      eventId: typeof givenId === "string" ? undefined : eventId,
       path: window.location.pathname,
       productId,
       value,

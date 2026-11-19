@@ -188,7 +188,7 @@ export function OrderForm({ config }: { config: OrderFormConfig }) {
         });
 
         if (res.ok) {
-          track("order_placed", { value: Math.max(0, items.reduce((s, i) => s + i.price * i.quantity, 0) - (promo?.discount ?? 0)) });
+          track("order_placed", { eventId: `order-${res.orderNumber}`, value: Math.max(0, items.reduce((s, i) => s + i.price * i.quantity, 0) - (promo?.discount ?? 0)) });
           try {
             sessionStorage.setItem(LAST_ORDER_CART_KEY, JSON.stringify(items));
             localStorage.setItem(CUSTOMER_KEY, JSON.stringify({ name: name.trim(), phone: phone.trim() }));

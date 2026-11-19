@@ -8,6 +8,8 @@ import { getPublicSettings } from "@/lib/settings/get";
 import { sendCapiEvent } from "@/lib/tracking/capi";
 import { META_NAMES, STORED_EVENTS } from "@/lib/tracking/events";
 
+const CAPI_FROM_BEACON = new Set(["view_item", "add_to_cart", "begin_checkout", "whatsapp_click"]);
+
 const short = (n: number) => z.string().trim().max(n).optional();
 
 const eventSchema = z.object({
@@ -27,8 +29,8 @@ export async function POST(request: NextRequest) {
     const parsed = eventSchema.safeParse(await request.json());
     if (!parsed.success) return noContent;
     const e = parsed.data;
-    const ip = (request.headers.get("x-forwarded-for")?.split(",")[0] ?? "unknown").trim();
-    if (ip !== "unknown" && !(await rateLimit(`events:ip:${ip}`, 600, 3600))) return noContent;
+    const ip = (request.headers.get("x-forwarded-for")?.split(",")[0] ?? request.headers.get("x-real-ip") ?? "unknown").trim();
+    if (ip !== "unknown" && !(await rateLimit(`events:ip:${ip}`, 300, 3600))) return noContent;
 
     await db.insert(siteEventTable).values({
       name: e.name,
@@ -41,7 +43,9 @@ export async function POST(request: NextRequest) {
       utmCampaign: e.utm?.campaign ?? null,
     });
 
-    const metaName = META_NAMES[e.name as keyof typeof META_NAMES];
+    // Only browse/intent events go to Meta from this unauthenticated beacon.
+    // Purchases are sent server-side by placeOrder with the real total.
+    const metaName = CAPI_FROM_BEACON.has(e.name) ? META_NAMES[e.name as keyof typeof META_NAMES] : undefined;
     if (metaName && e.eventId && process.env.META_CAPI_TOKEN) {
       const ua = request.headers.get("user-agent");
       const eventId = e.eventId;
@@ -54,7 +58,7 @@ export async function POST(request: NextRequest) {
           path: e.path,
           ip,
           userAgent: ua,
-          value: e.value ?? null,
+          value: null,
           productIds: e.productId ? [e.productId] : undefined,
         });
       });

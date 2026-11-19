@@ -62,6 +62,9 @@ const cachedPublic = unstable_cache(
   async (): Promise<PublicSettings> => {
     const raw = await readRaw([...PUBLIC_SECTIONS, ...FEATURE_SECTIONS, "payments"]);
     const sections = Object.fromEntries(PUBLIC_SECTIONS.map((k) => [k, resolveSection(k, raw.get(k))]));
+    // Hidden locations (e.g. a private correspondence address) stay server-side.
+    const locations = sections.locations as SettingsMap["locations"];
+    sections.locations = { ...locations, items: locations.items.filter((l) => l.isPublic) };
     const features = {
       gifting: resolveSection("gifting", raw.get("gifting")).enabled,
       teaFinder: resolveSection("teaFinder", raw.get("teaFinder")).enabled,

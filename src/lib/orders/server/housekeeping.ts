@@ -17,7 +17,15 @@ export async function expireStaleOrders(): Promise<number> {
       UPDATE store_order
          SET status = 'expired', cancel_reason = 'expired', version = version + 1, updated_at = now()
        WHERE status = 'awaiting_customer' AND expires_at IS NOT NULL AND expires_at < now()
-       RETURNING id
+       RETURNING id, promo_code
+    ),
+    -- Expired orders give their promo use back.
+    released AS (
+      UPDATE promo_code p
+         SET uses = GREATEST(p.uses - e.n, 0), updated_at = now()
+        FROM (SELECT promo_code, count(*)::int AS n FROM expired WHERE promo_code IS NOT NULL GROUP BY promo_code) e
+       WHERE p.code = e.promo_code
+       RETURNING p.id
     )
     INSERT INTO order_event (id, order_id, type, from_status, to_status, actor_type, customer_visible, created_at)
     SELECT gen_random_uuid()::text, id, 'status_change', 'awaiting_customer', 'expired', 'system', true, now()
@@ -39,9 +47,15 @@ export async function flagStuckOrders(): Promise<void> {
   `);
 }
 
+/** First-party analytics older than 400 days (KPIs look back 12 weeks; year-on-year needs ~1 year). */
+export async function pruneSiteEvents(): Promise<void> {
+  await db.execute(sql`DELETE FROM site_event WHERE created_at < now() - interval '400 days'`);
+}
+
 export async function runHousekeeping() {
   const expired = await expireStaleOrders();
   await flagStuckOrders();
   await pruneRateLimits();
+  await pruneSiteEvents();
   return { expired };
 }

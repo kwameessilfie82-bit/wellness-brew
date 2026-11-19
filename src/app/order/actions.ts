@@ -1,7 +1,8 @@
 "use server";
 
-import { and, eq, gte, inArray } from "drizzle-orm";
+import { and, eq, gte, inArray, notInArray } from "drizzle-orm";
 import { headers } from "next/headers";
+import { after } from "next/server";
 
 import { db } from "@/db";
 import { inventoryTable, orderEventTable, orderItemTable, productTable, storeOrderTable } from "@/db/schema";
@@ -20,6 +21,7 @@ import { rateLimit } from "@/lib/orders/server/rate-limit";
 import { computePromo, normalizeCode, orderTotal } from "@/lib/promotions/compute";
 import { claimPromoUse, findPromo } from "@/lib/promotions/server";
 import { getPublicSettings, getSettings } from "@/lib/settings/get";
+import { sendCapiEvent } from "@/lib/tracking/capi";
 
 const DUPLICATE_WINDOW_MS = 10 * 60 * 1000;
 
@@ -36,7 +38,13 @@ export async function checkPromoCode(
   if (ip !== "unknown" && !(await rateLimit(`promo:ip:${ip}`, 30, 3600))) {
     return { ok: false, error: "Too many attempts. Try again later." };
   }
-  const ids = [...new Set((Array.isArray(items) ? items : []).map((i) => String(i.productId)).slice(0, 100))];
+  const merged = new Map<string, number>();
+  for (const i of (Array.isArray(items) ? items : []).slice(0, 100)) {
+    if (!i || typeof i !== "object" || typeof i.productId !== "string") continue;
+    const q = Math.max(1, Math.min(10_000, Math.floor(Number(i.quantity) || 1)));
+    merged.set(i.productId, (merged.get(i.productId) ?? 0) + q);
+  }
+  const ids = [...merged.keys()];
   if (ids.length === 0) return { ok: false, error: "Your cart is empty." };
   const [rule, products] = await Promise.all([
     findPromo(code),
@@ -44,9 +52,9 @@ export async function checkPromoCode(
   ]);
   if (!rule) return { ok: false, error: "That code isn't valid." };
   const priceOf = new Map(products.map((p) => [p.id, parsePrice(p.price)]));
-  const lines = items
-    .filter((i) => priceOf.has(String(i.productId)))
-    .map((i) => ({ productId: String(i.productId), price: priceOf.get(String(i.productId))!, quantity: Math.max(1, Math.floor(Number(i.quantity) || 1)) }));
+  const lines = [...merged]
+    .filter(([id]) => priceOf.has(id))
+    .map(([productId, quantity]) => ({ productId, price: priceOf.get(productId)!, quantity }));
   const outcome = computePromo(rule, lines);
   return outcome.ok ? { ok: true, code: rule.code, discount: outcome.discount, label: outcome.label } : { ok: false, error: outcome.reason };
 }
@@ -204,6 +212,20 @@ export async function placeOrder(raw: unknown): Promise<PlaceOrderResult> {
       if (!rule) return { ok: false, code: "promo", error: "That code isn't valid." };
       const outcome = computePromo(rule, lines);
       if (!outcome.ok) return { ok: false, code: "promo", error: outcome.reason };
+      if (rule.kind === "referral") {
+        const [used] = await db
+          .select({ id: storeOrderTable.id })
+          .from(storeOrderTable)
+          .where(
+            and(
+              eq(storeOrderTable.promoCode, rule.code),
+              eq(storeOrderTable.customerPhoneE164, phone),
+              notInArray(storeOrderTable.status, ["cancelled", "expired"]),
+            ),
+          )
+          .limit(1);
+        if (used) return { ok: false, code: "promo", error: "You've already used this referral code." };
+      }
       promo = { id: rule.id, code: rule.code, discount: outcome.discount };
     }
 
@@ -389,6 +411,23 @@ export async function placeOrder(raw: unknown): Promise<PlaceOrderResult> {
         });
         return number;
       });
+      if (process.env.META_CAPI_TOKEN) {
+        const ua = (await headers()).get("user-agent");
+        after(async () => {
+          const { tracking } = await getPublicSettings();
+          await sendCapiEvent({
+            pixelId: tracking.metaPixelId,
+            eventName: "Purchase",
+            eventId: `order-${orderNumber}`,
+            path: "/order",
+            ip,
+            userAgent: ua,
+            value: total,
+            productIds: lines.map((l) => l.productId),
+            phone,
+          });
+        });
+      }
       return { ok: true, token, orderNumber };
     } catch (error) {
       if (error instanceof PromoExhaustedError) {

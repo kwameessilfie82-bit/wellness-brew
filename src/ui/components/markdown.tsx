@@ -8,7 +8,7 @@ import type React from "react";
  * No raw HTML is ever rendered; links allow only http(s), mailto, tel and /paths.
  */
 
-const SAFE_URL = /^(https?:\/\/|mailto:|tel:|\/(?!\/)|#)/i;
+const SAFE_URL = /^(https?:\/\/|mailto:|tel:|\/(?![\/\\])|#)/i;
 
 function inline(text: string, keyBase: string): React.ReactNode[] {
   const out: React.ReactNode[] = [];
