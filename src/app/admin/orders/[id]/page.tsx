@@ -63,6 +63,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         paymentReference: order.paymentReference,
         amountPaid: parsePrice(order.amountPaid),
         subtotal: parsePrice(order.subtotal),
+        discount: parsePrice(order.discount),
+        promoCode: order.promoCode,
         deliveryFee: parsePrice(order.shipping),
         total: parsePrice(order.total),
         notes: order.notes,

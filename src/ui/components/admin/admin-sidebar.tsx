@@ -13,6 +13,13 @@ import {
   FileText,
   ShoppingBag,
   Settings,
+  Star,
+  Inbox,
+  BookOpen,
+  Tag,
+  TrendingUp,
+  ListChecks,
+  History,
 } from "lucide-react";
 
 import { cn } from "@/lib/cn";
@@ -76,6 +83,13 @@ const navigationItems = [
     icon: FileText,
     permission: "canManageOrders" as const,
   },
+  { name: "Reviews", href: "/admin/reviews", icon: Star, permission: "canManageProducts" as const },
+  { name: "Inquiries", href: "/admin/inquiries", icon: Inbox, permission: "canManageOrders" as const },
+  { name: "Brew Journal", href: "/admin/journal", icon: BookOpen, permission: "canManageProducts" as const },
+  { name: "Promotions", href: "/admin/promotions", icon: Tag, permission: "canManageSettings" as const },
+  { name: "KPIs", href: "/admin/kpis", icon: TrendingUp, permission: "canViewAnalytics" as const },
+  { name: "Roadmap", href: "/admin/roadmap", icon: ListChecks, permission: "canViewAnalytics" as const },
+  { name: "Activity", href: "/admin/activity", icon: History, permission: "canViewAnalytics" as const },
   {
     name: "Settings",
     href: "/admin/settings",

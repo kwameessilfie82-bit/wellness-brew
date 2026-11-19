@@ -83,6 +83,8 @@ type Order = {
   paymentReference: string | null;
   amountPaid: number;
   subtotal: number;
+  discount: number;
+  promoCode: string | null;
   deliveryFee: number;
   total: number;
   notes: string | null;
@@ -880,6 +882,12 @@ function ItemsCard({
               <dt className="text-muted-foreground">Subtotal</dt>
               <dd>{formatMoney(order.subtotal)}</dd>
             </div>
+            {order.discount > 0 ? (
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Discount{order.promoCode ? ` (${order.promoCode})` : ""}</dt>
+                <dd>-{formatMoney(order.discount)}</dd>
+              </div>
+            ) : null}
             {isDelivery ? (
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">Delivery fee</dt>

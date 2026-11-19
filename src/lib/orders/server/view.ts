@@ -103,9 +103,11 @@ export async function paymentDetailsText(): Promise<string> {
 export async function templateVars(order: OrderRow, items: OrderItemRow[], extra: MessageVars = {}): Promise<MessageVars> {
   const { brand, contact } = await getPublicSettings();
   const subtotal = parsePrice(order.subtotal);
+  const discount = parsePrice(order.discount);
   const fee = parsePrice(order.shipping);
   const total = parsePrice(order.total);
   const due = Math.max(0, total - parsePrice(order.amountPaid));
+  const discountLine = discount > 0 ? `Discount${order.promoCode ? ` (${order.promoCode})` : ""}: -${formatMoney(discount)}` : "";
   const isPickup = order.fulfilment === "pickup";
   const area = order.deliveryArea ?? "";
   const feeText = isPickup
@@ -137,6 +139,7 @@ export async function templateVars(order: OrderRow, items: OrderItemRow[], extra
     : `Delivery: ${!order.deliveryFeeConfirmed ? "To be confirmed" : fee > 0 ? formatMoney(fee) : "Free"}${area ? ` (${area})` : ""}`;
   const totalsBlock = lines(
     `Subtotal: ${formatMoney(subtotal)}`,
+    discountLine,
     deliveryLine,
     `*Total: ${totalText}*`,
     paymentText && `Pay by: ${paymentText}`,

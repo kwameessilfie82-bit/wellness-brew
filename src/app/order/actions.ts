@@ -7,7 +7,7 @@ import { db } from "@/db";
 import { inventoryTable, orderEventTable, orderItemTable, productTable, storeOrderTable } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { getProductThumbnail, parsePrice } from "@/lib/format";
-import { addMoney, compareMoney, sumLines } from "@/lib/orders/money";
+import { compareMoney, sumLines } from "@/lib/orders/money";
 import { normalizePhone } from "@/lib/orders/phone";
 import {
   type ItemProblem,
@@ -17,9 +17,39 @@ import {
 } from "@/lib/orders/place-order-schema";
 import { newDeliveryCode, newToken, nextOrderNumber } from "@/lib/orders/server/ids";
 import { rateLimit } from "@/lib/orders/server/rate-limit";
+import { computePromo, normalizeCode, orderTotal } from "@/lib/promotions/compute";
+import { claimPromoUse, findPromo } from "@/lib/promotions/server";
 import { getPublicSettings, getSettings } from "@/lib/settings/get";
 
 const DUPLICATE_WINDOW_MS = 10 * 60 * 1000;
+
+class PromoExhaustedError extends Error {}
+
+/** Preview a code against the cart (order form). Prices come from the DB. */
+export async function checkPromoCode(
+  rawCode: string,
+  items: { productId: string; quantity: number }[],
+): Promise<{ ok: true; code: string; discount: number; label: string } | { ok: false; error: string }> {
+  const code = normalizeCode(String(rawCode ?? "")).slice(0, 40);
+  if (!code) return { ok: false, error: "Enter a code." };
+  const ip = await clientIp();
+  if (ip !== "unknown" && !(await rateLimit(`promo:ip:${ip}`, 30, 3600))) {
+    return { ok: false, error: "Too many attempts. Try again later." };
+  }
+  const ids = [...new Set((Array.isArray(items) ? items : []).map((i) => String(i.productId)).slice(0, 100))];
+  if (ids.length === 0) return { ok: false, error: "Your cart is empty." };
+  const [rule, products] = await Promise.all([
+    findPromo(code),
+    db.select({ id: productTable.id, price: productTable.price }).from(productTable).where(inArray(productTable.id, ids)),
+  ]);
+  if (!rule) return { ok: false, error: "That code isn't valid." };
+  const priceOf = new Map(products.map((p) => [p.id, parsePrice(p.price)]));
+  const lines = items
+    .filter((i) => priceOf.has(String(i.productId)))
+    .map((i) => ({ productId: String(i.productId), price: priceOf.get(String(i.productId))!, quantity: Math.max(1, Math.floor(Number(i.quantity) || 1)) }));
+  const outcome = computePromo(rule, lines);
+  return outcome.ok ? { ok: true, code: rule.code, discount: outcome.discount, label: outcome.label } : { ok: false, error: outcome.reason };
+}
 
 async function clientIp(): Promise<string> {
   const h = await headers();
@@ -167,6 +197,16 @@ export async function placeOrder(raw: unknown): Promise<PlaceOrderResult> {
       return { ok: false, code: "too_large", error: ordering.largeOrderMessage };
     }
 
+    // ── Promotion ───────────────────────────────────────────────────────
+    let promo: { id: string; code: string; discount: number } | null = null;
+    if (input.promoCode) {
+      const rule = await findPromo(input.promoCode);
+      if (!rule) return { ok: false, code: "promo", error: "That code isn't valid." };
+      const outcome = computePromo(rule, lines);
+      if (!outcome.ok) return { ok: false, code: "promo", error: outcome.reason };
+      promo = { id: rule.id, code: rule.code, discount: outcome.discount };
+    }
+
     // ── Fulfilment ───────────────────────────────────────────────────────
     let deliveryFee = 0;
     let feeConfirmed = true;
@@ -274,10 +314,12 @@ export async function placeOrder(raw: unknown): Promise<PlaceOrderResult> {
     const now = new Date();
     const orderId = crypto.randomUUID();
     const token = newToken();
-    const total = addMoney(subtotal, deliveryFee);
+    const discount = promo?.discount ?? 0;
+    const total = orderTotal(subtotal, discount, deliveryFee);
 
     try {
       const orderNumber = await db.transaction(async (tx) => {
+        if (promo && !(await claimPromoUse(tx, promo.id))) throw new PromoExhaustedError();
         const number = await nextOrderNumber(tx, now);
         await tx.insert(storeOrderTable).values({
           id: orderId,
@@ -314,6 +356,8 @@ export async function placeOrder(raw: unknown): Promise<PlaceOrderResult> {
           shipping: deliveryFee.toFixed(2),
           tax: "0",
           total: total.toFixed(2),
+          promoCode: promo?.code ?? null,
+          discount: discount.toFixed(2),
           notes: input.note || null,
           deliveryCode: newDeliveryCode(),
           expiresAt: new Date(now.getTime() + ordering.expiryHours * 3600 * 1000),
@@ -347,6 +391,9 @@ export async function placeOrder(raw: unknown): Promise<PlaceOrderResult> {
       });
       return { ok: true, token, orderNumber };
     } catch (error) {
+      if (error instanceof PromoExhaustedError) {
+        return { ok: false, code: "promo", error: "That code has just been fully used." };
+      }
       // Concurrent duplicate submit with the same key: return the winner.
       if ((error as { code?: string })?.code === "23505" || String(error).includes("idempotency")) {
         const [existing] = await db

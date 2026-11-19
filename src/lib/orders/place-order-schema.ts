@@ -53,6 +53,8 @@ export const placeOrderSchema = z
     giftMessage: t(300).optional().default(""),
     /** Sending the order on WhatsApp is the consent; kept optional for older clients. */
     consent: z.boolean().optional(),
+    /** Discount / referral / bundle code (Promotions). */
+    promoCode: t(40).optional().default(""),
     acceptPriceChanges: z.boolean().optional().default(false),
     allowDuplicate: z.boolean().optional().default(false),
     /** Honeypot: humans never see or fill this. */
@@ -80,4 +82,5 @@ export type PlaceOrderResult =
   | { ok: false; code: "price_changed"; error: string; changes: PriceChange[] }
   | { ok: false; code: "items"; error: string; problems: ItemProblem[] }
   | { ok: false; code: "duplicate"; error: string; existingToken: string; existingNumber: string }
+  | { ok: false; code: "promo"; error: string }
   | { ok: false; code: "paused" | "too_large" | "rate_limited" | "error"; error: string };

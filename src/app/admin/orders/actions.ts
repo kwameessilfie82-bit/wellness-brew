@@ -1,5 +1,6 @@
 "use server";
 
+import { orderTotal } from "@/lib/promotions/compute";
 import { eq, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -221,7 +222,7 @@ export async function setDeliveryFee(orderId: string, expectedVersion: number, f
     if (!order) return { ok: false, error: "Order not found" } as Fail;
     if (order.version !== expectedVersion) return CONFLICT;
     if (!isOrderStatus(order.status) || !EDITABLE.includes(order.status)) return { ok: false, error: "This order can no longer be edited" } as Fail;
-    const total = addMoney(parsePrice(order.subtotal), value);
+    const total = orderTotal(parsePrice(order.subtotal), parsePrice(order.discount), value);
     await tx
       .update(storeOrderTable)
       .set({
@@ -340,11 +341,14 @@ export async function updateOrderItems(input: {
       })),
     );
     const subtotal = sumLines(lines);
-    const total = addMoney(subtotal, parsePrice(order.shipping));
+    // A promo discount is a fixed amount once applied; it can't exceed the new subtotal.
+    const discount = Math.min(parsePrice(order.discount), subtotal);
+    const total = orderTotal(subtotal, discount, parsePrice(order.shipping));
     await tx
       .update(storeOrderTable)
       .set({
         subtotal: subtotal.toFixed(2),
+        discount: discount.toFixed(2),
         total: total.toFixed(2),
         paymentStatus: recomputePaymentStatus(order.paymentStatus, parsePrice(order.amountPaid), total),
         version: order.version + 1,

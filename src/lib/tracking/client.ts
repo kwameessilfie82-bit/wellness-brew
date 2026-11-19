@@ -20,12 +20,24 @@ export type TrackParams = {
 };
 
 const UTM_KEY = "wb-utm";
+const REF_KEY = "wb-ref";
+
+/** Referral code from a ?ref=CODE link, remembered for the visit. */
+export function readReferral(): string | null {
+  try {
+    return sessionStorage.getItem(REF_KEY);
+  } catch {
+    return null;
+  }
+}
 type Utm = { source?: string; medium?: string; campaign?: string };
 
 /** Remember the campaign that brought this visitor (per tab session). */
 export function captureUtm(): void {
   try {
     const p = new URLSearchParams(window.location.search);
+    const ref = p.get("ref");
+    if (ref && /^[A-Za-z0-9_-]{2,40}$/.test(ref)) sessionStorage.setItem(REF_KEY, ref.toUpperCase());
     const source = p.get("utm_source");
     if (!source) return;
     const utm: Utm = {
