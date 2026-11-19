@@ -1,6 +1,6 @@
 import "@/css/globals.css";
 import { CartProvider } from "@/lib/cart-context";
-import { getPublicSettings } from "@/lib/settings/get";
+import { getPublicSettings, getSettings } from "@/lib/settings/get";
 import { SiteSettingsProvider } from "@/lib/settings/site-settings-context";
 import { WishlistProvider } from "@/lib/wishlist-context";
 import { NavigationProgress } from "@/ui/components/navigation-progress";
@@ -30,8 +30,14 @@ export const viewport: Viewport = {
 };
 
 export async function generateMetadata(): Promise<Metadata> {
-	const { brand, compliance } = await getPublicSettings();
-	const defaultTitle = brand.tagline ? `${brand.name} - ${brand.tagline}` : brand.name;
+	const [{ brand, compliance }, seo] = await Promise.all([getPublicSettings(), getSettings("seo")]);
+	const defaultTitle = seo.defaultTitle || (brand.tagline ? `${brand.name} - ${brand.tagline}` : brand.name);
+	const description = seo.defaultDescription || brand.description;
+	const ogImages = seo.ogImageUrl ? [{ url: seo.ogImageUrl, width: 1200, height: 630 }] : undefined;
+	const extraKeywords = seo.keywords
+		.split(",")
+		.map((k) => k.trim())
+		.filter(Boolean);
 	const commonNames = compliance.commonNames
 		.split(",")
 		.map((n) => n.trim())
@@ -43,7 +49,7 @@ export async function generateMetadata(): Promise<Metadata> {
 	return {
 		metadataBase: new URL(SITE_URL),
 		title: { default: defaultTitle, template: `%s | ${brand.name}` },
-		description: brand.description,
+		description,
 		applicationName: brand.name,
 		keywords: [
 			"hibiscus tea Ghana",
@@ -53,15 +59,17 @@ export async function generateMetadata(): Promise<Metadata> {
 			"wellness tea",
 			...commonNames,
 			...(compliance.botanicalName ? [compliance.botanicalName] : []),
+			...extraKeywords,
 		],
 		openGraph: {
 			type: "website",
 			siteName: brand.name,
 			locale: "en_GH",
 			title: defaultTitle,
-			description: brand.description,
+			description,
+			...(ogImages ? { images: ogImages } : {}),
 		},
-		twitter: { card: "summary_large_image", title: defaultTitle, description: brand.description },
+		twitter: { card: "summary_large_image", title: defaultTitle, description, ...(ogImages ? { images: ogImages } : {}) },
 		robots: IS_INDEXABLE
 			? {
 					index: true,

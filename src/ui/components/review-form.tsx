@@ -4,6 +4,7 @@ import { CheckCircle2, Star } from "lucide-react";
 import { useState, useTransition } from "react";
 
 import { submitReview } from "@/app/review/actions";
+import { track } from "@/lib/tracking/client";
 import { cn } from "@/lib/cn";
 import { Button } from "@/ui/primitives/button";
 import { Checkbox } from "@/ui/primitives/checkbox";
@@ -54,7 +55,10 @@ export function ReviewForm({ productId, products, orderNumber = "", brandName }:
     setError(null);
     start(async () => {
       const res = await submitReview({ ...v, orderNumber });
-      if (res.ok) setDone(true);
+      if (res.ok) {
+        track("review_submitted", { productId: v.productId });
+        setDone(true);
+      }
       else {
         setError(res.error);
         setErrors(res.fieldErrors ?? {});

@@ -30,7 +30,11 @@ import { Button } from "@/ui/primitives/button";
 
 import { BlendShowcase } from "./_home/blend-showcase";
 import { FeaturedProducts } from "./_home/featured-products";
+import { HeroHeadline, HeroPrimaryCta } from "./_home/hero-experiment";
 import { PourHero } from "./_home/pour/pour-hero";
+import { getLatestPosts } from "@/lib/journal/server";
+import { getFeaturedReviews } from "@/lib/reviews/server";
+import { Stars } from "./shop/[slug]/product-info";
 
 const ICONS: Record<HomepageContent["valueProps"][number]["icon"], LucideIcon> = {
   award: Award,
@@ -50,14 +54,17 @@ const ICONS: Record<HomepageContent["valueProps"][number]["icon"], LucideIcon> =
 export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 export default async function HomePage() {
-  const [{ brand, compliance }, content, featured] = await Promise.all([
+  const [{ brand, compliance, site, features }, content, featured, reviews, posts] = await Promise.all([
     getPublicSettings(),
     getSettings("homepage"),
     getFeaturedProducts(4).catch((error) => {
       console.error("[home] featured products failed:", error);
       return [];
     }),
+    getFeaturedReviews(3).catch(() => []),
+    getLatestPosts(3).catch(() => []),
   ]);
+  const show = site.homepageSections;
   const f = (text: string) => fillBrand(text, brand.name);
 
   return (
@@ -90,15 +97,11 @@ export default async function HomePage() {
                   {f(content.badge)}
                 </div>
               ) : null}
-              <h1 className="mb-4 text-balance font-serif text-[2.6rem] font-bold leading-[1.05] tracking-tight text-heading sm:text-5xl md:mb-6 md:text-6xl md:leading-[1.1] lg:text-7xl">
-                {f(content.titleLead)}
-                {content.titleHighlight ? (
-                  <>
-                    {" "}
-                    <span className="text-gradient-hero">{f(content.titleHighlight)}</span>
-                  </>
-                ) : null}
-              </h1>
+              <HeroHeadline
+                className="mb-4 text-balance font-serif text-[2.6rem] font-bold leading-[1.05] tracking-tight text-heading sm:text-5xl md:mb-6 md:text-6xl md:leading-[1.1] lg:text-7xl"
+                highlightClassName="text-gradient-hero"
+                a={{ titleLead: f(content.titleLead), titleHighlight: f(content.titleHighlight), primaryCtaLabel: content.primaryCtaLabel }}
+              />
               {content.subtitle ? (
                 <p className="mx-auto mb-6 max-w-md text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg md:mx-0 md:mb-8 md:max-w-xl md:text-xl">
                   {f(content.subtitle)}
@@ -115,7 +118,7 @@ export default async function HomePage() {
                       !(content.secondaryCtaLabel && content.secondaryCtaHref) && "col-span-2",
                     )}
                   >
-                    <Link href={content.primaryCtaHref}>{content.primaryCtaLabel}</Link>
+                    <HeroPrimaryCta href={content.primaryCtaHref} label={content.primaryCtaLabel} />
                   </Button>
                 ) : null}
                 {content.secondaryCtaLabel && content.secondaryCtaHref ? (
@@ -133,6 +136,7 @@ export default async function HomePage() {
       </PourHero>
 
       {/* Products first: the page exists to sell tea. */}
+      {show.featured ? (
       <section className="relative bg-background py-12 md:py-20">
         <div className="section-container">
           <div className="mb-12 animate-fade-in-up">
@@ -149,17 +153,59 @@ export default async function HomePage() {
             ) : null}
           </div>
           <FeaturedProducts initialProducts={featured} />
+          {features.teaFinder ? (
+            <p className="mt-8 text-center text-muted-foreground">
+              Not sure which to pick?{" "}
+              <Link href="/tea-finder" className="font-semibold text-primary underline underline-offset-4">
+                Find your blend in 3 questions
+              </Link>
+            </p>
+          ) : null}
         </div>
       </section>
+      ) : null}
 
-      <BlendShowcase
-        items={content.showcase}
-        eyebrow={f(content.showcaseEyebrow)}
-        title={f(content.showcaseTitle)}
-        subtitle={f(content.showcaseSubtitle)}
-      />
+      {show.showcase ? (
+        <BlendShowcase
+          items={content.showcase}
+          eyebrow={f(content.showcaseEyebrow)}
+          title={f(content.showcaseTitle)}
+          subtitle={f(content.showcaseSubtitle)}
+        />
+      ) : null}
 
-      {content.valueProps.length > 0 ? (
+      {show.reviews && reviews.length > 0 ? (
+        <section className="py-20" aria-labelledby="home-reviews">
+          <div className="section-container">
+            <h2 id="home-reviews" className="mb-10 text-center font-serif text-3xl font-bold text-heading md:text-4xl">
+              What customers say
+            </h2>
+            <div className="grid gap-6 md:grid-cols-3">
+              {reviews.map((r) => (
+                <figure key={r.id} className="flex flex-col rounded-2xl border bg-card p-6">
+                  <Stars value={r.rating} />
+                  {r.title ? <p className="mt-3 font-semibold">{r.title}</p> : null}
+                  <blockquote className="mt-2 flex-1 text-muted-foreground">&ldquo;{r.body}&rdquo;</blockquote>
+                  <figcaption className="mt-4 text-sm">
+                    <span className="font-medium">{r.name}</span>
+                    {r.location ? `, ${r.location}` : ""}
+                    {r.productName && r.productSlug ? (
+                      <>
+                        {" · "}
+                        <Link href={`/shop/${r.productSlug}`} className="text-primary hover:underline">
+                          {r.productName}
+                        </Link>
+                      </>
+                    ) : null}
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {show.valueProps && content.valueProps.length > 0 ? (
         <section className="border-y border-border/60 bg-secondary/40 py-20">
           <div className="section-container">
             <div
@@ -192,7 +238,44 @@ export default async function HomePage() {
         </section>
       ) : null}
 
-      {content.closingTitle ? (
+      {show.journal && posts.length > 0 ? (
+        <section className="py-20" aria-labelledby="home-journal">
+          <div className="section-container">
+            <div className="mb-10 flex items-end justify-between gap-4">
+              <h2 id="home-journal" className="font-serif text-3xl font-bold text-heading md:text-4xl">
+                From the Brew Journal
+              </h2>
+              <Link href="/journal" className="text-sm font-semibold text-primary hover:underline">
+                All posts
+              </Link>
+            </div>
+            <div className="grid gap-6 md:grid-cols-3">
+              {posts.map((p) => (
+                <Link key={p.id} href={`/journal/${p.slug}`} className="group overflow-hidden rounded-2xl border bg-card">
+                  {p.coverUrl ? (
+                    <div className="relative aspect-[16/10] bg-muted">
+                      <Image
+                        src={p.coverUrl}
+                        alt=""
+                        fill
+                        sizes="(max-width: 768px) 100vw, 33vw"
+                        className="object-cover transition group-hover:scale-105"
+                        unoptimized={isUnoptimizedImage(p.coverUrl)}
+                      />
+                    </div>
+                  ) : null}
+                  <div className="p-5">
+                    <h3 className="font-semibold group-hover:text-primary">{p.title}</h3>
+                    {p.excerpt ? <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{p.excerpt}</p> : null}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {show.closing && content.closingTitle ? (
         <section className="py-20">
           <div className="section-container text-center">
             <h2 className="mb-4 font-serif text-3xl font-bold text-heading md:text-4xl">

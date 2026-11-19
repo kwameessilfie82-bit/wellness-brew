@@ -189,3 +189,9 @@ export const getProductsPage = cache(
     };
   },
 );
+
+/** Every visible product with its taxonomy terms, for the Tea Finder (small catalogue). */
+export const getFinderProducts = cache(async (): Promise<ServerProduct[]> => {
+  const rows = await baseQuery(visible()).orderBy(desc(productTable.isFeatured), desc(productTable.createdAt)).limit(200);
+  return toServerProducts(rows);
+});

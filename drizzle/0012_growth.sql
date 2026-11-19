@@ -147,6 +147,13 @@ CREATE TABLE IF NOT EXISTS "roadmap_item" (
   "created_at" timestamp NOT NULL DEFAULT now(),
   "updated_at" timestamp NOT NULL DEFAULT now()
 );
+-- Columns mirroring the strategy workbook's "90-Day Roadmap" sheet.
+ALTER TABLE "roadmap_item" ADD COLUMN IF NOT EXISTS "priority" text;
+ALTER TABLE "roadmap_item" ADD COLUMN IF NOT EXISTS "why" text;
+ALTER TABLE "roadmap_item" ADD COLUMN IF NOT EXISTS "effort" text;
+ALTER TABLE "roadmap_item" ADD COLUMN IF NOT EXISTS "impact" text;
+ALTER TABLE "roadmap_item" ADD COLUMN IF NOT EXISTS "success_measure" text;
+ALTER TABLE "roadmap_item" ADD COLUMN IF NOT EXISTS "dependency" text;
 CREATE INDEX IF NOT EXISTS "roadmap_item_position_idx" ON "roadmap_item" ("position");
 CREATE INDEX IF NOT EXISTS "roadmap_item_updated_by_idx" ON "roadmap_item" ("updated_by");
 ALTER TABLE "roadmap_item" ENABLE ROW LEVEL SECURITY;
