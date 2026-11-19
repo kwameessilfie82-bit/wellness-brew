@@ -58,8 +58,12 @@ CREATE INDEX IF NOT EXISTS "store_order_user_created_idx" ON "store_order" ("use
 CREATE INDEX IF NOT EXISTS "store_order_assigned_to_idx" ON "store_order" ("assigned_to");
 CREATE INDEX IF NOT EXISTS "order_item_product_idx" ON "order_item" ("product_id");
 CREATE INDEX IF NOT EXISTS "order_event_actor_idx" ON "order_event" ("actor_id");
-CREATE INDEX IF NOT EXISTS "invoice_item_invoice_idx" ON "invoice_item" ("invoice_id");
-CREATE INDEX IF NOT EXISTS "invoice_item_product_idx" ON "invoice_item" ("product_id");
+-- Same names as 0005 (some databases missed it), and drop copies an earlier
+-- revision of this migration created under different names.
+CREATE INDEX IF NOT EXISTS "invoice_item_invoice_id_idx" ON "invoice_item" ("invoice_id");
+CREATE INDEX IF NOT EXISTS "invoice_item_product_id_idx" ON "invoice_item" ("product_id");
+DROP INDEX IF EXISTS "invoice_item_invoice_idx";
+DROP INDEX IF EXISTS "invoice_item_product_idx";
 CREATE INDEX IF NOT EXISTS "invoice_created_by_idx" ON "invoice" ("created_by");
 
 -- Admin / auth / settings.

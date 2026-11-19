@@ -306,8 +306,8 @@ export const invoiceItemTable = pgTable("invoice_item", {
   quantity: integer("quantity").notNull(),
   lineTotal: decimal("line_total", { precision: 10, scale: 2 }).notNull(),
 }, (t) => [
-  index("invoice_item_invoice_idx").on(t.invoiceId),
-  index("invoice_item_product_idx").on(t.productId),
+  index("invoice_item_invoice_id_idx").on(t.invoiceId),
+  index("invoice_item_product_id_idx").on(t.productId),
 ]).enableRLS();
 
 /** Order timeline: status changes, payments, edits, notes and messages. */
