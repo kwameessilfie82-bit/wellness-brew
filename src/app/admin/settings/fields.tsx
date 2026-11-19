@@ -29,6 +29,15 @@ export const SECTION_LABELS: Record<SettingsSection, string> = {
   ordering: "Ordering",
   delivery: "Delivery",
   whatsapp: "WhatsApp messages",
+  pages: "Pages & FAQ",
+  site: "Announcement & toggles",
+  seo: "SEO",
+  tracking: "Tracking",
+  taxonomy: "Taxonomy",
+  gifting: "Gifting",
+  teaFinder: "Tea Finder",
+  stockists: "Stockists",
+  experiments: "A/B tests",
 };
 
 export type Errors = Record<string, string>;

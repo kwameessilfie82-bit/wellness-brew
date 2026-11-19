@@ -66,6 +66,9 @@ export const WHATSAPP_TEMPLATE_KEYS = [
   "deliveryFailed",
   "cancelled",
   "paymentReceived",
+  "productEnquiry",
+  "giftEnquiry",
+  "reviewRequest",
 ] as const;
 export type WhatsappTemplateKey = (typeof WHATSAPP_TEMPLATE_KEYS)[number];
 
@@ -93,6 +96,18 @@ export const WHATSAPP_TEMPLATE_INFO: Record<WhatsappTemplateKey, { label: string
   deliveryFailed: { label: "We couldn't reach you", hint: "" },
   cancelled: { label: "Order cancelled", hint: "" },
   paymentReceived: { label: "Payment received", hint: "" },
+  productEnquiry: {
+    label: "Product question (website button)",
+    hint: "Prefilled when a customer taps “Ask on WhatsApp” on a product page. Use {product} and {link}.",
+  },
+  giftEnquiry: {
+    label: "Gifting question (website button)",
+    hint: "Prefilled from the corporate gifting page.",
+  },
+  reviewRequest: {
+    label: "Ask for a review",
+    hint: "Send a few days after delivery. {reviewLink} opens the review form.",
+  },
 };
 
 /** Placeholders available in every template (shown as help in the editor). */
@@ -126,6 +141,8 @@ export const TEMPLATE_PLACEHOLDERS = [
   "hours",
   "pickupLocation",
   "reason",
+  "product",
+  "reviewLink",
 ] as const;
 
 export const ORDERING_DEFAULTS: {
@@ -215,6 +232,10 @@ export const ORDERING_DEFAULTS: {
       "Hi {name}, our rider couldn't reach you with order {orderNumber}. When is a good time to deliver?",
     cancelled: "Hi {name}, your order {orderNumber} has been cancelled. {reason}",
     paymentReceived: "Hi {name}, we've received your payment for {orderNumber}. Thank you! Your paid invoice: {invoiceLink}",
+    productEnquiry: "Hello {brand} 👋 I have a question about {product}.\n{link}",
+    giftEnquiry: "Hello {brand} 👋 I'd like to ask about corporate / event gifting.",
+    reviewRequest:
+      "Hi {name}, we hope you're enjoying your tea! Would you take 1 minute to leave a review? It really helps us: {reviewLink}",
   },
 };
 

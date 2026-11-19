@@ -35,6 +35,17 @@ import {
   move,
   useSection,
 } from "./fields";
+import {
+  ExperimentsSection,
+  GiftingSection,
+  PagesSection,
+  SeoSection,
+  SiteSection,
+  StockistsSection,
+  TaxonomySection,
+  TeaFinderSection,
+  TrackingSection,
+} from "./growth-sections";
 import { DeliverySection, OrderingSection, WhatsappSection } from "./ordering-sections";
 
 /* ───────────────────────── sections ───────────────────────── */
@@ -573,6 +584,33 @@ export function SettingsClient({
         </TabsContent>
         <TabsContent value="whatsapp" forceMount className={PANEL}>
           <WhatsappSection initial={initial.whatsapp} brandName={initial.brand.name} />
+        </TabsContent>
+        <TabsContent value="pages" forceMount className={PANEL}>
+          <PagesSection initial={initial.pages} bannedPhrases={banned} />
+        </TabsContent>
+        <TabsContent value="site" forceMount className={PANEL}>
+          <SiteSection initial={initial.site} bannedPhrases={banned} />
+        </TabsContent>
+        <TabsContent value="seo" forceMount className={PANEL}>
+          <SeoSection initial={initial.seo} bannedPhrases={banned} />
+        </TabsContent>
+        <TabsContent value="tracking" forceMount className={PANEL}>
+          <TrackingSection initial={initial.tracking} />
+        </TabsContent>
+        <TabsContent value="taxonomy" forceMount className={PANEL}>
+          <TaxonomySection initial={initial.taxonomy} />
+        </TabsContent>
+        <TabsContent value="gifting" forceMount className={PANEL}>
+          <GiftingSection initial={initial.gifting} bannedPhrases={banned} />
+        </TabsContent>
+        <TabsContent value="teaFinder" forceMount className={PANEL}>
+          <TeaFinderSection initial={initial.teaFinder} taxonomy={initial.taxonomy} />
+        </TabsContent>
+        <TabsContent value="stockists" forceMount className={PANEL}>
+          <StockistsSection initial={initial.stockists} />
+        </TabsContent>
+        <TabsContent value="experiments" forceMount className={PANEL}>
+          <ExperimentsSection initial={initial.experiments} />
         </TabsContent>
         <TabsContent value="history">
           <HistoryPanel history={history} />

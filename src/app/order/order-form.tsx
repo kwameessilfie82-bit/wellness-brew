@@ -1,5 +1,7 @@
 "use client";
 
+import { track } from "@/lib/tracking/client";
+
 import { AlertTriangle, ChevronDown, Loader2, MessageCircle, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -182,6 +184,7 @@ export function OrderForm({ config }: { config: OrderFormConfig }) {
         });
 
         if (res.ok) {
+          track("order_placed", { value: items.reduce((s, i) => s + i.price * i.quantity, 0) });
           try {
             sessionStorage.setItem(LAST_ORDER_CART_KEY, JSON.stringify(items));
             localStorage.setItem(CUSTOMER_KEY, JSON.stringify({ name: name.trim(), phone: phone.trim() }));

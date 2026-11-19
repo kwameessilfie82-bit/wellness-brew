@@ -15,3 +15,4 @@ export * from "./uploads/tables";
 export * from "./uploads/types";
 
 export * from "./settings/tables";
+export * from "./growth/tables";

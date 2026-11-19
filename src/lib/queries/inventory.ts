@@ -1,5 +1,6 @@
 import "server-only";
 
+import { parseProductDetails, productCompleteness } from "@/lib/products/details";
 import {
   and,
   count,
@@ -103,6 +104,9 @@ export async function fetchInventoryList(params: InventoryListParams) {
         createdAt: productTable.createdAt,
         updatedAt: productTable.updatedAt,
         images: productTable.images,
+        description: productTable.description,
+        fdaRegNumber: productTable.fdaRegNumber,
+        details: productTable.details,
         categoryName: categoryTable.name,
         categoryIsActive: categoryTable.isActive,
         inventoryId: inventoryTable.id,
@@ -143,6 +147,14 @@ export async function fetchInventoryList(params: InventoryListParams) {
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
     images: toListImageJson(row.images),
+    completeness: (({ score, level }) => ({ score, level }))(
+      productCompleteness({
+        description: row.description,
+        images: row.images,
+        fdaRegNumber: row.fdaRegNumber,
+        details: parseProductDetails(row.details),
+      }),
+    ),
     category: {
       id: row.categoryId,
       name: row.categoryName,

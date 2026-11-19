@@ -1,5 +1,7 @@
 "use client";
 
+import { track } from "@/lib/tracking/client";
+
 import { Copy, MessageCircle, Phone, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
@@ -64,6 +66,7 @@ export function HandoffPanel(props: {
 
   const open = () => {
     void logHandoffClick(props.token).catch(() => undefined);
+    track("whatsapp_click", { variant: "order" });
     // In-app browsers often block https://wa.me navigation; the native scheme works there.
     window.location.href = isInAppBrowser() ? props.deepUrl : props.sendUrl;
   };

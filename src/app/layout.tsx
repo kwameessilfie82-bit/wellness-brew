@@ -8,6 +8,9 @@ import { OAuthLocalhostRecovery } from "@/ui/components/oauth-localhost-recovery
 import { ThemeProvider } from "@/ui/components/theme-provider";
 import { Toaster } from "@/ui/primitives/sonner";
 import { Analytics } from "@vercel/analytics/next";
+import { AnalyticsScripts } from "@/ui/components/analytics-scripts";
+import { AnnouncementBar } from "@/ui/components/announcement-bar";
+import { MaintenanceGate } from "@/ui/components/maintenance-gate";
 import { JsonLd, organizationLd, websiteLd } from "@/lib/seo/json-ld";
 import { IS_INDEXABLE, SITE_URL } from "@/lib/seo/site";
 import type { Metadata, Viewport } from "next";
@@ -91,9 +94,13 @@ export default async function RootLayout({
 									<NavigationProgress />
 								</Suspense>
 								<OAuthLocalhostRecovery />
-								{children}
+								<AnnouncementBar />
+								<MaintenanceGate>{children}</MaintenanceGate>
 								<Toaster richColors closeButton position="top-center" />
 								<Analytics />
+								<Suspense fallback={null}>
+									<AnalyticsScripts />
+								</Suspense>
 							</WishlistProvider>
 						</CartProvider>
 					</ThemeProvider>

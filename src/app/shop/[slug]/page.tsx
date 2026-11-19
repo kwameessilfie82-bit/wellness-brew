@@ -13,17 +13,23 @@ import {
   getRelatedProducts,
   type ServerProduct,
 } from "@/lib/products/server";
-import { breadcrumbLd, JsonLd, productLd, productPath } from "@/lib/seo/json-ld";
-import { metaDescription } from "@/lib/seo/site";
+import { getProductReviews } from "@/lib/reviews/server";
+import { breadcrumbLd, faqLd, JsonLd, productLd, productPath } from "@/lib/seo/json-ld";
+import { absoluteUrl, metaDescription } from "@/lib/seo/site";
 import { getPublicSettings, getSettings } from "@/lib/settings/get";
+import { fillTemplate } from "@/lib/orders/message";
+import { whatsappLink } from "@/lib/settings/schemas";
 import { FallbackImage } from "@/ui/components/fallback-image";
 import { FdaBadge } from "@/ui/components/fda-badge";
+import { ReviewForm } from "@/ui/components/review-form";
+import { TrackedAnchor, TrackOnMount } from "@/ui/components/tracked";
 import { Footer } from "@/ui/footer";
 import { Navigation } from "@/ui/navigation";
 import { Badge } from "@/ui/primitives/badge";
 import { Button } from "@/ui/primitives/button";
 import { ProductCard } from "@/ui/product-card";
 
+import { ProductDetailSections, ProductQuickFacts, ReviewList, Stars, termLabels } from "./product-info";
 import { ProductPurchase } from "./product-purchase";
 
 export const revalidate = 300;
@@ -78,11 +84,26 @@ export default async function ProductDetailPage({ params }: Props) {
   if (!product) notFound();
   if (byId && product.slug) permanentRedirect(productPath(product));
 
-  const [{ brand, compliance }, related, delivery] = await Promise.all([
+  const [{ brand, compliance, contact }, related, delivery, taxonomy, whatsapp, rating] = await Promise.all([
     getPublicSettings(),
     getRelatedProducts(product.id, product.categoryId),
     getSettings("delivery"),
+    getSettings("taxonomy"),
+    getSettings("whatsapp"),
+    getProductReviews(product.id).catch(() => ({ average: 0, count: 0, reviews: [], items: [] })),
   ]);
+  const waNumber = contact.whatsappNumber || contact.orderPhone;
+  const askHref = waNumber
+    ? whatsappLink(
+        waNumber,
+        fillTemplate(whatsapp.productEnquiry, {
+          brand: brand.name,
+          product: product.name,
+          link: absoluteUrl(productPath(product)),
+        }),
+      )
+    : null;
+  const faq = faqLd(product.details.faq);
   const shipping = { zoneFees: delivery.zones.filter((z) => z.isActive).map((z) => z.fee) };
   const inStock = product.quantityAvailable > 0;
   const fdaNumber = productFdaNumber(product.fdaRegNumber, compliance);
@@ -98,7 +119,14 @@ export default async function ProductDetailPage({ params }: Props) {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <JsonLd data={[productLd(product, brand.name, shipping, fdaNumber), breadcrumbLd(crumbs)]} />
+      <JsonLd
+        data={[
+          productLd(product, brand.name, shipping, fdaNumber, rating),
+          breadcrumbLd(crumbs),
+          ...(faq ? [faq] : []),
+        ]}
+      />
+      <TrackOnMount event="view_item" params={{ productId: product.id, productName: product.name, value: product.price }} />
       <Navigation />
 
       <nav aria-label="Breadcrumb" className="section-container py-6 text-sm text-muted-foreground animate-fade-in-up">
@@ -145,6 +173,12 @@ export default async function ProductDetailPage({ params }: Props) {
               <p className="text-sm font-medium uppercase tracking-wider text-brand">{product.categoryName}</p>
             ) : null}
             <h1 className="font-serif text-4xl font-bold leading-tight text-heading md:text-5xl">{product.name}</h1>
+            {rating.count > 0 ? (
+              <a href="#reviews" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+                <Stars value={rating.average} />
+                {rating.average.toFixed(1)} · {rating.count} review{rating.count === 1 ? "" : "s"}
+              </a>
+            ) : null}
             <p className="whitespace-pre-line text-lg leading-relaxed text-muted-foreground">
               {product.description || product.shortDescription}
             </p>
@@ -159,15 +193,46 @@ export default async function ProductDetailPage({ params }: Props) {
               <p className="w-full text-sm text-muted-foreground">{DELIVERY_CHARGES_NOTE}</p>
             </div>
 
-            <ProductPurchase
-              product={{ id: product.id, name: product.name, price: product.price, image: product.image }}
-              inStock={inStock}
-            />
+            <ProductQuickFacts price={product.price} details={product.details} terms={termLabels(product.details, taxonomy)} />
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <ProductPurchase
+                product={{ id: product.id, name: product.name, price: product.price, image: product.image }}
+                inStock={inStock}
+              />
+              {askHref ? (
+                <Button asChild size="lg" variant="outline" className="h-12 rounded-full text-base">
+                  <TrackedAnchor
+                    href={askHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    event="whatsapp_click"
+                    params={{ productId: product.id, productName: product.name, variant: "product" }}
+                  >
+                    Ask on WhatsApp
+                  </TrackedAnchor>
+                </Button>
+              ) : null}
+            </div>
             {compliance.showDisclaimerOnProducts && compliance.disclaimer ? (
               <p className="text-xs leading-relaxed text-muted-foreground">{compliance.disclaimer}</p>
             ) : null}
           </div>
         </article>
+
+        <ProductDetailSections details={product.details} />
+
+        <section id="reviews" className="mt-20 grid scroll-mt-24 gap-10 lg:grid-cols-2" aria-labelledby="reviews-heading">
+          <div>
+            <h2 id="reviews-heading" className="mb-6 font-serif text-3xl font-bold text-heading">
+              Reviews
+            </h2>
+            <ReviewList reviews={rating.items} average={rating.average} count={rating.count} />
+          </div>
+          <div className="rounded-2xl border bg-card p-6">
+            <h3 className="mb-4 font-serif text-xl font-semibold">Tried {product.name}?</h3>
+            <ReviewForm productId={product.id} brandName={brand.name} />
+          </div>
+        </section>
 
         {related.length > 0 ? (
           <section className="mt-20 animate-fade-in-up-delay-2" aria-labelledby="related-heading">

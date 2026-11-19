@@ -472,6 +472,9 @@ export async function prepareMessage(orderId: string, key: string): Promise<Resu
     // The rider sees the full address (they need it); the customer page doesn't.
     extra.name = order.isGift && order.recipientName ? order.recipientName : order.customerName;
   }
+  if (key === "reviewRequest") {
+    extra.reviewLink = `${siteUrl()}/review?order=${encodeURIComponent(order.orderNumber)}`;
+  }
   if (key === "cancelled" && order.cancelReason) {
     extra.reason = CANCEL_REASON_LABELS[order.cancelReason as keyof typeof CANCEL_REASON_LABELS] ?? "";
   }

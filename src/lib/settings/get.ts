@@ -25,11 +25,14 @@ import {
   type SettingsSection,
 } from "./schemas";
 
+/** Sections whose `enabled` flag is exposed publicly as `features`. */
+const FEATURE_SECTIONS = ["gifting", "teaFinder", "stockists"] as const satisfies readonly SettingsSection[];
+
 export const settingsTag = (section: SettingsSection) => `settings:${section}`;
 export const SETTINGS_ALL_TAG = "settings:all";
 /** Bump when a settings schema changes shape so old cached values (which may
  *  lack new fields) are never served — the data cache outlives deploys. */
-const SETTINGS_CACHE_VERSION = "v6";
+const SETTINGS_CACHE_VERSION = "v7";
 
 async function readRaw(sections: readonly SettingsSection[]) {
   const rows = await db
@@ -57,13 +60,22 @@ export async function getSettings<K extends SettingsSection>(section: K): Promis
 
 const cachedPublic = unstable_cache(
   async (): Promise<PublicSettings> => {
-    const raw = await readRaw([...PUBLIC_SECTIONS, "payments"]);
+    const raw = await readRaw([...PUBLIC_SECTIONS, ...FEATURE_SECTIONS, "payments"]);
     const sections = Object.fromEntries(PUBLIC_SECTIONS.map((k) => [k, resolveSection(k, raw.get(k))]));
+    const features = {
+      gifting: resolveSection("gifting", raw.get("gifting")).enabled,
+      teaFinder: resolveSection("teaFinder", raw.get("teaFinder")).enabled,
+      stockists: resolveSection("stockists", raw.get("stockists")).enabled,
+    };
     // Only the MoMo number/provider/name leave the server; bank details stay private.
-    return { ...sections, payment: pickPublicPayment(resolveSection("payments", raw.get("payments"))) } as PublicSettings;
+    return {
+      ...sections,
+      features,
+      payment: pickPublicPayment(resolveSection("payments", raw.get("payments"))),
+    } as PublicSettings;
   },
   ["site-settings", "public", SETTINGS_CACHE_VERSION],
-  { tags: [...PUBLIC_SECTIONS.map(settingsTag), settingsTag("payments"), SETTINGS_ALL_TAG] },
+  { tags: [...PUBLIC_SECTIONS.map(settingsTag), ...FEATURE_SECTIONS.map(settingsTag), settingsTag("payments"), SETTINGS_ALL_TAG] },
 );
 
 /** All public sections in one query, for the root layout. */

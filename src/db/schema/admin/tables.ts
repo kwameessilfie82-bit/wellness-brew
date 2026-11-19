@@ -95,6 +95,8 @@ export const productTable = pgTable("product", {
   tags: text("tags"), // JSON array of tags
   seoTitle: text("seo_title"),
   seoDescription: text("seo_description"),
+  /** Product page facts (ingredients, brewing, FAQ, taxonomy…). Shape: ProductDetails in src/lib/products/details.ts */
+  details: jsonb("details").notNull().default({}),
   createdAt: timestamp("created_at").notNull(),
   updatedAt: timestamp("updated_at").notNull(),
   createdBy: text("created_by")
@@ -209,6 +211,9 @@ export const storeOrderTable = pgTable(
     shipping: decimal("shipping", { precision: 10, scale: 2 }).notNull(),
     tax: decimal("tax", { precision: 10, scale: 2 }).notNull(),
     total: decimal("total", { precision: 10, scale: 2 }).notNull(),
+    /** Promotion applied at checkout (code as entered, upper-cased) and its discount. */
+    promoCode: text("promo_code"),
+    discount: decimal("discount", { precision: 10, scale: 2 }).notNull().default("0"),
     notes: text("notes"),
     deliveryCode: text("delivery_code"),
     riderToken: text("rider_token"),

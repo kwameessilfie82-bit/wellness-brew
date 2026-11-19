@@ -18,6 +18,7 @@ import { useSiteSettings } from "@/lib/settings/site-settings-context";
 const navLinks = [
   { href: "/", label: "Home" },
   { href: "/shop", label: "Shop" },
+  { href: "/journal", label: "Journal" },
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
 ];

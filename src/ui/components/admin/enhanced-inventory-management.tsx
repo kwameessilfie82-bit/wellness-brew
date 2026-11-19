@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import Link from "next/link";
 import { Minus, Plus, Search, AlertTriangle, TrendingUp, TrendingDown, Package, Edit, Trash2, CheckSquare } from "lucide-react";
 
 import { Button } from "@/ui/primitives/button";
@@ -1189,6 +1190,10 @@ export function EnhancedInventoryManagement({
                         <div>
                           <div className="font-medium">{product.name}</div>
                           <div className="text-sm text-muted-foreground">{product.sku}</div>
+                          <CompletenessLink
+                            productId={product.id}
+                            completeness={(product as { completeness?: { score: number; level: "green" | "amber" | "red" } }).completeness}
+                          />
                         </div>
                       </div>
                     </TableCell>
@@ -1410,5 +1415,32 @@ export function EnhancedInventoryManagement({
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+const COMPLETENESS_STYLE = {
+  green: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300",
+  amber: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
+  red: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300",
+} as const;
+
+/** Product-page completeness (Catalogue QA) — links to the details editor. */
+function CompletenessLink({
+  productId,
+  completeness,
+}: {
+  productId: string;
+  completeness?: { score: number; level: "green" | "amber" | "red" };
+}) {
+  return (
+    <Link
+      href={`/admin/inventory/${productId}/details`}
+      className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium hover:underline ${
+        completeness ? COMPLETENESS_STYLE[completeness.level] : "bg-muted text-muted-foreground"
+      }`}
+      title="Edit product page details"
+    >
+      Details{completeness ? ` · ${completeness.score}%` : ""}
+    </Link>
   );
 }

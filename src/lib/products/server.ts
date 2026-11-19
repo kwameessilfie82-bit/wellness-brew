@@ -12,6 +12,7 @@ import { cache } from "react";
 import { db } from "@/db";
 import { categoryTable, inventoryTable, productTable } from "@/db/schema";
 
+import { parseProductDetails, type ProductDetails } from "./details";
 import { normalizeStoreProducts, type StoreProduct } from "./normalize";
 
 const productColumns = {
@@ -34,6 +35,7 @@ const productColumns = {
   seoTitle: productTable.seoTitle,
   seoDescription: productTable.seoDescription,
   updatedAt: productTable.updatedAt,
+  details: productTable.details,
 };
 
 export type ServerProduct = StoreProduct & {
@@ -41,6 +43,7 @@ export type ServerProduct = StoreProduct & {
   seoDescription: string | null;
   updatedAt: Date | null;
   categorySlug: string | null;
+  details: ProductDetails;
 };
 
 const visible = () =>
@@ -63,6 +66,7 @@ function toServerProducts(rows: Awaited<ReturnType<typeof baseQuery>>): ServerPr
     seoDescription: rows[i].seoDescription ?? null,
     updatedAt: rows[i].updatedAt ?? null,
     categorySlug: rows[i].categorySlug ?? null,
+    details: parseProductDetails(rows[i].details),
   }));
 }
 
