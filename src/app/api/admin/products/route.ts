@@ -156,9 +156,7 @@ const postHandler = withAdminAuth(
         createdBy: adminUser.id,
       };
 
-      await db.insert(productTable).values(newProduct);
-
-      // Create inventory record for the new product
+      // Product and its inventory row are created together or not at all.
       const newInventory = {
         id: `inv-${Date.now()}`,
         productId: newProduct.id,
@@ -172,7 +170,10 @@ const postHandler = withAdminAuth(
         updatedAt: new Date(),
       };
 
-      await db.insert(inventoryTable).values(newInventory);
+      await db.transaction(async (tx) => {
+        await tx.insert(productTable).values(newProduct);
+        await tx.insert(inventoryTable).values(newInventory);
+      });
 
       revalidateCatalog();
       return NextResponse.json({ product: newProduct }, { status: 201 });
