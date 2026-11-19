@@ -9,6 +9,7 @@ import {
   inventoryTransactionTable,
   orderEventTable,
   orderItemTable,
+  promoCodeTable,
   storeOrderTable,
 } from "@/db/schema";
 
@@ -189,6 +190,19 @@ export async function transitionLocked(
         : null;
   }
   if (to !== "awaiting_customer") patch.expiresAt = null;
+
+  // A promo use is held by every live order. Cancelling/expiring gives it back;
+  // reopening takes it again (staff decision, so not capped by max uses).
+  if (order.promoCode) {
+    const released = (s: string) => s === "cancelled" || s === "expired";
+    const delta = !released(from) && released(to) ? -1 : released(from) && !released(to) ? 1 : 0;
+    if (delta !== 0) {
+      await tx
+        .update(promoCodeTable)
+        .set({ uses: sql`GREATEST(${promoCodeTable.uses} + ${delta}, 0)`, updatedAt: new Date() })
+        .where(eq(promoCodeTable.code, order.promoCode));
+    }
+  }
 
   const paymentStatus = (patch.paymentStatus ?? order.paymentStatus) as PaymentStatus;
   const finalStatus = isPaymentStatus(paymentStatus) ? deriveCompletion(to, paymentStatus) : to;

@@ -44,6 +44,15 @@ const SETTINGS_TAB_LABELS: Record<string, string> = {
   ordering: "Ordering",
   delivery: "Delivery",
   whatsapp: "WhatsApp messages",
+  pages: "Pages & FAQ",
+  site: "Announcement & toggles",
+  seo: "SEO",
+  tracking: "Tracking",
+  taxonomy: "Taxonomy",
+  gifting: "Gifting",
+  teaFinder: "Tea Finder",
+  stockists: "Stockists",
+  experiments: "A/B tests",
   history: "History",
 };
 

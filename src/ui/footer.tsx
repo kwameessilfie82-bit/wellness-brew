@@ -29,7 +29,8 @@ const PLATFORM_NAMES: Record<string, string> = {
 }
 
 export function Footer() {
-  const { brand, contact, social, compliance, payment } = useSiteSettings()
+  const { brand, contact, social, compliance, payment, features } = useSiteSettings()
+  const link = "text-sm text-muted-foreground transition hover:text-brand"
   const registrations = compliance.registrations.filter((r) => r.status === "approved" && r.number)
   const footerSocial = social.items.filter((s) => s.showInFooter)
   return (
@@ -92,18 +93,24 @@ export function Footer() {
           <div>
             <h4 className="font-semibold mb-4">Shop</h4>
             <nav className="flex flex-col gap-2">
-              <Link href="/shop" className="text-sm text-muted-foreground transition hover:text-brand">
+              <Link href="/shop" className={link}>
                 All Products
               </Link>
-              <Link
-                href="/shop?category=herbal"
-                className="text-sm text-muted-foreground transition hover:text-brand"
-              >
-                Herbal
-              </Link>
-              <Link href="/shop?category=hibiscus" className="text-sm text-muted-foreground transition hover:text-brand">
-                Hibiscus Tea
-              </Link>
+              {features.teaFinder ? (
+                <Link href="/tea-finder" className={link}>
+                  Find your blend
+                </Link>
+              ) : null}
+              {features.gifting ? (
+                <Link href="/gifting" className={link}>
+                  Corporate gifting
+                </Link>
+              ) : null}
+              {features.stockists ? (
+                <Link href="/stockists" className={link}>
+                  Where to buy
+                </Link>
+              ) : null}
             </nav>
           </div>
           <div>
@@ -112,14 +119,29 @@ export function Footer() {
               <Link href="/about" className="text-sm text-muted-foreground transition hover:text-brand">
                 About Us
               </Link>
-              <Link href="/contact" className="text-sm text-muted-foreground transition hover:text-brand">
+              <Link href="/journal" className={link}>
+                Brew Journal
+              </Link>
+              <Link href="/contact" className={link}>
                 Contact
+              </Link>
+              <Link href="/review" className={link}>
+                Write a review
               </Link>
             </nav>
           </div>
           <div>
-            <h4 className="font-semibold mb-4">Legal</h4>
+            <h4 className="font-semibold mb-4">Help</h4>
             <nav className="flex flex-col gap-2">
+              <Link href="/faq" className={link}>
+                FAQ
+              </Link>
+              <Link href="/delivery" className={link}>
+                Delivery & pickup
+              </Link>
+              <Link href="/returns" className={link}>
+                Returns & refunds
+              </Link>
               <Link href="/privacy" className="text-sm text-muted-foreground transition hover:text-brand">
                 Privacy Policy
               </Link>

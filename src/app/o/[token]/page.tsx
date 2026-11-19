@@ -245,6 +245,12 @@ export default async function OrderPage({ params, searchParams }: Props) {
               <dt className="text-muted-foreground">Subtotal</dt>
               <dd>{formatMoney(subtotal)}</dd>
             </div>
+            {parsePrice(order.discount) > 0 ? (
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Discount{order.promoCode ? ` (${order.promoCode})` : ""}</dt>
+                <dd>-{formatMoney(parsePrice(order.discount))}</dd>
+              </div>
+            ) : null}
             {fulfilment === "delivery" && order.deliveryFeeConfirmed ? (
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">Delivery{order.deliveryArea ? ` (${order.deliveryArea})` : ""}</dt>

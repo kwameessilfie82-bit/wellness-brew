@@ -145,6 +145,7 @@ export function productLd(
   brandName: string,
   shipping?: ShippingFacts,
   fdaNumber?: string | null,
+  rating?: ProductRatingFacts | null,
 ): Json {
   const url = absoluteUrl(productPath(product));
   const images = product.images.map((i) => absoluteImage(i)).filter(Boolean) as string[];
@@ -171,6 +172,25 @@ export function productLd(
         }
       : {}),
     url,
+    ...(rating && rating.count > 0
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: rating.average.toFixed(1),
+            reviewCount: rating.count,
+            bestRating: 5,
+            worstRating: 1,
+          },
+          review: rating.reviews.slice(0, 5).map((r) => ({
+            "@type": "Review",
+            author: { "@type": "Person", name: r.name },
+            datePublished: r.date.slice(0, 10),
+            reviewRating: { "@type": "Rating", ratingValue: r.rating, bestRating: 5, worstRating: 1 },
+            ...(r.title ? { name: r.title } : {}),
+            reviewBody: r.body,
+          })),
+        }
+      : {}),
     offers: {
       "@type": "Offer",
       url,
@@ -185,6 +205,50 @@ export function productLd(
       hasMerchantReturnPolicy: RETURN_POLICY_LD,
       seller: { "@id": ORG_ID },
     },
+  };
+}
+
+export type ProductRatingFacts = {
+  average: number;
+  count: number;
+  reviews: { name: string; rating: number; title: string | null; body: string; date: string }[];
+};
+
+export function faqLd(items: { question: string; answer: string }[]): Json | null {
+  const valid = items.filter((i) => i.question && i.answer);
+  if (valid.length === 0) return null;
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: valid.map((i) => ({
+      "@type": "Question",
+      name: i.question,
+      acceptedAnswer: { "@type": "Answer", text: i.answer },
+    })),
+  };
+}
+
+export function articleLd(post: {
+  title: string;
+  description: string;
+  path: string;
+  image?: string | null;
+  publishedAt: Date | null;
+  updatedAt: Date;
+}): Json {
+  const image = absoluteImage(post.image);
+  return {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.title,
+    description: post.description,
+    url: absoluteUrl(post.path),
+    mainEntityOfPage: absoluteUrl(post.path),
+    ...(image ? { image: [image] } : {}),
+    ...(post.publishedAt ? { datePublished: post.publishedAt.toISOString() } : {}),
+    dateModified: post.updatedAt.toISOString(),
+    publisher: { "@id": ORG_ID },
+    author: { "@id": ORG_ID },
   };
 }
 

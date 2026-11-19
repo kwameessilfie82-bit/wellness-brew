@@ -293,6 +293,8 @@ export async function renderOrderInvoicePdf(order: OrderRow, items: ItemRow[], s
   const due = Math.max(0, total - paid);
   type TotalRow = { label: string; value: string; strong?: boolean; sub?: string };
   const rows: TotalRow[] = [{ label: "Subtotal", value: formatMoney(subtotal) }];
+  const discount = parsePrice(order.discount);
+  if (discount > 0) rows.push({ label: "Discount", sub: order.promoCode ?? undefined, value: `-${formatMoney(discount)}` });
   if (order.fulfilment === "delivery") {
     rows.push({
       label: "Delivery",

@@ -40,6 +40,7 @@ export async function syncOrderInvoice(tx: Tx, orderId: string, createdBy: strin
     clientEmail: order.customerEmail,
     clientAddress: order.fulfilment === "pickup" ? `Pickup: ${order.pickupLocationName ?? ""}` : [order.deliveryArea, order.shippingAddress].filter(Boolean).join(", "),
     subtotal: order.subtotal,
+    discount: order.discount,
     deliveries: order.shipping,
     total: order.total,
   };

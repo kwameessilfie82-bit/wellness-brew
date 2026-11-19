@@ -5,6 +5,18 @@
  */
 import { z } from "zod";
 
+import {
+  GROWTH_DEFAULTS,
+  type ExperimentsSettings,
+  type GiftingSettings,
+  type PagesSettings,
+  type SeoSettings,
+  type SiteSettings,
+  type StockistsSettings,
+  type TaxonomySettings,
+  type TeaFinderSettings,
+  type TrackingSettings,
+} from "./growth-schemas";
 import type { DeliverySettings, OrderingSettings, WhatsappSettings } from "./ordering-schemas";
 
 const str = (max = 500) => z.string().trim().max(max);
@@ -268,12 +280,27 @@ export type SettingsMap = {
   ordering: OrderingSettings;
   delivery: DeliverySettings;
   whatsapp: WhatsappSettings;
+  seo: SeoSettings;
+  tracking: TrackingSettings;
+  pages: PagesSettings;
+  site: SiteSettings;
+  taxonomy: TaxonomySettings;
+  gifting: GiftingSettings;
+  teaFinder: TeaFinderSettings;
+  stockists: StockistsSettings;
+  experiments: ExperimentsSettings;
 };
 export type SettingsSection = keyof SettingsMap;
-export const PUBLIC_SECTIONS = ["brand", "contact", "locations", "social", "compliance"] as const;
+/** Loaded once in the root layout (cached). Nothing secret may live in these. */
+export const PUBLIC_SECTIONS = ["brand", "contact", "locations", "social", "compliance", "site", "tracking", "experiments"] as const;
 /** The only Payments fields allowed on the public site (bank details stay private). */
 export type PublicPayment = { momoNumber: string; momoProvider: string; momoMerchantName: string };
-export type PublicSettings = Pick<SettingsMap, (typeof PUBLIC_SECTIONS)[number]> & { payment: PublicPayment };
+/** On/off switches for optional public pages (derived from their sections). */
+export type PublicFeatures = { gifting: boolean; teaFinder: boolean; stockists: boolean };
+export type PublicSettings = Pick<SettingsMap, (typeof PUBLIC_SECTIONS)[number]> & {
+  payment: PublicPayment;
+  features: PublicFeatures;
+};
 export const pickPublicPayment = (p: PaymentsSettings): PublicPayment => ({
   momoNumber: p.momoNumber,
   momoProvider: p.momoProvider,
@@ -288,6 +315,11 @@ export const DEFAULT_LOGO_DARK = "/logo-dark.png";
 // Payments defaults live server-side in ./registry.ts.
 export const PUBLIC_DEFAULTS: PublicSettings = {
   payment: { momoNumber: "", momoProvider: "", momoMerchantName: "" },
+  features: {
+    gifting: GROWTH_DEFAULTS.gifting.enabled,
+    teaFinder: GROWTH_DEFAULTS.teaFinder.enabled,
+    stockists: GROWTH_DEFAULTS.stockists.enabled,
+  },
   brand: {
     name: "Wellness Brew",
     legalName: "",
@@ -332,6 +364,9 @@ export const PUBLIC_DEFAULTS: PublicSettings = {
     showDisclaimerOnProducts: true,
     registrations: [],
   },
+  site: GROWTH_DEFAULTS.site,
+  tracking: GROWTH_DEFAULTS.tracking,
+  experiments: GROWTH_DEFAULTS.experiments,
 };
 
 /** Replace `{brand}` placeholders in owner-written copy. */

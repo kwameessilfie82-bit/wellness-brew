@@ -19,6 +19,18 @@ import {
   type SettingsSection,
   socialSchema,
 } from "./schemas";
+import {
+  experimentsSchema,
+  giftingSchema,
+  GROWTH_DEFAULTS,
+  pagesSchema,
+  seoSchema,
+  siteSchema,
+  stockistsSchema,
+  taxonomySchema,
+  teaFinderSchema,
+  trackingSchema,
+} from "./growth-schemas";
 import { deliverySchema, ORDERING_DEFAULTS, orderingSchema, whatsappSchema } from "./ordering-schemas";
 
 const banned = (phrase: string, reason: string, suggestion = "") => ({
@@ -76,6 +88,15 @@ export const SETTINGS_SCHEMAS = {
   ordering: orderingSchema,
   delivery: deliverySchema,
   whatsapp: whatsappSchema,
+  seo: seoSchema,
+  tracking: trackingSchema,
+  pages: pagesSchema,
+  site: siteSchema,
+  taxonomy: taxonomySchema,
+  gifting: giftingSchema,
+  teaFinder: teaFinderSchema,
+  stockists: stockistsSchema,
+  experiments: experimentsSchema,
 } as const;
 
 export const SETTINGS_SECTIONS = Object.keys(SETTINGS_SCHEMAS) as SettingsSection[];
@@ -176,6 +197,7 @@ export const SETTINGS_DEFAULTS: SettingsMap = {
     register: [],
   },
   ...ORDERING_DEFAULTS,
+  ...GROWTH_DEFAULTS,
 };
 
 /**

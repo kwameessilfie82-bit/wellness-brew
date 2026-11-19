@@ -2,7 +2,7 @@
 
 import { ArrowDown, ArrowUp, Save, Trash2, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useRef, useState, useTransition } from "react";
+import { useId, useMemo, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import type { BannedPhrase, SettingsMap, SettingsSection } from "@/lib/settings/schemas";
@@ -29,6 +29,15 @@ export const SECTION_LABELS: Record<SettingsSection, string> = {
   ordering: "Ordering",
   delivery: "Delivery",
   whatsapp: "WhatsApp messages",
+  pages: "Pages & FAQ",
+  site: "Announcement & toggles",
+  seo: "SEO",
+  tracking: "Tracking",
+  taxonomy: "Taxonomy",
+  gifting: "Gifting",
+  teaFinder: "Tea Finder",
+  stockists: "Stockists",
+  experiments: "A/B tests",
 };
 
 export type Errors = Record<string, string>;
@@ -39,16 +48,19 @@ export function Field({
   label,
   hint,
   error,
+  htmlFor,
   children,
 }: {
   label: string;
   hint?: string;
   error?: string;
+  /** id of the control, so the label is announced and clickable. */
+  htmlFor?: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="space-y-1.5">
-      <Label>{label}</Label>
+      <Label htmlFor={htmlFor}>{label}</Label>
       {children}
       {error ? (
         <p className="text-xs text-destructive">{error}</p>
@@ -82,10 +94,12 @@ export function TextField({
   type?: string;
   bannedPhrases?: BannedPhrase[];
 }) {
+  const id = useId();
   return (
-    <Field label={label} hint={hint} error={error}>
+    <Field label={label} hint={hint} error={error} htmlFor={id}>
       {multiline ? (
         <Textarea
+          id={id}
           value={value}
           placeholder={placeholder}
           onChange={(e) => onChange(e.target.value)}
@@ -94,6 +108,7 @@ export function TextField({
         />
       ) : (
         <Input
+          id={id}
           type={type}
           value={value}
           placeholder={placeholder}

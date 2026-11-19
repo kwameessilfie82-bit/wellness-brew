@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { getUserProfile } from "@/lib/queries/profile";
 import { getPublicSettings, getSettings } from "@/lib/settings/get";
 import { Footer } from "@/ui/footer";
+import { TrackOnMount } from "@/ui/components/tracked";
 import { Navigation } from "@/ui/navigation";
 
 import { OrderForm, type OrderFormConfig } from "./order-form";
@@ -37,6 +38,7 @@ export default async function OrderPage() {
 
   return (
     <div className="min-h-screen">
+      <TrackOnMount event="begin_checkout" />
       <Navigation />
       <OrderForm config={config} />
       <Footer />

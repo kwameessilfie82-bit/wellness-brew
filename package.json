@@ -20,7 +20,8 @@
     "db:drop-account": "node scripts/run-sql.mjs drizzle/0002_drop_account.sql",
     "db:migrate-profile": "node scripts/run-sql.mjs drizzle/0003_user_profile_payment.sql",
     "db:migrate-settings": "node scripts/run-sql.mjs drizzle/0006_site_settings.sql",
-    "db:migrate-0011": "node scripts/run-sql.mjs --tx drizzle/0011_rls_and_fk_indexes.sql"
+    "db:migrate-0011": "node scripts/run-sql.mjs --tx drizzle/0011_rls_and_fk_indexes.sql",
+    "db:migrate-0012": "node scripts/run-sql.mjs --tx drizzle/0012_growth.sql"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

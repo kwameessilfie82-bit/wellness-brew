@@ -1,5 +1,7 @@
 "use client";
 
+import { track } from "@/lib/tracking/client";
+
 import {
   createContext,
   useCallback,
@@ -155,6 +157,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       ];
     });
 
+    track("add_to_cart", {
+      productId,
+      productName: product.name,
+      value: parsePrice(product.price ?? product.customerPrice ?? product.retailPrice ?? 0),
+    });
     toast.success(existing ? "Cart updated" : "Added to cart", {
       id: `cart-${productId}`,
       description: existing

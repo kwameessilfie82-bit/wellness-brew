@@ -1,5 +1,7 @@
 "use client";
 
+import { track } from "@/lib/tracking/client";
+
 import { AlertTriangle, ChevronDown, Loader2, MessageCircle, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -19,6 +21,7 @@ import { Input } from "@/ui/primitives/input";
 import { Label } from "@/ui/primitives/label";
 
 import { placeOrder } from "./actions";
+import { PromoField, type AppliedPromo } from "./promo-field";
 
 export type OrderFormConfig = {
   ordering: {
@@ -63,6 +66,8 @@ export function OrderForm({ config }: { config: OrderFormConfig }) {
   const [duplicate, setDuplicate] = useState<{ error: string; token: string } | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   const [acceptPrices, setAcceptPrices] = useState(false);
+  const [promo, setPromo] = useState<AppliedPromo | null>(null);
+  const [promoError, setPromoError] = useState<string | null>(null);
   const [redirecting, setRedirecting] = useState(false);
   const [activeAction, setActiveAction] = useState<"submit" | "prices" | "duplicate">("submit");
 
@@ -178,10 +183,12 @@ export function OrderForm({ config }: { config: OrderFormConfig }) {
           phone,
           acceptPriceChanges: accept,
           allowDuplicate: opts.allowDuplicate ?? false,
+          promoCode: promo?.code ?? "",
           website,
         });
 
         if (res.ok) {
+          track("order_placed", { eventId: `order-${res.orderNumber}`, value: Math.max(0, items.reduce((s, i) => s + i.price * i.quantity, 0) - (promo?.discount ?? 0)) });
           try {
             sessionStorage.setItem(LAST_ORDER_CART_KEY, JSON.stringify(items));
             localStorage.setItem(CUSTOMER_KEY, JSON.stringify({ name: name.trim(), phone: phone.trim() }));
@@ -208,6 +215,11 @@ export function OrderForm({ config }: { config: OrderFormConfig }) {
             break;
           case "duplicate":
             setDuplicate({ error: res.error, token: res.existingToken });
+            break;
+          case "promo":
+            setPromo(null);
+            setPromoError(res.error);
+            toast.error(res.error);
             break;
           default:
             setFailure(res.error);
@@ -407,6 +419,16 @@ export function OrderForm({ config }: { config: OrderFormConfig }) {
               ) : null}
             </div>
 
+            <PromoField
+              items={items.map((i) => ({ productId: String(i.id), quantity: i.quantity }))}
+              applied={promo}
+              onChange={(p) => {
+                setPromo(p);
+                setPromoError(null);
+              }}
+              serverError={promoError}
+            />
+
             {/* Honeypot: invisible to people, tempting to bots. */}
             <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
               <label htmlFor="website">Website</label>
@@ -450,7 +472,15 @@ export function OrderForm({ config }: { config: OrderFormConfig }) {
               <CollapsibleTrigger asChild>
                 <button type="button" className="flex w-full items-center justify-between gap-3 text-left">
                   <CardTitle className="text-base">
-                    {itemCount} {itemCount === 1 ? "item" : "items"} · {formatMoney(totalPrice)}
+                    {itemCount} {itemCount === 1 ? "item" : "items"} ·{" "}
+                    {promo ? (
+                      <>
+                        <span className="text-muted-foreground line-through">{formatMoney(totalPrice)}</span>{" "}
+                        {formatMoney(Math.max(0, totalPrice - promo.discount))}
+                      </>
+                    ) : (
+                      formatMoney(totalPrice)
+                    )}
                   </CardTitle>
                   <ChevronDown className={`h-5 w-5 shrink-0 transition-transform ${summaryOpen ? "rotate-180" : ""}`} />
                 </button>
