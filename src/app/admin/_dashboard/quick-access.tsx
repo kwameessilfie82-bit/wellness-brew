@@ -11,7 +11,7 @@ import {
   Warehouse,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 
 import {
   ADMIN_DESTINATIONS,
@@ -34,6 +34,7 @@ const ICONS: Record<AdminDestination["icon"], LucideIcon> = {
 };
 
 const SLOTS = 6;
+const noopSubscribe = () => () => {};
 
 type Tile = { target: VisitTarget; count?: number; last?: number };
 
@@ -50,28 +51,29 @@ function ago(ts: number, now: number) {
 export function QuickAccess({ userId, permissions }: { userId: string; permissions: AdminPermission[] }) {
   const allowed = new Set(permissions);
   const defaults: Tile[] = ADMIN_DESTINATIONS.filter((d) => allowed.has(d.permission)).map((target) => ({ target }));
-  const [tiles, setTiles] = useState<Tile[]>(defaults.slice(0, SLOTS));
-  const [personal, setPersonal] = useState(false);
-  const [now, setNow] = useState(0);
-
-  useEffect(() => {
+  // Visit log lives in localStorage (client-only); the server snapshot is null so SSR renders the defaults.
+  const raw = useSyncExternalStore(
+    noopSubscribe,
+    () => localStorage.getItem(visitStorageKey(userId)) ?? "{}",
+    () => null,
+  );
+  const [now] = useState(() => Date.now());
+  const ranked = useMemo(() => {
+    if (raw === null) return [];
     try {
-      const log = JSON.parse(localStorage.getItem(visitStorageKey(userId)) ?? "{}") as VisitLog;
-      const ranked = rankVisits(log).filter((v) => allowed.has(v.target.permission as AdminPermission));
-      if (ranked.length === 0) return;
-      const used = new Set(ranked.map((r) => r.target.key));
-      const filled: Tile[] = [
-        ...ranked.slice(0, SLOTS),
-        ...defaults.filter((d) => !used.has(d.target.key)),
-      ].slice(0, SLOTS);
-      setTiles(filled);
-      setPersonal(true);
-      setNow(Date.now());
+      return rankVisits(JSON.parse(raw) as VisitLog).filter((v) => allowed.has(v.target.permission as AdminPermission));
     } catch {
-      // keep defaults
+      return [];
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]);
+  }, [raw, permissions]);
+  const personal = ranked.length > 0;
+  const tiles: Tile[] = personal
+    ? (() => {
+        const used = new Set(ranked.map((r) => r.target.key));
+        return [...ranked.slice(0, SLOTS), ...defaults.filter((d) => !used.has(d.target.key))].slice(0, SLOTS);
+      })()
+    : defaults.slice(0, SLOTS);
 
   return (
     <section aria-labelledby="quick-access" className="space-y-3">

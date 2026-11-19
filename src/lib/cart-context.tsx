@@ -1,12 +1,13 @@
 "use client";
 
-import React, {
+import {
   createContext,
+  useCallback,
   useContext,
-  useState,
   useEffect,
-  useRef,
-  ReactNode,
+  useMemo,
+  useState,
+  type ReactNode,
 } from "react";
 import { toast } from "sonner";
 
@@ -19,7 +20,7 @@ import {
   type StoredCartItem,
 } from "@/lib/cart-storage";
 
-interface CartItem extends StoredCartItem {}
+type CartItem = StoredCartItem;
 
 interface ProductInput {
   id: string | number;
@@ -57,21 +58,21 @@ export const useCart = () => {
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isHydrated, setIsHydrated] = useState(false);
-  const hasRestoredRef = useRef(false);
-
   useEffect(() => {
     const restored = restoreCartAfterAuth();
-    const cart =
-      restored.length > 0 ? restored : readCartFromStorage();
+    const cart = restored.length > 0 ? restored : readCartFromStorage();
+    // localStorage is only readable after mount; hydrating from it here is the
+    // intended external-sync use of an effect.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setItems(cart);
-    hasRestoredRef.current = true;
     setIsHydrated(true);
 
     // Reconcile with the live catalogue: drop products that were deleted or
     // switched off, and refresh names/prices/images that changed since.
     if (cart.length === 0) return;
     let cancelled = false;
-    refreshCartItems(cart.map((i) => String(i.id)))
+    const snapshotIds = new Set(cart.map((i) => String(i.id)));
+    refreshCartItems([...snapshotIds])
       .then((fresh) => {
         if (cancelled) return;
         const byId = new Map(fresh.map((p) => [p.id, p]));
@@ -84,7 +85,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         setItems((prev) => {
           const next: CartItem[] = [];
           for (const item of prev) {
-            const p = byId.get(String(item.id));
+            const id = String(item.id);
+            // Added after the snapshot was taken — not part of this check.
+            if (!snapshotIds.has(id)) {
+              next.push(item);
+              continue;
+            }
+            const p = byId.get(id);
             if (!p) continue;
             next.push({ ...item, name: p.name, price: p.price, image: p.image ?? item.image });
           }
@@ -113,93 +120,92 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
+  // Persist only after the stored cart has been applied to state. Gating on
+  // state (not a ref) prevents the first, still-empty render from overwriting
+  // localStorage — which wiped the cart under React StrictMode.
   useEffect(() => {
-    if (!hasRestoredRef.current) {
-      return;
-    }
+    if (!isHydrated) return;
     writeCartToStorage(items);
-  }, [items]);
+  }, [items, isHydrated]);
 
-  const addToCart = (product: ProductInput) => {
+  const addToCart = useCallback((product: ProductInput) => {
     const productId = String(product.id);
-    let toastTitle = "Added to cart";
-    let toastDescription = product.name;
+    // Read from the rendered cart for the toast; never side-effect inside the updater.
+    const existing = items.find((item) => item.id === productId);
 
     setItems((prev) => {
-      const existing = prev.find((item) => item.id === productId);
-      if (existing) {
-        const nextQuantity = existing.quantity + 1;
-        toastTitle = "Cart updated";
-        toastDescription = `${product.name} · Qty ${nextQuantity}`;
+      const current = prev.find((item) => item.id === productId);
+      if (current) {
         return prev.map((item) =>
-          item.id === productId
-            ? { ...item, quantity: nextQuantity }
-            : item,
+          item.id === productId ? { ...item, quantity: item.quantity + 1 } : item,
         );
       }
-
-      const newItem: CartItem = {
-        id: productId,
-        name: product.name,
-        price: parsePrice(
-          product.price ?? product.customerPrice ?? product.retailPrice ?? 0,
-        ),
-        quantity: 1,
-        image: product.image,
-      };
-      return [...prev, newItem];
+      return [
+        ...prev,
+        {
+          id: productId,
+          name: product.name,
+          price: parsePrice(
+            product.price ?? product.customerPrice ?? product.retailPrice ?? 0,
+          ),
+          quantity: 1,
+          image: product.image,
+        },
+      ];
     });
 
-    toast.success(toastTitle, {
+    toast.success(existing ? "Cart updated" : "Added to cart", {
       id: `cart-${productId}`,
-      description: toastDescription,
+      description: existing
+        ? `${product.name} · Qty ${existing.quantity + 1}`
+        : product.name,
     });
-  };
+  }, [items]);
 
-  const removeFromCart = (id: string | number) => {
-    setItems((prev) =>
-      prev.filter((item) => item.id !== String(id) && item.id !== id),
-    );
-  };
+  const removeFromCart = useCallback((id: string | number) => {
+    const key = String(id);
+    setItems((prev) => prev.filter((item) => String(item.id) !== key));
+  }, []);
 
-  const updateQuantity = (id: string | number, quantity: number) => {
-    if (quantity <= 0) {
-      removeFromCart(id);
-      return;
-    }
-    setItems((prev) =>
-      prev.map((item) =>
-        item.id === String(id) || item.id === id
-          ? { ...item, quantity }
-          : item,
-      ),
-    );
-  };
-
-  const clearCart = () => {
-    setItems([]);
-  };
-
-  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-
-  return (
-    <CartContext.Provider
-      value={{
-        items,
-        cart: items,
-        isHydrated,
-        addToCart,
-        removeFromCart,
-        removeItem: removeFromCart,
-        updateQuantity,
-        clearCart,
-        total,
-        totalPrice: total,
-        totalItems,
-      }}
-    >
-      {children}
-    </CartContext.Provider>
+  const updateQuantity = useCallback(
+    (id: string | number, quantity: number) => {
+      const key = String(id);
+      if (!Number.isFinite(quantity) || quantity <= 0) {
+        setItems((prev) => prev.filter((item) => String(item.id) !== key));
+        return;
+      }
+      const qty = Math.floor(quantity);
+      setItems((prev) =>
+        prev.map((item) => (String(item.id) === key ? { ...item, quantity: qty } : item)),
+      );
+    },
+    [],
   );
+
+  const clearCart = useCallback(() => setItems([]), []);
+
+  const value = useMemo<CartContextType>(() => {
+    // Sum in pesewas to avoid float drift (e.g. 0.1 + 0.2).
+    const totalMinor = items.reduce(
+      (sum, item) => sum + Math.round(item.price * 100) * item.quantity,
+      0,
+    );
+    const total = totalMinor / 100;
+    const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+    return {
+      items,
+      cart: items,
+      isHydrated,
+      addToCart,
+      removeFromCart,
+      removeItem: removeFromCart,
+      updateQuantity,
+      clearCart,
+      total,
+      totalPrice: total,
+      totalItems,
+    };
+  }, [items, isHydrated, addToCart, removeFromCart, updateQuantity, clearCart]);
+
+  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 };

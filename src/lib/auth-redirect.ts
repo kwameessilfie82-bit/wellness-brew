@@ -4,6 +4,21 @@ import { getConfiguredAppUrl, getRequestOrigin } from "@/lib/app-url";
 
 export const AUTH_NEXT_COOKIE = "oauth-next-path";
 
+/**
+ * Sanitises a post-auth redirect target. Only same-origin relative paths are
+ * allowed — rejects `//evil.com`, `/\evil.com`, `@evil.com`, `javascript:` etc.
+ * Safe to call from both server and client code.
+ */
+export function safeNextPath(
+  next: string | null | undefined,
+  fallback = "/",
+): string {
+  if (!next || typeof next !== "string") return fallback;
+  if (!/^\/(?![/\\])/.test(next)) return fallback;
+  if (/[\s@\\]/.test(next) || next.includes("://")) return fallback;
+  return next;
+}
+
 const DEFAULT_ALLOWED_ORIGINS = [
   "http://localhost:3000",
   "https://wellness-brew.vercel.app",

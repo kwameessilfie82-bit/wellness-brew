@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { orderItemTable, storeOrderTable } from "@/db/schema";
 import { buildOrderInvoicePdf, invoiceFileName } from "@/lib/orders/server/invoice-pdf";
+import { rateLimit } from "@/lib/orders/server/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,13 @@ export async function GET(request: Request, { params }: { params: Promise<{ toke
   if (!/^[A-Za-z0-9_-]{16,64}$/.test(token)) return new Response("Not found", { status: 404 });
   const [order] = await db.select().from(storeOrderTable).where(eq(storeOrderTable.publicToken, token)).limit(1);
   if (!order) return new Response("Not found", { status: 404 });
+  // PDF rendering is CPU-heavy: cap regenerations per order.
+  if (!(await rateLimit(`invoice-pdf:${order.id}`, 30, 3600))) {
+    return new Response("Too many requests. Please try again later.", {
+      status: 429,
+      headers: { "Retry-After": "3600" },
+    });
+  }
   const items = await db.select().from(orderItemTable).where(eq(orderItemTable.orderId, order.id));
 
   try {

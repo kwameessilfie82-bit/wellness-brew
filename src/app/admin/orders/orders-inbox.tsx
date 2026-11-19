@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
 
 import { Bell, Loader2, Search } from "lucide-react";
 import Link from "next/link";
@@ -47,6 +47,7 @@ const EMPTY: Record<string, string> = {
   all: "No orders yet.",
 };
 
+const noopSubscribe = () => () => {};
 const ORDER_NUMBER_RE = /^wb-?\d{4}-?\d+$/i;
 
 function attentionLabel(reason: string): string {
@@ -78,7 +79,13 @@ export function OrdersInbox({
   const [navTab, setNavTab] = useState<string | null>(null);
   const [enablingAlerts, setEnablingAlerts] = useState(false);
   const [now, setNow] = useState(() => Date.now());
-  const [perm, setPerm] = useState<NotificationPermission | "unsupported">("unsupported");
+  const [permOverride, setPerm] = useState<NotificationPermission | null>(null);
+  const livePerm = useSyncExternalStore(
+    noopSubscribe,
+    (): NotificationPermission | "unsupported" => (typeof Notification === "undefined" ? "unsupported" : Notification.permission),
+    () => "unsupported" as const,
+  );
+  const perm = permOverride ?? livePerm;
 
   // Server data changed (tab/search/refresh) → reset the list.
   if (seen !== initialRows) {
@@ -87,13 +94,12 @@ export function OrdersInbox({
     setCursor(initialCursor);
   }
 
-  useEffect(() => {
+  // URL query changed → reset the search box.
+  const [seenQ, setSeenQ] = useState(q);
+  if (seenQ !== q) {
+    setSeenQ(q);
     setInput(q);
-  }, [q]);
-
-  useEffect(() => {
-    if (typeof Notification !== "undefined") setPerm(Notification.permission);
-  }, []);
+  }
 
   // Tick relative times.
   useEffect(() => {

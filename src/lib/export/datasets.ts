@@ -265,9 +265,15 @@ async function orderSheets(opts: ExportOptions): Promise<AnySheet[]> {
     .where(from ? gte(o.createdAt, from) : undefined)
     .orderBy(desc(o.createdAt));
   const ids = orders.map((r) => r.id);
-  const items = ids.length
-    ? await db.select().from(orderItemTable).where(inArray(orderItemTable.orderId, ids))
-    : [];
+  const items: (typeof orderItemTable.$inferSelect)[] = [];
+  for (let i = 0; i < ids.length; i += 1000) {
+    items.push(
+      ...(await db
+        .select()
+        .from(orderItemTable)
+        .where(inArray(orderItemTable.orderId, ids.slice(i, i + 1000)))),
+    );
+  }
   const numberById = new Map(orders.map((r) => [r.id, r]));
 
   return [

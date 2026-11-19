@@ -51,7 +51,7 @@ export function NavigationProgress() {
   // URL changed → finish the bar.
   useEffect(() => {
     clear();
-    setState((s) => (s === "idle" ? s : "done"));
+    timers.current.push(setTimeout(() => setState((s) => (s === "idle" ? s : "done")), 0));
     timers.current.push(setTimeout(() => setState("idle"), 300));
   }, [pathname, searchParams]);
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateCatalog } from "@/lib/products/revalidate";
 import { withAdminAuth } from "@/lib/admin-middleware";
 import { db } from "@/db";
 import { categoryTable } from "@/db/schema";
@@ -71,6 +72,7 @@ const putHandler = withAdminAuth(
         .set(updatedCategory)
         .where(eq(categoryTable.id, params.id));
 
+      revalidateCatalog();
       return NextResponse.json({ category: updatedCategory });
     } catch (error) {
       console.error("Error updating category:", error);
@@ -107,6 +109,7 @@ const deleteHandler = withAdminAuth(
       await db.delete(categoryTable)
         .where(eq(categoryTable.id, params.id));
 
+      revalidateCatalog();
       return NextResponse.json({ message: "Category deleted successfully" });
     } catch (error) {
       console.error("Error deleting category:", error);

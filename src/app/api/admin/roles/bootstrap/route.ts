@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { adminRoleTable, adminUserTable } from "@/db/schema";
 import { syncDefaultRolePermissions } from "@/lib/admin-auth";
 import { getCurrentUser } from "@/lib/auth";
+import { isOwnerEmail } from "@/lib/owner-emails";
 import { eq } from "drizzle-orm";
 
 // POST /api/admin/roles/bootstrap
@@ -14,8 +15,14 @@ export async function POST() {
       return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     }
 
-    const existingAdmins = await db.query.adminUserTable.findMany();
-    if (existingAdmins.length > 0) {
+    // First-run bootstrap is reserved for a verified owner address — otherwise
+    // any new sign-up could claim Manager on a fresh/empty database.
+    if (!user.emailVerified || !isOwnerEmail(user.email)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const existingAdmin = await db.query.adminUserTable.findFirst({ columns: { id: true } });
+    if (existingAdmin) {
       return NextResponse.json({ error: "Bootstrap not allowed; admins already exist" }, { status: 403 });
     }
 

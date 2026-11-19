@@ -31,7 +31,12 @@ export default async function RiderPage({ params }: Props) {
   const { contact } = await getPublicSettings();
   const shopPhone = contact.orderPhone || contact.whatsappNumber;
 
-  const closed = !!order && isOrderStatus(order.status) && TERMINAL.includes(order.status);
+  // Once delivered the rider's job is done: stop exposing the customer's
+  // address and phone even though the order isn't terminal until paid.
+  const closed =
+    !!order &&
+    isOrderStatus(order.status) &&
+    (order.status === "delivered" || TERMINAL.includes(order.status));
   if (closed) {
     return (
       <main className="mx-auto max-w-md p-6 text-center">

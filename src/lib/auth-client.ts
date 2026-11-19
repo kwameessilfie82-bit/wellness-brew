@@ -39,7 +39,8 @@ export function useSession() {
 
   useEffect(() => {
     if (!isSupabaseConfigured()) {
-      setIsPending(false);
+      // Resolve on the next tick: no auth backend to subscribe to.
+      queueMicrotask(() => setIsPending(false));
       return;
     }
 
@@ -238,7 +239,7 @@ export function useMfa() {
 
 // Kept for backward compatibility with profile/MFA pages
 export const twoFactor = {
-  disable: async ({ password: _password }: { password: string }) => {
+  disable: async (_args: { password: string }) => { // eslint-disable-line @typescript-eslint/no-unused-vars -- signature kept for callers
     const supabase = createClient();
     const { data } = await supabase.auth.mfa.listFactors();
     const totpFactor = data?.totp?.[0];
@@ -251,7 +252,7 @@ export const twoFactor = {
     if (error) throw error;
     return { data: null };
   },
-  enable: async ({ password: _password }: { password: string }) => {
+  enable: async (_args: { password: string }) => { // eslint-disable-line @typescript-eslint/no-unused-vars -- signature kept for callers
     const supabase = createClient();
     const { data, error } = await supabase.auth.mfa.enroll({
       factorType: "totp",
@@ -264,7 +265,7 @@ export const twoFactor = {
       },
     };
   },
-  verifyBackupCode: async ({ code: _code }: { code: string }) => {
+  verifyBackupCode: async (_args: { code: string }) => { // eslint-disable-line @typescript-eslint/no-unused-vars -- signature kept for callers
     throw new Error("Backup codes are managed in the Supabase dashboard.");
   },
   verifyTotp: async ({ code }: { code: string }) => {

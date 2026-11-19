@@ -1,8 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
 import { getCurrentUser } from "@/lib/auth";
 import { formatGhanaPhone } from "@/lib/ghana";
 import { getUserProfile, updateUserProfile } from "@/lib/queries/profile";
+
+const text = (max: number) => z.string().trim().max(max).nullish();
+
+/** Accepts number or numeric string; "" / null clear the pin (never coerced to 0,0). */
+const coord = (limit: number) =>
+  z.preprocess(
+    (v) => (v === "" ? null : v),
+    z.coerce.number().min(-limit).max(limit).nullish(),
+  );
+
+const profileSchema = z.object({
+  name: z.string().trim().min(1).max(120).optional(),
+  phone: text(32),
+  deliveryRegion: text(80),
+  deliveryLocation: text(300),
+  deliveryLandmark: text(300),
+  deliveryLatitude: coord(90),
+  deliveryLongitude: coord(180),
+  age: z.number().int().min(0).max(130).nullish(),
+});
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -38,11 +59,25 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await request.json();
+  let json: unknown;
+  try {
+    json = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  const parsed = profileSchema.safeParse(json);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Invalid profile data", issues: z.flattenError(parsed.error) },
+      { status: 400 },
+    );
+  }
+  const body = parsed.data;
 
   const profile = await updateUserProfile(user.id, {
-    name: body.name?.trim(),
-    phone: body.phone != null ? formatGhanaPhone(String(body.phone)) : undefined,
+    name: body.name,
+    phone: body.phone != null ? formatGhanaPhone(body.phone) : undefined,
     deliveryRegion: body.deliveryRegion ?? undefined,
     deliveryLocation: body.deliveryLocation ?? undefined,
     deliveryLandmark: body.deliveryLandmark ?? undefined,

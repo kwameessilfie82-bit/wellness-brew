@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateCatalog } from "@/lib/products/revalidate";
 
 import { getAppBaseUrl } from "@/lib/app-url";
 import { withAdminAuth } from "@/lib/admin-middleware";
@@ -173,6 +174,7 @@ const postHandler = withAdminAuth(
 
       await db.insert(inventoryTable).values(newInventory);
 
+      revalidateCatalog();
       return NextResponse.json({ product: newProduct }, { status: 201 });
     } catch (error) {
       console.error("Error creating product:", error);

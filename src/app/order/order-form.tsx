@@ -70,6 +70,7 @@ export function OrderForm({ config }: { config: OrderFormConfig }) {
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(CUSTOMER_KEY) ?? "null") as { name?: string; phone?: string } | null;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time sync from localStorage (client-only external store)
       if (saved?.name) setName((cur) => cur || saved.name || "");
       if (saved?.phone) setPhone((cur) => cur || saved.phone || "");
     } catch {
@@ -79,15 +80,14 @@ export function OrderForm({ config }: { config: OrderFormConfig }) {
 
   const waDigits = (contact.whatsappNumber || contact.orderPhone).replace(/\D/g, "");
   const waHref = waDigits ? `https://wa.me/${waDigits}` : null;
-  const WhatsAppLink = () =>
-    waHref ? (
-      <Button asChild className="bg-[#25D366] text-white hover:bg-[#1ebe5a]">
-        <a href={waHref} target="_blank" rel="noopener noreferrer">
-          <MessageCircle className="mr-2 h-4 w-4" />
-          Chat with us on WhatsApp
-        </a>
-      </Button>
-    ) : null;
+  const whatsAppLink = waHref ? (
+    <Button asChild className="bg-[#25D366] text-white hover:bg-[#1ebe5a]">
+      <a href={waHref} target="_blank" rel="noopener noreferrer">
+        <MessageCircle className="mr-2 h-4 w-4" />
+        Chat with us on WhatsApp
+      </a>
+    </Button>
+  ) : null;
 
   // Scroll/focus the first invalid field after errors are set.
   useEffect(() => {
@@ -122,7 +122,7 @@ export function OrderForm({ config }: { config: OrderFormConfig }) {
           </AlertDescription>
         </Alert>
         <div className="mt-4">
-          <WhatsAppLink />
+          {whatsAppLink}
         </div>
       </div>
     );
@@ -145,7 +145,8 @@ export function OrderForm({ config }: { config: OrderFormConfig }) {
   const clearErr = (key: string) =>
     setErrors((e) => {
       if (!e[key]) return e;
-      const { [key]: _drop, ...rest } = e;
+      const rest = { ...e };
+      delete rest[key];
       return rest;
     });
 
@@ -259,7 +260,7 @@ export function OrderForm({ config }: { config: OrderFormConfig }) {
             <AlertDescription>
               <p>{ordering.largeOrderMessage}</p>
               <div className="mt-3">
-                <WhatsAppLink />
+                {whatsAppLink}
               </div>
             </AlertDescription>
           </Alert>
@@ -353,7 +354,7 @@ export function OrderForm({ config }: { config: OrderFormConfig }) {
             <AlertDescription>
               <p>{failure}</p>
               <div className="mt-3">
-                <WhatsAppLink />
+                {whatsAppLink}
               </div>
             </AlertDescription>
           </Alert>

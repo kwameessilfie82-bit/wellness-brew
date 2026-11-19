@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { User as SupabaseAuthUser } from "@supabase/supabase-js";
-import { desc, eq } from "drizzle-orm";
+import { desc } from "drizzle-orm";
 
 import type { UserWithRole } from "@/app/admin/customers/page.types";
 import { syncUserFromSupabase } from "@/lib/auth";

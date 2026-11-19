@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateCatalog } from "@/lib/products/revalidate";
 
 import { withAdminAuth } from "@/lib/admin-middleware";
 import { eq } from "drizzle-orm";
@@ -106,6 +107,7 @@ const postHandler = withAdminAuth(
 
       await db.insert(categoryTable).values(newCategory);
 
+      revalidateCatalog();
       return NextResponse.json({ category: newCategory }, { status: 201 });
     } catch (error) {
       console.error("Error creating category:", error);

@@ -17,14 +17,11 @@ interface UserInfo {
 export function NavigationUserInfo() {
   const { isPending, user } = useCurrentUser();
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
-  const [loading, setLoading] = useState(true);
+  const loading = isPending || (!!user && !userInfo);
 
   useEffect(() => {
     const fetchUserInfo = async () => {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
+      if (!user) return;
 
       try {
         const response = await fetch("/api/admin/me");
@@ -49,19 +46,15 @@ export function NavigationUserInfo() {
           isAdmin: false,
           adminRole: null,
         });
-      } finally {
-        setLoading(false);
       }
     };
 
     if (!isPending && user) {
       void fetchUserInfo();
-    } else if (!isPending && !user) {
-      setLoading(false);
     }
   }, [isPending, user]);
 
-  if (isPending || loading) {
+  if (loading) {
     return <Skeleton className="h-9 w-9 rounded-full" />;
   }
 

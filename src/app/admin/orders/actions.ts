@@ -4,7 +4,7 @@ import { eq, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 import { db } from "@/db";
-import { inventoryTable, orderItemTable, productTable, storeOrderTable } from "@/db/schema";
+import { inventoryTable, inventoryTransactionTable, orderItemTable, productTable, storeOrderTable } from "@/db/schema";
 import { hasPermission, isAdmin } from "@/lib/admin-auth";
 import { parsePrice } from "@/lib/format";
 import { waLink } from "@/lib/orders/message";
@@ -294,16 +294,33 @@ export async function updateOrderItems(input: {
       const delta = new Map<string, number>();
       for (const b of before) if (b.productId) delta.set(b.productId, (delta.get(b.productId) ?? 0) + b.quantity);
       for (const l of lines) delta.set(l.productId, (delta.get(l.productId) ?? 0) - l.quantity);
+      const now = new Date();
       for (const [productId, d] of delta) {
         if (d === 0) continue;
-        await tx
+        const [moved] = await tx
           .update(inventoryTable)
           .set({
             quantityInStock: sql`${inventoryTable.quantityInStock} + ${d}`,
             quantityAvailable: sql`${inventoryTable.quantityAvailable} + ${d}`,
-            updatedAt: new Date(),
+            updatedAt: now,
           })
-          .where(eq(inventoryTable.productId, productId));
+          .where(eq(inventoryTable.productId, productId))
+          .returning({ id: inventoryTable.id });
+        // Untracked products have no inventory row; tracked ones get a ledger
+        // entry so stock history always reconciles with on-hand quantity.
+        if (moved) {
+          await tx.insert(inventoryTransactionTable).values({
+            id: crypto.randomUUID(),
+            productId,
+            type: d > 0 ? "in" : "out",
+            quantity: d,
+            reason: "order edit",
+            reference: order.orderNumber,
+            notes: "Order items edited by staff",
+            performedBy: admin.id,
+            createdAt: now,
+          });
+        }
       }
     }
 

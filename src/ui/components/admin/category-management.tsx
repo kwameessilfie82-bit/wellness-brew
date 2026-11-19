@@ -30,6 +30,18 @@ interface CategoryManagementProps {
   adminUser: AdminUserWithDetails;
 }
 
+/** Stored category image -> single-item preview list (plain URL, data URL, or JSON array). */
+function parseCategoryImages(image: string | null | undefined): string[] {
+  if (!image) return [];
+  if (image.startsWith("data:") || image.startsWith("http") || image.startsWith("/")) return [image];
+  try {
+    const parsed = JSON.parse(image);
+    return Array.isArray(parsed) && parsed.length > 0 ? [parsed[0]] : [];
+  } catch {
+    return [];
+  }
+}
+
 export function CategoryManagement({ }: CategoryManagementProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -78,34 +90,6 @@ export function CategoryManagement({ }: CategoryManagementProps) {
     setFn(getArr.filter((_, i) => i !== index));
   };
 
-  // Initialize edit images when opening the edit dialog
-  useEffect(() => {
-    if (isEditDialogOpen && editingCategory) {
-      try {
-        if (!editingCategory.image) {
-          setEditCategoryImages([]);
-          return;
-        }
-        
-        // Check if it's already a data URL or regular URL (not JSON)
-        if (typeof editingCategory.image === 'string' && (editingCategory.image.startsWith('data:') || editingCategory.image.startsWith('http') || editingCategory.image.startsWith('/'))) {
-          setEditCategoryImages([editingCategory.image]);
-          return;
-        }
-        
-        // Try to parse as JSON array
-        const parsed = JSON.parse(editingCategory.image || "[]");
-        if (Array.isArray(parsed)) {
-          setEditCategoryImages(parsed.length > 0 ? [parsed[0]] : []);
-        } else {
-          setEditCategoryImages([]);
-        }
-      } catch {
-        setEditCategoryImages([]);
-      }
-    }
-  }, [isEditDialogOpen, editingCategory]);
-
   // Fetch categories from API
   const fetchCategories = async () => {
     try {
@@ -126,6 +110,7 @@ export function CategoryManagement({ }: CategoryManagementProps) {
 
   // Load categories on component mount
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial data fetch on mount
     fetchCategories();
   }, []);
 
@@ -184,6 +169,7 @@ export function CategoryManagement({ }: CategoryManagementProps) {
 
   const handleEditCategory = (category: Category) => {
     setEditingCategory(category);
+    setEditCategoryImages(parseCategoryImages(category.image));
     setIsEditDialogOpen(true);
   };
 
@@ -266,7 +252,6 @@ export function CategoryManagement({ }: CategoryManagementProps) {
       });
 
       if (response.ok) {
-        const data = await response.json();
         // Refresh categories to get updated product counts
         await fetchCategories();
       } else {
@@ -352,6 +337,7 @@ export function CategoryManagement({ }: CategoryManagementProps) {
                 <div className="grid grid-cols-1 gap-2">
                   <div className="relative group aspect-square rounded overflow-hidden border">
                     {newCategoryImages[0] && (newCategoryImages[0].startsWith('data:') || newCategoryImages[0].startsWith('blob:')) ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- admin preview of user-uploaded/data-URL image
                       <img alt="New category image" className="h-full w-full object-cover" src={newCategoryImages[0]} />
                     ) : (
                       <FallbackImage src={newCategoryImages[0] || "/placeholder.svg"} alt="New category image" className="object-cover" fill sizes="(max-width: 768px) 100vw, 400px" />
@@ -437,6 +423,7 @@ export function CategoryManagement({ }: CategoryManagementProps) {
                         if (typeof item.image === 'string' && (item.image.startsWith('data:') || item.image.startsWith('http') || item.image.startsWith('/'))) {
                           // It's a direct URL string
                           if (item.image.startsWith('data:') || item.image.startsWith('blob:')) {
+                            // eslint-disable-next-line @next/next/no-img-element -- admin preview of user-uploaded/data-URL image
                             return <img alt={item.name} className="h-full w-full object-cover" src={item.image} />;
                           }
                           return <FallbackImage alt={item.name} className="" fill loading="lazy" sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw" src={item.image} />;
@@ -448,6 +435,7 @@ export function CategoryManagement({ }: CategoryManagementProps) {
                           const imageSrc = parsedImages[0];
                           // If it's a data URL or blob URL, use regular img tag
                           if (imageSrc.startsWith('data:') || imageSrc.startsWith('blob:')) {
+                            // eslint-disable-next-line @next/next/no-img-element -- admin preview of user-uploaded/data-URL image
                             return <img alt={item.name} className="h-full w-full object-cover" src={imageSrc} />;
                           }
                           // Otherwise use FallbackImage for regular URLs
@@ -576,6 +564,7 @@ export function CategoryManagement({ }: CategoryManagementProps) {
                 <div className="grid grid-cols-1 gap-2">
                   <div className="relative group aspect-square rounded overflow-hidden border">
                     {editCategoryImages[0] && (editCategoryImages[0].startsWith('data:') || editCategoryImages[0].startsWith('blob:')) ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- admin preview of user-uploaded/data-URL image
                       <img alt="Category image" className="h-full w-full object-cover" src={editCategoryImages[0]} />
                     ) : (
                       <FallbackImage src={editCategoryImages[0] || "/placeholder.svg"} alt="Category image" className="object-cover" fill sizes="(max-width: 768px) 100vw, 400px" />

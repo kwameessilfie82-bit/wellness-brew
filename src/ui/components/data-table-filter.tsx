@@ -37,7 +37,7 @@ import {
   optionFilterDetails,
   textFilterDetails,
 } from "@/lib/filters";
-import { useIsMobile } from "@/lib/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/ui/primitives/button";
 import { Calendar } from "@/ui/primitives/calendar";
 import { Checkbox } from "@/ui/primitives/checkbox";
@@ -259,10 +259,11 @@ export function DebouncedInput({
   value: number | string;
 }) {
   const [value, setValue] = useState(initialValue);
-
-  useEffect(() => {
+  const [prevInitial, setPrevInitial] = useState(initialValue);
+  if (prevInitial !== initialValue) {
+    setPrevInitial(initialValue);
     setValue(initialValue);
-  }, [initialValue]);
+  }
 
   useEffect(() => {
     const timeout = setTimeout(() => {

@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useTheme } from "next-themes";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 
 import { cn } from "@/lib/cn";
 
@@ -14,7 +14,14 @@ const PourScene = dynamic(() => import("./pour-scene"), { ssr: false });
 const BG_LIGHT = "/hero/bg-canopy.webp";
 const BG_DARK = "/hero/bg-canopy.webp";
 
+let webglCache: boolean | undefined;
 function hasWebGL() {
+  if (webglCache !== undefined) return webglCache;
+  webglCache = detectWebGL();
+  return webglCache;
+}
+
+function detectWebGL() {
   try {
     const c = document.createElement("canvas");
     return !!(c.getContext("webgl2") || c.getContext("webgl"));
@@ -22,6 +29,15 @@ function hasWebGL() {
     return false;
   }
 }
+
+const REDUCED_QUERY = "(prefers-reduced-motion: reduce)";
+const noopSubscribe = () => () => {};
+function subscribeReduced(onChange: () => void) {
+  const mq = window.matchMedia(REDUCED_QUERY);
+  mq.addEventListener("change", onChange);
+  return () => mq.removeEventListener("change", onChange);
+}
+const getReduced = () => window.matchMedia(REDUCED_QUERY).matches;
 
 /**
  * Hero: copy (server-rendered children) + a full-bleed 3D layer. On load the
@@ -35,8 +51,8 @@ export function PourHero({ children, fallback }: { children: ReactNode; fallback
   const section = useRef<HTMLElement>(null);
   const box = useRef<HTMLDivElement>(null);
   const layout = useRef<HeroLayout>({ cx: 0.75, cy: 0.5, bw: 0.45, bh: 0.7, mobile: false });
-  const [reduced, setReduced] = useState(false);
-  const [noWebGL, setNoWebGL] = useState(false);
+  const reduced = useSyncExternalStore(subscribeReduced, getReduced, () => false);
+  const noWebGL = useSyncExternalStore(noopSubscribe, () => !hasWebGL(), () => false);
   const [load3d, setLoad3d] = useState(false);
   const [ready, setReady] = useState(false);
   const [inView, setInView] = useState(true);
@@ -45,24 +61,12 @@ export function PourHero({ children, fallback }: { children: ReactNode; fallback
   const animated = !reduced && !noWebGL;
 
   useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const sync = () => setReduced(mq.matches);
-    sync();
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
-  }, []);
-
-  useEffect(() => {
-    if (reduced) return;
-    if (!hasWebGL()) {
-      setNoWebGL(true);
-      return;
-    }
+    if (reduced || noWebGL) return;
     const ric = window.requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 200));
     const cancel = window.cancelIdleCallback ?? window.clearTimeout;
     const id = ric(() => setLoad3d(true), { timeout: 1500 });
     return () => cancel(id);
-  }, [reduced]);
+  }, [reduced, noWebGL]);
 
   // Track where the stage box sits inside the hero so the scene can place the
   // teapot there while ingredients use the whole hero.

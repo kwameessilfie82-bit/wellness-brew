@@ -113,7 +113,7 @@ export default async function PrivacyPage() {
                 <h2 className="text-2xl font-serif font-bold text-foreground mb-4">8. Changes to This Policy</h2>
                 <p className="leading-relaxed">
                   We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new 
-                  Privacy Policy on this page and updating the "Last updated" date.
+                  Privacy Policy on this page and updating the &quot;Last updated&quot; date.
                 </p>
               </section>
 

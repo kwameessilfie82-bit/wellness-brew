@@ -93,7 +93,8 @@ export async function getAdminUser(userId: string): Promise<AdminUserWithDetails
     let resolvedAdminUser = adminUser;
     if (!resolvedAdminUser) {
       const currentUser = await getCurrentUser();
-      const currentEmail = currentUser?.email ?? null;
+      // Never relink admin rights by an unverified email (account takeover).
+      const currentEmail = currentUser?.emailVerified ? currentUser.email : null;
 
       if (currentEmail) {
         // Find any existing admin_user linked to a user with the same email
@@ -283,7 +284,7 @@ export async function requirePagePermission(
   if (!adminUser) {
     redirect(
       returnTo
-        ? `/auth/sign-in?redirect=${encodeURIComponent(returnTo)}`
+        ? `/auth/sign-in?next=${encodeURIComponent(returnTo)}`
         : "/auth/sign-in",
     );
   }

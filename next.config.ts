@@ -1,7 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
   images: {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 31536000, // 1 year
@@ -17,14 +16,17 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  poweredByHeader: false,
   experimental: {
     optimizePackageImports: ["lucide-react", "@radix-ui/react-icons"],
   },
   compiler: {
-    removeConsole: process.env.NODE_ENV === "production",
+    // Strip debug logs in prod but keep error/warn so server failures stay visible.
+    removeConsole:
+      process.env.NODE_ENV === "production" ? { exclude: ["error", "warn"] } : false,
   },
   
-  // Add CORS headers for API routes
+  // Security headers. CORS for /api is handled per-origin in proxy.ts.
   async headers() {
     return [
       {
@@ -32,6 +34,7 @@ const nextConfig: NextConfig = {
         headers: [
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(self), interest-cohort=()" },
           { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
         ],
@@ -39,29 +42,6 @@ const nextConfig: NextConfig = {
       {
         source: "/api/:path*",
         headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
-      },
-      {
-        source: "/api/:path*",
-        headers: [
-          {
-            key: "Access-Control-Allow-Origin",
-            value: process.env.NODE_ENV === "production" 
-              ? "https://wellnessgroupgh.com" 
-              : "*",
-          },
-          {
-            key: "Access-Control-Allow-Methods",
-            value: "GET, POST, PUT, DELETE, OPTIONS",
-          },
-          {
-            key: "Access-Control-Allow-Headers",
-            value: "Content-Type, Authorization, Cookie",
-          },
-          {
-            key: "Access-Control-Allow-Credentials",
-            value: "true",
-          },
-        ],
       },
     ];
   },

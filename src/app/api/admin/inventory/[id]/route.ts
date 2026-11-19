@@ -1,8 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAdminAuth } from "@/lib/admin-middleware";
 import { db } from "@/db";
-import { productTable, inventoryTable } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { productTable, inventoryTable, inventoryTransactionTable } from "@/db/schema";
+import { and, eq, like, ne } from "drizzle-orm";
+import { revalidateCatalog } from "@/lib/products/revalidate";
+
+/** Parses an optional money field: "" / null = cleared, invalid = not ok. */
+function parseMoney(value: unknown): { ok: true; value: string | null } | { ok: false } {
+  if (value === null || value === "") return { ok: true, value: null };
+  const n = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(n) || n < 0) return { ok: false };
+  return { ok: true, value: (Math.round(n * 100) / 100).toFixed(2) };
+}
+
+function parseCount(value: unknown): number | null {
+  if (value === undefined || value === null || value === "") return null;
+  const n = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(n)) return null;
+  return Math.max(0, Math.trunc(n));
+}
+
+const MONEY_FIELDS = [
+  "price",
+  "originalPrice",
+  "customerPrice",
+  "retailPrice",
+  "wholesalePrice",
+  "wholesalePrice2",
+  "distributorPrice",
+] as const;
 
 // GET /api/admin/inventory/[id] - Get product by ID
 const getHandler = withAdminAuth(
@@ -46,19 +72,17 @@ const putHandler = withAdminAuth(
   async (request: NextRequest, adminUser, context?: { params: Record<string, string> }) => {
     try {
       const params = context?.params as { id: string };
-      const body = await request.json();
+      let body;
+      try {
+        body = await request.json();
+      } catch {
+        return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+      }
       const {
         name,
         description,
         shortDescription,
         categoryId,
-        price,
-        originalPrice,
-        customerPrice,
-        retailPrice,
-        wholesalePrice,
-        wholesalePrice2,
-        distributorPrice,
         sku,
         barcode,
         fdaRegNumber,
@@ -81,6 +105,23 @@ const putHandler = withAdminAuth(
         quantityReserved,
         finalizeReservations,
       } = body;
+
+      // Validate money up front so bad input is a 400, not a DB error.
+      const money: Partial<Record<(typeof MONEY_FIELDS)[number], string | null>> = {};
+      for (const key of MONEY_FIELDS) {
+        if (body[key] === undefined) continue;
+        const parsed = parseMoney(body[key]);
+        if (!parsed.ok) {
+          return NextResponse.json(
+            { error: `${key} must be a non-negative number` },
+            { status: 400 },
+          );
+        }
+        money[key] = parsed.value;
+      }
+      if (money.price === null) {
+        return NextResponse.json({ error: "price cannot be empty" }, { status: 400 });
+      }
 
       // Check if product exists
       const existingProduct = await db.query.productTable.findFirst({
@@ -114,14 +155,17 @@ const putHandler = withAdminAuth(
         const baseSlug =
           name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') ||
           'product';
-        const existingSlugRows = await db.query.productTable.findMany({
-          columns: { slug: true },
-        });
-        const existingSlugs = new Set(
-          existingSlugRows
-            .map((p) => p.slug)
-            .filter((s) => s !== existingProduct.slug),
-        );
+        // Only fetch candidate collisions, not every slug in the catalogue.
+        const existingSlugRows = await db
+          .select({ slug: productTable.slug })
+          .from(productTable)
+          .where(
+            and(
+              like(productTable.slug, `${baseSlug}%`),
+              ne(productTable.id, existingProduct.id),
+            ),
+          );
+        const existingSlugs = new Set(existingSlugRows.map((p) => p.slug));
         slug = baseSlug;
         let slugCounter = 2;
         while (existingSlugs.has(slug)) {
@@ -137,13 +181,13 @@ const putHandler = withAdminAuth(
         description: description !== undefined ? description : existingProduct.description,
         shortDescription: shortDescription !== undefined ? shortDescription : existingProduct.shortDescription,
         categoryId: categoryId || existingProduct.categoryId,
-        price: price ? price.toString() : existingProduct.price,
-        originalPrice: originalPrice !== undefined ? (originalPrice ? originalPrice.toString() : null) : existingProduct.originalPrice,
-        customerPrice: body.customerPrice !== undefined ? (customerPrice !== "" && !isNaN(Number(customerPrice)) ? Number(customerPrice).toString() : null) : existingProduct.customerPrice,
-        retailPrice: body.retailPrice !== undefined ? (retailPrice !== "" && !isNaN(Number(retailPrice)) ? Number(retailPrice).toString() : null) : existingProduct.retailPrice,
-        wholesalePrice: body.wholesalePrice !== undefined ? (wholesalePrice !== "" && !isNaN(Number(wholesalePrice)) ? Number(wholesalePrice).toString() : null) : existingProduct.wholesalePrice,
-        wholesalePrice2: body.wholesalePrice2 !== undefined ? (wholesalePrice2 !== "" && !isNaN(Number(wholesalePrice2)) ? Number(wholesalePrice2).toString() : null) : existingProduct.wholesalePrice2,
-        distributorPrice: body.distributorPrice !== undefined ? (distributorPrice !== "" && !isNaN(Number(distributorPrice)) ? Number(distributorPrice).toString() : null) : existingProduct.distributorPrice,
+        price: money.price ?? existingProduct.price,
+        originalPrice: money.originalPrice !== undefined ? money.originalPrice : existingProduct.originalPrice,
+        customerPrice: money.customerPrice !== undefined ? money.customerPrice : existingProduct.customerPrice,
+        retailPrice: money.retailPrice !== undefined ? money.retailPrice : existingProduct.retailPrice,
+        wholesalePrice: money.wholesalePrice !== undefined ? money.wholesalePrice : existingProduct.wholesalePrice,
+        wholesalePrice2: money.wholesalePrice2 !== undefined ? money.wholesalePrice2 : existingProduct.wholesalePrice2,
+        distributorPrice: money.distributorPrice !== undefined ? money.distributorPrice : existingProduct.distributorPrice,
         sku: sku || existingProduct.sku,
         barcode: barcode !== undefined ? barcode : existingProduct.barcode,
         fdaRegNumber:
@@ -177,59 +221,72 @@ const putHandler = withAdminAuth(
         updatedAt: new Date(),
       };
 
-      await db.update(productTable)
-        .set(updatedProduct)
-        .where(eq(productTable.id, params.id));
+      const now = new Date();
+      await db.transaction(async (tx) => {
+        await tx.update(productTable).set(updatedProduct).where(eq(productTable.id, params.id));
 
-      // Finalize reservations: reduce stock by reserved, set reserved to 0, recompute available
-      if (finalizeReservations === true) {
-        const inventory = await db.query.inventoryTable.findFirst({
-          where: eq(inventoryTable.productId, params.id),
-        });
+        const touchesInventory =
+          finalizeReservations === true ||
+          lowStockThreshold !== undefined ||
+          reorderPoint !== undefined ||
+          reorderQuantity !== undefined ||
+          quantityInStock !== undefined ||
+          quantityReserved !== undefined;
+        if (!touchesInventory) return;
 
-        if (inventory) {
-          const newQuantityInStock = Math.max(0, inventory.quantityInStock - inventory.quantityReserved);
-          await db.update(inventoryTable)
-            .set({
-              quantityInStock: newQuantityInStock,
-              quantityReserved: 0,
-              quantityAvailable: newQuantityInStock,
-              updatedAt: new Date(),
-            })
-            .where(eq(inventoryTable.productId, params.id));
+        // Lock the row so a concurrent order confirmation (moveStock) can't
+        // interleave between this read and write and have its deduction lost.
+        const [inventory] = await tx
+          .select()
+          .from(inventoryTable)
+          .where(eq(inventoryTable.productId, params.id))
+          .for("update");
+        if (!inventory) return;
+
+        let nextInStock = inventory.quantityInStock;
+        let nextReserved = inventory.quantityReserved;
+        if (finalizeReservations === true) {
+          nextInStock = inventory.quantityInStock - inventory.quantityReserved;
+          nextReserved = 0;
+        } else {
+          nextInStock = parseCount(quantityInStock) ?? nextInStock;
+          nextReserved = parseCount(quantityReserved) ?? nextReserved;
         }
-      } else if (
-        lowStockThreshold !== undefined ||
-        reorderPoint !== undefined ||
-        reorderQuantity !== undefined ||
-        quantityInStock !== undefined ||
-        quantityReserved !== undefined
-      ) {
-        const inventory = await db.query.inventoryTable.findFirst({
-          where: eq(inventoryTable.productId, params.id),
-        });
 
-        if (inventory) {
-          const nextQuantityInStock =
-            quantityInStock !== undefined ? Math.max(0, Number(quantityInStock) || 0) : inventory.quantityInStock;
-          const nextQuantityReserved =
-            quantityReserved !== undefined ? Math.max(0, Number(quantityReserved) || 0) : inventory.quantityReserved;
-          const nextQuantityAvailable = Math.max(0, nextQuantityInStock - nextQuantityReserved);
-          const increased = nextQuantityInStock > inventory.quantityInStock;
-          await db.update(inventoryTable)
-            .set({
-              lowStockThreshold: lowStockThreshold !== undefined ? lowStockThreshold : inventory.lowStockThreshold,
-              reorderPoint: reorderPoint !== undefined ? reorderPoint : inventory.reorderPoint,
-              reorderQuantity: reorderQuantity !== undefined ? reorderQuantity : inventory.reorderQuantity,
-              quantityInStock: nextQuantityInStock,
-              quantityReserved: nextQuantityReserved,
-              quantityAvailable: nextQuantityAvailable,
-              lastRestocked: increased ? new Date() : inventory.lastRestocked,
-              updatedAt: new Date(),
-            })
-            .where(eq(inventoryTable.productId, params.id));
+        const delta = nextInStock - inventory.quantityInStock;
+        await tx
+          .update(inventoryTable)
+          .set({
+            lowStockThreshold: parseCount(lowStockThreshold) ?? inventory.lowStockThreshold,
+            reorderPoint: parseCount(reorderPoint) ?? inventory.reorderPoint,
+            reorderQuantity: parseCount(reorderQuantity) ?? inventory.reorderQuantity,
+            quantityInStock: nextInStock,
+            quantityReserved: nextReserved,
+            // Not clamped: negative availability (oversold) must stay visible.
+            quantityAvailable: nextInStock - nextReserved,
+            lastRestocked: delta > 0 ? now : inventory.lastRestocked,
+            lastCounted: delta !== 0 ? now : inventory.lastCounted,
+            updatedAt: now,
+          })
+          .where(eq(inventoryTable.id, inventory.id));
+
+        // Keep the stock ledger in step with every manual stock change.
+        if (delta !== 0) {
+          await tx.insert(inventoryTransactionTable).values({
+            id: crypto.randomUUID(),
+            productId: params.id,
+            type: "adjustment",
+            quantity: delta,
+            reason: finalizeReservations === true ? "reservations finalized" : "manual stock edit",
+            reference: "",
+            notes: "",
+            performedBy: adminUser.id,
+            createdAt: now,
+          });
         }
-      }
+      });
+
+      revalidateCatalog();
 
       return NextResponse.json({ 
         message: "Product updated successfully",
@@ -271,6 +328,7 @@ const deleteHandler = withAdminAuth(
 
       // Delete product (inventory will be deleted due to cascade)
       await db.delete(productTable).where(eq(productTable.id, params.id));
+      revalidateCatalog();
 
       return NextResponse.json({ 
         message: "Product deleted successfully",

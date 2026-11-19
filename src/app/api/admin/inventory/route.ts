@@ -4,7 +4,8 @@ import { getAppBaseUrl } from "@/lib/app-url";
 import { withAdminAuth } from "@/lib/admin-middleware";
 import { db } from "@/db";
 import { inventoryTable, inventoryTransactionTable, productTable } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
+import { revalidateCatalog } from "@/lib/products/revalidate";
 import {
   fetchInventoryList,
   fetchInventoryStats,
@@ -227,10 +228,8 @@ const postHandler = withAdminAuth(
           createdBy: adminUser.id,
         };
 
-        await db.insert(productTable).values(newProduct);
-
         const newInventory = {
-          id: `inv-${Date.now()}`,
+          id: crypto.randomUUID(),
           productId: newProduct.id,
           quantityInStock: Math.max(0, initialStock),
           quantityReserved: 0,
@@ -244,7 +243,12 @@ const postHandler = withAdminAuth(
           updatedAt: new Date(),
         };
 
-        await db.insert(inventoryTable).values(newInventory);
+        // Product + its inventory row are created atomically.
+        await db.transaction(async (tx) => {
+          await tx.insert(productTable).values(newProduct);
+          await tx.insert(inventoryTable).values(newInventory);
+        });
+        revalidateCatalog();
 
         return NextResponse.json(
           {
@@ -274,88 +278,86 @@ const postHandler = withAdminAuth(
           );
         }
 
-        if (!Number.isFinite(quantity)) {
+        if (!Number.isInteger(quantity) || quantity === 0) {
           return NextResponse.json(
-            { error: "Quantity must be a finite number" },
+            { error: "Quantity must be a non-zero whole number" },
             { status: 400 },
           );
         }
 
+        const delta =
+          type === "in"
+            ? Math.abs(quantity)
+            : type === "out"
+              ? -Math.abs(quantity)
+              : quantity;
+        const now = new Date();
         const transaction = {
-          id: `trans-${Date.now()}`,
+          id: crypto.randomUUID(),
           productId,
           type,
-          quantity,
+          quantity: delta,
           reason,
           reference: reference || "",
           notes: notes || "",
           performedBy: adminUser.id,
-          createdAt: new Date(),
+          createdAt: now,
         };
 
-        await db.insert(inventoryTransactionTable).values(transaction);
+        // Validate, ledger and stock move in one transaction. The update is a
+        // relative SQL expression, so it composes with concurrent order
+        // confirmations instead of overwriting them.
+        const outcome = await db.transaction(async (tx) => {
+          const [updated] = await tx
+            .update(inventoryTable)
+            .set({
+              quantityInStock: sql`${inventoryTable.quantityInStock} + ${delta}`,
+              quantityAvailable: sql`${inventoryTable.quantityAvailable} + ${delta}`,
+              lastCounted: now,
+              ...(delta > 0 ? { lastRestocked: now } : {}),
+              updatedAt: now,
+            })
+            .where(eq(inventoryTable.productId, productId))
+            .returning({ id: inventoryTable.id });
 
-        const existingInventory = await db.query.inventoryTable.findFirst({
-          where: eq(inventoryTable.productId, productId),
+          if (!updated) {
+            if (delta < 0) return "no-inventory" as const;
+            const product = await tx.query.productTable.findFirst({
+              where: eq(productTable.id, productId),
+              columns: { id: true },
+            });
+            if (!product) return "no-product" as const;
+            await tx.insert(inventoryTable).values({
+              id: crypto.randomUUID(),
+              productId,
+              quantityInStock: delta,
+              quantityReserved: 0,
+              quantityAvailable: delta,
+              lowStockThreshold: 10,
+              reorderPoint: 5,
+              reorderQuantity: 50,
+              lastCounted: now,
+              lastRestocked: now,
+              createdAt: now,
+              updatedAt: now,
+            });
+          }
+
+          await tx.insert(inventoryTransactionTable).values(transaction);
+          return "ok" as const;
         });
 
-        if (!existingInventory && type === "out") {
+        if (outcome === "no-inventory") {
           return NextResponse.json(
-            {
-              error:
-                "Cannot decrease stock for a product with no existing inventory",
-            },
+            { error: "Cannot decrease stock for a product with no existing inventory" },
             { status: 400 },
           );
         }
-
-        if (existingInventory) {
-          let delta = quantity;
-          if (type === "in") {
-            delta = Math.abs(quantity);
-          } else if (type === "out") {
-            delta = -Math.abs(quantity);
-          }
-
-          const newQuantity = existingInventory.quantityInStock + delta;
-          const boundedQuantityInStock = Math.max(0, newQuantity);
-          const newAvailable = Math.max(
-            0,
-            newQuantity - existingInventory.quantityReserved,
-          );
-
-          await db
-            .update(inventoryTable)
-            .set({
-              quantityInStock: boundedQuantityInStock,
-              quantityAvailable: newAvailable,
-              lastCounted: new Date(),
-              lastRestocked:
-                delta > 0 || type === "in"
-                  ? new Date()
-                  : existingInventory.lastRestocked,
-              updatedAt: new Date(),
-            })
-            .where(eq(inventoryTable.productId, productId));
-        } else {
-          const initialQuantity =
-            type === "in" ? Math.max(0, Math.abs(quantity)) : Math.max(0, quantity);
-          await db.insert(inventoryTable).values({
-            id: `inv-${Date.now()}`,
-            productId,
-            quantityInStock: initialQuantity,
-            quantityReserved: 0,
-            quantityAvailable: initialQuantity,
-            lowStockThreshold: 10,
-            reorderPoint: 5,
-            reorderQuantity: 50,
-            lastCounted: new Date(),
-            lastRestocked: initialQuantity > 0 ? new Date() : null,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          });
+        if (outcome === "no-product") {
+          return NextResponse.json({ error: "Product not found" }, { status: 404 });
         }
 
+        revalidateCatalog();
         return NextResponse.json({
           message: "Inventory adjustment successful",
           transaction,
@@ -371,7 +373,6 @@ const postHandler = withAdminAuth(
       return NextResponse.json(
         {
           error: "Failed to process request",
-          details: error instanceof Error ? error.message : String(error),
         },
         { status: 500 },
       );

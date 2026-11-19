@@ -17,7 +17,7 @@ import {
   type StoredWishlistItem,
 } from "@/lib/wishlist-storage";
 
-interface WishlistItem extends StoredWishlistItem {}
+type WishlistItem = StoredWishlistItem;
 
 interface ProductInput {
   id: string | number;
@@ -53,6 +53,7 @@ export const WishlistProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const wishlist = readWishlistFromStorage();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time hydration from localStorage (client-only external store)
     setItems(wishlist);
     hasRestoredRef.current = true;
     setIsHydrated(true);

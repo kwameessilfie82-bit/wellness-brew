@@ -31,7 +31,7 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
   const { denied } = await searchParams;
   const adminUser = await isAdmin();
   if (!adminUser) {
-    redirect("/auth/sign-in?redirect=/admin");
+    redirect("/auth/sign-in?next=/admin");
   }
 
   const perms = adminUser.role?.permissions ?? {};
