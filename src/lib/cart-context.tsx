@@ -13,6 +13,7 @@ import { toast } from "sonner";
 
 import { refreshCartItems } from "@/app/order/cart-actions";
 import { parsePrice } from "@/lib/format";
+import { compareMoney } from "@/lib/orders/money";
 import {
   readCartFromStorage,
   restoreCartAfterAuth,
@@ -80,7 +81,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         const removed = cart.filter((i) => !byId.has(String(i.id))).length;
         const repriced = cart.filter((i) => {
           const p = byId.get(String(i.id));
-          return p && Math.abs(p.price - i.price) > 0.004;
+          return p && compareMoney(p.price, i.price) !== 0;
         });
         setItems((prev) => {
           const next: CartItem[] = [];

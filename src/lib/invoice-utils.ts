@@ -1,3 +1,5 @@
+import { addMoney, lineTotal, round2, subtractMoney } from "@/lib/orders/money"
+
 // Store the current invoice number in localStorage for persistence
 function getCurrentInvoiceNumber(): number {
   if (typeof window !== 'undefined') {
@@ -41,15 +43,15 @@ export function formatDate(date: string): string {
 }
 
 export function calculateLineTotal(price: number, quantity: number): number {
-  return price * quantity
+  return lineTotal(price, quantity)
 }
 
 export function calculateSubtotal(items: { lineTotal: number }[]): number {
-  return items.reduce((sum, item) => sum + item.lineTotal, 0)
+  return addMoney(...items.map((item) => item.lineTotal))
 }
 
 export function calculateTax(subtotal: number, taxRate: number): number {
-  return (subtotal * taxRate) / 100
+  return round2((subtotal * taxRate) / 100)
 }
 
 export function calculateTotal(
@@ -59,6 +61,6 @@ export function calculateTotal(
   customDesignPrinting: number,
   deliveries: number,
 ): number {
-  return subtotal + taxAmount - discount + customDesignPrinting + deliveries
+  return subtractMoney(addMoney(subtotal, taxAmount, customDesignPrinting, deliveries), discount)
 }
   

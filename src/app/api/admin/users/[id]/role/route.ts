@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { withAdminAuth } from "@/lib/admin-middleware";
 import { db } from "@/db";
 import { adminUserTable, adminRoleTable, userTable } from "@/db/schema";
-import { and, count, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
+import { isLastActiveManager, withManagerLock } from "@/lib/admin-manager-guard";
 import { z } from "zod";
 
 const bodySchema = z.object({
@@ -48,88 +49,67 @@ const putHandler = withAdminAuth(
         return NextResponse.json({ error: "User not found" }, { status: 404 });
       }
 
-      // Never demote/remove the last active manager
-      if (role !== "manager") {
-        const [target] = await db
-          .select({ roleName: adminRoleTable.name, isActive: adminUserTable.isActive })
-          .from(adminUserTable)
-          .innerJoin(adminRoleTable, eq(adminUserTable.roleId, adminRoleTable.id))
-          .where(eq(adminUserTable.userId, userId));
-
-        if (target?.roleName === "manager" && target.isActive) {
-          const [{ value: activeManagers }] = await db
-            .select({ value: count() })
-            .from(adminUserTable)
-            .innerJoin(adminRoleTable, eq(adminUserTable.roleId, adminRoleTable.id))
-            .where(and(eq(adminRoleTable.name, "manager"), eq(adminUserTable.isActive, true)));
-
-          if (activeManagers <= 1) {
-            return NextResponse.json(
-              { error: "Cannot demote or remove the last active manager" },
-              { status: 409 }
-            );
-          }
+      // Check + mutation run under one lock so two concurrent demotions
+      // can't both pass the "last manager" check.
+      const outcome = await withManagerLock(async (tx) => {
+        if (role !== "manager" && (await isLastActiveManager(tx, userId))) {
+          return { kind: "last-manager" } as const;
         }
-      }
 
-      // If role is 'none', remove admin privileges
-      if (role === 'none') {
-        await db.delete(adminUserTable)
-          .where(eq(adminUserTable.userId, userId));
+        if (role === "none") {
+          await tx.delete(adminUserTable).where(eq(adminUserTable.userId, userId));
+          return { kind: "removed" } as const;
+        }
 
-        return NextResponse.json({
-          message: "User role removed successfully",
-          role: null
+        const roleRecord = await tx.query.adminRoleTable.findFirst({
+          where: eq(adminRoleTable.name, role),
         });
-      }
+        if (!roleRecord) return { kind: "no-role" } as const;
 
-      // Find the role ID
-      const roleRecord = await db.query.adminRoleTable.findFirst({
-        where: eq(adminRoleTable.name, role),
+        const now = new Date();
+        const existingAdminUser = await tx.query.adminUserTable.findFirst({
+          where: eq(adminUserTable.userId, userId),
+          columns: { id: true },
+        });
+        if (existingAdminUser) {
+          await tx
+            .update(adminUserTable)
+            .set({ roleId: roleRecord.id, updatedAt: now })
+            .where(eq(adminUserTable.userId, userId));
+        } else {
+          await tx.insert(adminUserTable).values({
+            id: `admin-${crypto.randomUUID()}`,
+            userId,
+            roleId: roleRecord.id,
+            isActive: true,
+            // createdBy references the base user id, not the admin_user id.
+            createdBy: adminUser.user?.id ?? null,
+            createdAt: now,
+            updatedAt: now,
+          });
+        }
+        return { kind: "updated", roleRecord } as const;
       });
 
-      if (!roleRecord) {
+      if (outcome.kind === "last-manager") {
         return NextResponse.json(
-          { error: "Role not found" },
-          { status: 404 }
+          { error: "Cannot demote or remove the last active manager" },
+          { status: 409 },
         );
       }
-
-      // Check if user already has an admin role
-      const existingAdminUser = await db.query.adminUserTable.findFirst({
-        where: eq(adminUserTable.userId, userId),
-      });
-
-      if (existingAdminUser) {
-        // Update existing admin role
-        await db.update(adminUserTable)
-          .set({
-            roleId: roleRecord.id,
-            updatedAt: new Date(),
-          })
-          .where(eq(adminUserTable.userId, userId));
-      } else {
-        // Create new admin user record
-        await db.insert(adminUserTable).values({
-          id: `admin-${crypto.randomUUID()}`,
-          userId: userId,
-          roleId: roleRecord.id,
-          isActive: true,
-          // createdBy should reference the base user id, not the admin_user id
-          // Previous line kept for reference:
-          // createdBy: adminUser.id,
-          createdBy: adminUser.user?.id ?? null,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        });
+      if (outcome.kind === "no-role") {
+        return NextResponse.json({ error: "Role not found" }, { status: 404 });
+      }
+      if (outcome.kind === "removed") {
+        return NextResponse.json({ message: "User role removed successfully", role: null });
       }
 
       return NextResponse.json({
         message: "User role updated successfully",
         role: {
-          name: roleRecord.name,
-          description: roleRecord.description || '',
-        }
+          name: outcome.roleRecord.name,
+          description: outcome.roleRecord.description || "",
+        },
       });
     } catch (error) {
       console.error("Error updating user role:", error);

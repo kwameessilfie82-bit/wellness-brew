@@ -7,7 +7,7 @@ import { db } from "@/db";
 import { inventoryTable, orderEventTable, orderItemTable, productTable, storeOrderTable } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { getProductThumbnail, parsePrice } from "@/lib/format";
-import { round2 } from "@/lib/orders/money";
+import { addMoney, compareMoney, sumLines } from "@/lib/orders/money";
 import { normalizePhone } from "@/lib/orders/phone";
 import {
   type ItemProblem,
@@ -151,7 +151,7 @@ export async function placeOrder(raw: unknown): Promise<PlaceOrderResult> {
         continue;
       }
       const price = parsePrice(p.price);
-      if (Math.abs(price - req.seenPrice) >= 0.005) changes.push({ productId, name, was: req.seenPrice, now: price });
+      if (compareMoney(price, req.seenPrice) !== 0) changes.push({ productId, name, was: req.seenPrice, now: price });
       lines.push({ productId, name, sku: p.sku, price, quantity: req.quantity, image: getProductThumbnail(p.images) });
     }
     if (problems.length > 0) {
@@ -161,7 +161,7 @@ export async function placeOrder(raw: unknown): Promise<PlaceOrderResult> {
       return { ok: false, code: "price_changed", error: "Some prices have changed since you added them.", changes };
     }
 
-    const subtotal = round2(lines.reduce((s, l) => s + l.price * l.quantity, 0));
+    const subtotal = sumLines(lines);
     if (subtotal <= 0) return { ok: false, code: "error", error: "Your order total is zero." };
     if (ordering.maxOrderTotal > 0 && subtotal > ordering.maxOrderTotal) {
       return { ok: false, code: "too_large", error: ordering.largeOrderMessage };
@@ -274,7 +274,7 @@ export async function placeOrder(raw: unknown): Promise<PlaceOrderResult> {
     const now = new Date();
     const orderId = crypto.randomUUID();
     const token = newToken();
-    const total = round2(subtotal + deliveryFee);
+    const total = addMoney(subtotal, deliveryFee);
 
     try {
       const orderNumber = await db.transaction(async (tx) => {

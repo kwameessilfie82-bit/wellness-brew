@@ -8,7 +8,7 @@ import { inventoryTable, inventoryTransactionTable, orderItemTable, productTable
 import { hasPermission, isAdmin } from "@/lib/admin-auth";
 import { parsePrice } from "@/lib/format";
 import { waLink } from "@/lib/orders/message";
-import { round2 } from "@/lib/orders/money";
+import { addMoney, compareMoney, paidStatus, round2, subtractMoney, sumLines } from "@/lib/orders/money";
 import { newToken } from "@/lib/orders/server/ids";
 import { syncOrderInvoice } from "@/lib/orders/server/invoices";
 import { listOrders, listStaff, type OrderTab, ORDER_TABS } from "@/lib/orders/server/staff-queries";
@@ -67,6 +67,7 @@ export async function changeOrderStatus(input: {
   note?: string;
   undo?: boolean;
   allowNegativeStock?: boolean;
+  restock?: boolean;
 }): Promise<Result<{ status: OrderStatus }>> {
   const admin = await requireStaff();
   if (!admin) return { ok: false, error: "Not allowed" };
@@ -90,6 +91,8 @@ export async function changeOrderStatus(input: {
         note: input.note?.slice(0, 500),
         undo: input.undo,
         allowNegativeStock: input.allowNegativeStock,
+        restock: input.restock,
+        eventData: input.to === "returned" ? { restocked: input.restock !== false } : undefined,
         patch,
       });
       return r.ok ? ({ ok: true, status: r.status } as const) : ({ ok: false, error: r.error, code: r.code } as Fail);
@@ -132,12 +135,12 @@ export async function recordPayment(input: {
     if (order.paymentStatus === "refund_due" || order.paymentStatus === "refunded") {
       return { ok: false, error: "This order has a refund in progress." } as Fail;
     }
-    const paid = round2(parsePrice(order.amountPaid) + amount);
+    const paid = addMoney(parsePrice(order.amountPaid), amount);
     const total = parsePrice(order.total);
-    if (paid > total + 0.009) {
-      return { ok: false, error: `That's more than the balance due (${round2(total - parsePrice(order.amountPaid))}).` } as Fail;
+    if (compareMoney(paid, total) > 0) {
+      return { ok: false, error: `That's more than the balance due (${subtractMoney(total, parsePrice(order.amountPaid))}).` } as Fail;
     }
-    const paymentStatus = paid + 0.004 >= total ? "paid" : "partially_paid";
+    const paymentStatus = compareMoney(paid, total) >= 0 ? "paid" : "partially_paid";
     const status = isOrderStatus(order.status) ? deriveCompletion(order.status, paymentStatus) : order.status;
     await tx
       .update(storeOrderTable)
@@ -218,7 +221,7 @@ export async function setDeliveryFee(orderId: string, expectedVersion: number, f
     if (!order) return { ok: false, error: "Order not found" } as Fail;
     if (order.version !== expectedVersion) return CONFLICT;
     if (!isOrderStatus(order.status) || !EDITABLE.includes(order.status)) return { ok: false, error: "This order can no longer be edited" } as Fail;
-    const total = round2(parsePrice(order.subtotal) + value);
+    const total = addMoney(parsePrice(order.subtotal), value);
     await tx
       .update(storeOrderTable)
       .set({
@@ -244,8 +247,7 @@ export async function setDeliveryFee(orderId: string, expectedVersion: number, f
 
 function recomputePaymentStatus(current: string, paid: number, total: number): string {
   if (current === "refund_due" || current === "refunded" || current === "pending_verification") return current;
-  if (paid <= 0) return "unpaid";
-  return paid + 0.004 >= total ? "paid" : "partially_paid";
+  return paidStatus(paid, total);
 }
 
 /**
@@ -337,8 +339,8 @@ export async function updateOrderItems(input: {
         image: before.find((b) => b.productId === l.productId)?.image ?? null,
       })),
     );
-    const subtotal = round2(lines.reduce((s, l) => s + l.price * l.quantity, 0));
-    const total = round2(subtotal + parsePrice(order.shipping));
+    const subtotal = sumLines(lines);
+    const total = addMoney(subtotal, parsePrice(order.shipping));
     await tx
       .update(storeOrderTable)
       .set({

@@ -346,6 +346,7 @@ function StatusCard({
   const busy = (k: string) => pending && activeKey === k;
   const [cancelOpen, setCancelOpen] = useState(false);
   const [undoOpen, setUndoOpen] = useState(false);
+  const [returnOpen, setReturnOpen] = useState(false);
   const [reason, setReason] = useState<string>(CANCEL_REASONS[0]);
   const [note, setNote] = useState("");
   const [undoTo, setUndoTo] = useState("");
@@ -356,7 +357,12 @@ function StatusCard({
   const undoTargets = UNDO_TRANSITIONS[status] ?? [];
   const needsFee = fulfilment === "delivery" && !order.deliveryFeeConfirmed;
 
-  function go(key: string, to: string, extra: { reason?: string; note?: string; undo?: boolean } = {}, allowNegativeStock = false) {
+  function go(
+    key: string,
+    to: string,
+    extra: { reason?: string; note?: string; undo?: boolean; restock?: boolean } = {},
+    allowNegativeStock = false,
+  ) {
     run(
       key,
       async () => {
@@ -371,6 +377,7 @@ function StatusCard({
         if (ok) {
           setCancelOpen(false);
           setUndoOpen(false);
+          setReturnOpen(false);
           setNote("");
           setUndoNote("");
         }
@@ -393,7 +400,7 @@ function StatusCard({
                 variant={i === 0 ? "default" : "outline"}
                 disabled={pending || blocked}
                 loading={busy("status:" + s)}
-                onClick={() => go("status:" + s, s)}
+                onClick={() => (s === "returned" ? setReturnOpen(true) : go("status:" + s, s))}
               >
                 {STATUS_ACTIONS[s]}
               </Button>
@@ -442,6 +449,40 @@ function StatusCard({
             </Button>
             <Button type="button" variant="destructive" disabled={pending} loading={busy("cancel")} onClick={() => go("cancel", "cancelled", { reason, note })}>
               Cancel order
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={returnOpen} onOpenChange={(o) => { if (!pending) setReturnOpen(o); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mark {order.orderNumber} as returned?</DialogTitle>
+            <DialogDescription>
+              Can the returned items be sold again? Damaged, opened or used goods should not go back into stock.
+            </DialogDescription>
+          </DialogHeader>
+          <input className={inputCls} placeholder="Note (optional)" value={note} onChange={(e) => setNote(e.target.value)} />
+          <DialogFooter>
+            <Button type="button" variant="outline" disabled={pending} onClick={() => setReturnOpen(false)}>
+              Back
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={pending}
+              loading={busy("return:writeoff")}
+              onClick={() => go("return:writeoff", "returned", { note, restock: false })}
+            >
+              Returned, don&apos;t restock
+            </Button>
+            <Button
+              type="button"
+              disabled={pending}
+              loading={busy("return:restock")}
+              onClick={() => go("return:restock", "returned", { note, restock: true })}
+            >
+              Returned &amp; restock
             </Button>
           </DialogFooter>
         </DialogContent>

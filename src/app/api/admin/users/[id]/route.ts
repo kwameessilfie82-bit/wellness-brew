@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { and, count, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
-import { db } from "@/db";
-import { adminRoleTable, adminUserTable } from "@/db/schema";
+import { adminUserTable } from "@/db/schema";
+import { isLastActiveManager, withManagerLock } from "@/lib/admin-manager-guard";
 import { withAdminAuth } from "@/lib/admin-middleware";
 import { deleteUserCompletely } from "@/lib/queries/users";
 
@@ -19,26 +19,19 @@ const deleteHandler = withAdminAuth(
         );
       }
 
-      // Never delete the last active manager
-      const [target] = await db
-        .select({ roleName: adminRoleTable.name, isActive: adminUserTable.isActive })
-        .from(adminUserTable)
-        .innerJoin(adminRoleTable, eq(adminUserTable.roleId, adminRoleTable.id))
-        .where(eq(adminUserTable.userId, userId));
-
-      if (target?.roleName === "manager" && target.isActive) {
-        const [{ value: activeManagers }] = await db
-          .select({ value: count() })
-          .from(adminUserTable)
-          .innerJoin(adminRoleTable, eq(adminUserTable.roleId, adminRoleTable.id))
-          .where(and(eq(adminRoleTable.name, "manager"), eq(adminUserTable.isActive, true)));
-
-        if (activeManagers <= 1) {
-          return NextResponse.json(
-            { error: "Cannot delete the last active manager" },
-            { status: 409 },
-          );
-        }
+      // Under the manager lock: refuse if this is the last manager, otherwise
+      // revoke admin access first. Auth deletion below calls Supabase (outside
+      // the DB transaction); if it fails, the user is merely left without admin rights.
+      const blocked = await withManagerLock(async (tx) => {
+        if (await isLastActiveManager(tx, userId)) return true;
+        await tx.delete(adminUserTable).where(eq(adminUserTable.userId, userId));
+        return false;
+      });
+      if (blocked) {
+        return NextResponse.json(
+          { error: "Cannot delete the last active manager" },
+          { status: 409 },
+        );
       }
 
       const result = await deleteUserCompletely(userId);
