@@ -213,7 +213,7 @@ export default async function OrderPage({ params, searchParams }: Props) {
               <pre className="mt-3 whitespace-pre-wrap rounded-lg bg-muted p-3 font-sans text-sm">{paymentText}</pre>
             ) : null}
             {order.paymentStatus === "pending_verification" ? (
-              <p className="mt-3 text-sm font-medium text-brand">Thanks! We're checking your payment.</p>
+              <p className="mt-3 text-sm font-medium text-brand">Thanks! We&apos;re checking your payment.</p>
             ) : (
               <PaidForm token={token} />
             )}

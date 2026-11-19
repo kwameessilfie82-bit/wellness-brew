@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 // import { useRouter } from "next/navigation"; // Not used currently
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -8,6 +9,7 @@ import { useState } from "react";
 import { brandLogos } from "@/lib/settings/schemas";
 import { useSiteSettings } from "@/lib/settings/site-settings-context";
 import { signInWithEmail, signInWithGoogle } from "@/lib/auth-client";
+import { safeNextPath } from "@/lib/auth-redirect";
 
 import { prepareDevLogin } from "../dev-login-action";
 import { GoogleIcon } from "@/ui/components/icons/google";
@@ -22,7 +24,7 @@ export function SignInPageClient({ devLogin = false }: { devLogin?: boolean }) {
   const { brand } = useSiteSettings();
   const logos = brandLogos(brand);
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") || "/";
+  const next = safeNextPath(searchParams.get("next"));
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -183,9 +185,9 @@ export function SignInPageClient({ devLogin = false }: { devLogin?: boolean }) {
 
             <div className="mt-6 text-center text-sm text-muted-foreground">
               Don&apos;t have an account?{" "}
-              <a href="/auth/sign-up" className="font-medium text-primary hover:underline">
+              <Link href="/auth/sign-up" className="font-medium text-primary hover:underline">
                 Sign up
-              </a>
+              </Link>
             </div>
 
             <div className="mt-4 text-center text-xs text-muted-foreground">

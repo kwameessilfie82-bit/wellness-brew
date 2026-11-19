@@ -21,7 +21,7 @@ export const adminRoleTable = pgTable("admin_role", {
   permissions: text("permissions").notNull(), // JSON string of permissions
   createdAt: timestamp("created_at").notNull(),
   updatedAt: timestamp("updated_at").notNull(),
-});
+}).enableRLS();
 
 // Admin users table (extends user table)
 export const adminUserTable = pgTable("admin_user", {
@@ -38,7 +38,10 @@ export const adminUserTable = pgTable("admin_user", {
     .references(() => userTable.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").notNull(),
   updatedAt: timestamp("updated_at").notNull(),
-});
+}, (t) => [
+  index("admin_user_role_idx").on(t.roleId),
+  index("admin_user_created_by_idx").on(t.createdBy),
+]).enableRLS();
 
 // Categories table
 export const categoryTable = pgTable("category", {
@@ -54,7 +57,9 @@ export const categoryTable = pgTable("category", {
   createdBy: text("created_by")
     .notNull()
     .references(() => adminUserTable.id, { onDelete: "cascade" }),
-});
+}, (t) => [
+  index("category_created_by_idx").on(t.createdBy),
+]).enableRLS();
 
 // Products table
 export const productTable = pgTable("product", {
@@ -95,7 +100,12 @@ export const productTable = pgTable("product", {
   createdBy: text("created_by")
     .notNull()
     .references(() => adminUserTable.id, { onDelete: "cascade" }),
-});
+}, (t) => [
+  index("product_category_active_created_idx").on(t.categoryId, t.isActive, t.createdAt.desc()),
+  index("product_active_created_idx").on(t.isActive, t.createdAt.desc()),
+  index("product_featured_created_idx").on(t.createdAt.desc()).where(sql`${t.isActive} AND ${t.isFeatured}`),
+  index("product_created_by_idx").on(t.createdBy),
+]).enableRLS();
 
 // Inventory table
 export const inventoryTable = pgTable("inventory", {
@@ -115,7 +125,7 @@ export const inventoryTable = pgTable("inventory", {
   notes: text("notes"),
   createdAt: timestamp("created_at").notNull(),
   updatedAt: timestamp("updated_at").notNull(),
-});
+}).enableRLS();
 
 // Inventory transactions table (for tracking stock movements)
 export const inventoryTransactionTable = pgTable("inventory_transaction", {
@@ -132,7 +142,11 @@ export const inventoryTransactionTable = pgTable("inventory_transaction", {
     .notNull()
     .references(() => adminUserTable.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").notNull(),
-});
+}, (t) => [
+  index("inventory_txn_product_created_idx").on(t.productId, t.createdAt.desc()),
+  index("inventory_txn_created_idx").on(t.createdAt.desc()),
+  index("inventory_txn_performed_by_idx").on(t.performedBy),
+]).enableRLS();
 
 // Product variants table (for different sizes, colors, etc.)
 export const productVariantTable = pgTable("product_variant", {
@@ -148,7 +162,9 @@ export const productVariantTable = pgTable("product_variant", {
   attributes: text("attributes"), // JSON: {size: "L", color: "red"}
   createdAt: timestamp("created_at").notNull(),
   updatedAt: timestamp("updated_at").notNull(),
-});
+}, (t) => [
+  index("product_variant_product_idx").on(t.productId),
+]).enableRLS();
 
 /** Order statuses / channels: see src/lib/orders/status.ts. */
 export const storeOrderTable = pgTable(
@@ -216,12 +232,14 @@ export const storeOrderTable = pgTable(
     uniqueIndex("store_order_public_token_idx").on(t.publicToken),
     uniqueIndex("store_order_rider_token_idx").on(t.riderToken),
     uniqueIndex("store_order_idempotency_key_idx").on(t.idempotencyKey),
+    index("store_order_user_created_idx").on(t.userId, t.createdAt.desc()),
+    index("store_order_assigned_to_idx").on(t.assignedTo),
     index("store_order_status_created_idx").on(t.status, t.createdAt.desc()),
     index("store_order_created_idx").on(t.createdAt.desc()),
     index("store_order_phone_created_idx").on(t.customerPhoneE164, t.createdAt.desc()),
     index("store_order_expiry_idx").on(t.expiresAt).where(sql`${t.status} = 'awaiting_customer'`),
   ],
-);
+).enableRLS();
 
 export const orderItemTable = pgTable("order_item", {
   id: text("id").primaryKey(),
@@ -236,7 +254,9 @@ export const orderItemTable = pgTable("order_item", {
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   quantity: integer("quantity").notNull(),
   image: text("image"),
-});
+}, (t) => [
+  index("order_item_product_idx").on(t.productId),
+]).enableRLS();
 
 // Invoices saved from the admin invoice generator — the source of truth for
 // dashboard sales analytics. Line items snapshot name/price/category so the
@@ -266,7 +286,10 @@ export const invoiceTable = pgTable("invoice", {
     .unique("invoice_order_id_idx")
     .references(() => storeOrderTable.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").notNull(),
-});
+}, (t) => [
+  index("invoice_created_by_idx").on(t.createdBy),
+  index("invoice_date_idx").on(t.invoiceDate),
+]).enableRLS();
 
 export const invoiceItemTable = pgTable("invoice_item", {
   id: text("id").primaryKey(),
@@ -282,7 +305,10 @@ export const invoiceItemTable = pgTable("invoice_item", {
   unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
   quantity: integer("quantity").notNull(),
   lineTotal: decimal("line_total", { precision: 10, scale: 2 }).notNull(),
-});
+}, (t) => [
+  index("invoice_item_invoice_id_idx").on(t.invoiceId),
+  index("invoice_item_product_id_idx").on(t.productId),
+]).enableRLS();
 
 /** Order timeline: status changes, payments, edits, notes and messages. */
 export const orderEventTable = pgTable(
@@ -301,8 +327,11 @@ export const orderEventTable = pgTable(
     customerVisible: boolean("customer_visible").notNull().default(false),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
-  (t) => [index("order_event_order_created_idx").on(t.orderId, t.createdAt)],
-);
+  (t) => [
+    index("order_event_order_created_idx").on(t.orderId, t.createdAt),
+    index("order_event_actor_idx").on(t.actorId),
+  ],
+).enableRLS();
 
 /** Fixed-window rate-limit counters. */
 export const rateLimitTable = pgTable(
@@ -313,4 +342,4 @@ export const rateLimitTable = pgTable(
     windowStart: timestamp("window_start").notNull(),
   },
   (t) => [index("rate_limit_window_idx").on(t.windowStart)],
-);
+).enableRLS();

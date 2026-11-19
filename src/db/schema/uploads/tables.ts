@@ -1,4 +1,4 @@
-import { pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { index, pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 import { userTable } from "../users/tables";
 
@@ -14,4 +14,6 @@ export const uploadsTable = pgTable("uploads", {
   userId: text("user_id")
     .notNull()
     .references(() => userTable.id, { onDelete: "cascade" }),
-});
+}, (t) => [
+  index("uploads_user_idx").on(t.userId),
+]).enableRLS();

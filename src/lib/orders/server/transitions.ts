@@ -1,3 +1,4 @@
+import { paidStatus } from "@/lib/orders/money";
 import "server-only";
 
 import { and, eq, sql } from "drizzle-orm";
@@ -127,6 +128,8 @@ export async function transitionLocked(
     reason?: string;
     note?: string;
     allowNegativeStock?: boolean;
+    /** Returns only: false = goods are damaged/consumed, don't put them back on the shelf. */
+    restock?: boolean;
     patch?: Partial<OrderRow>;
     eventData?: Record<string, unknown>;
   } = {},
@@ -150,8 +153,13 @@ export async function transitionLocked(
     }
     patch.stockDeducted = true;
   } else if (wasHeld && !willHold && order.stockDeducted) {
-    await moveStock(tx, order, 1, actor);
-    patch.stockDeducted = false;
+    if (to === "returned" && opts.restock === false) {
+      // Write-off: stock stays deducted. stockDeducted remains true, so an
+      // undo back to delivered won't deduct the same units a second time.
+    } else {
+      await moveStock(tx, order, 1, actor);
+      patch.stockDeducted = false;
+    }
   }
 
   const ts = TIMESTAMP_FOR[to];
@@ -170,8 +178,7 @@ export async function transitionLocked(
     // Reopening: a refund that wasn't paid out is no longer due.
     patch.cancelReason = null;
     if (order.paymentStatus === "refund_due") {
-      const paid = Number(order.amountPaid);
-      patch.paymentStatus = paid <= 0 ? "unpaid" : paid + 0.004 >= Number(order.total) ? "paid" : "partially_paid";
+      patch.paymentStatus = paidStatus(Number(order.amountPaid), Number(order.total));
     }
   }
   // Keep a pending payment-verification flag; any other flag is resolved by moving the order on.

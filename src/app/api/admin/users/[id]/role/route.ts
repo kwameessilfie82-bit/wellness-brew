@@ -1,84 +1,115 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAdminAuth } from "@/lib/admin-middleware";
 import { db } from "@/db";
-import { adminUserTable, adminRoleTable } from "@/db/schema";
+import { adminUserTable, adminRoleTable, userTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { isLastActiveManager, withManagerLock } from "@/lib/admin-manager-guard";
+import { z } from "zod";
+
+const bodySchema = z.object({
+  role: z.enum(["none", "manager", "admin", "customer"]),
+});
 
 // PUT /api/admin/users/[id]/role - Update user role
 const putHandler = withAdminAuth(
   async (request: NextRequest, adminUser, context?: { params: Record<string, string> }) => {
     try {
-      const body = await request.json();
-      const params = context?.params as { id: string };
-      const { role } = body;
+      let body: unknown;
+      try {
+        body = await request.json();
+      } catch {
+        return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+      }
 
-      if (!role) {
+      const parsed = bodySchema.safeParse(body);
+      if (!parsed.success) {
         return NextResponse.json(
-          { error: "Role is required" },
+          { error: "Invalid role", issues: z.flattenError(parsed.error) },
           { status: 400 }
         );
       }
 
+      const params = context?.params as { id: string };
+      const { role } = parsed.data;
       const userId = params.id;
 
-      // If role is 'none', remove admin privileges
-      if (role === 'none') {
-        await db.delete(adminUserTable)
-          .where(eq(adminUserTable.userId, userId));
-        
-        return NextResponse.json({ 
-          message: "User role removed successfully",
-          role: null 
-        });
-      }
-
-      // Find the role ID
-      const roleRecord = await db.query.adminRoleTable.findFirst({
-        where: eq(adminRoleTable.name, role),
-      });
-
-      if (!roleRecord) {
+      if (adminUser.userId === userId) {
         return NextResponse.json(
-          { error: "Role not found" },
-          { status: 404 }
+          { error: "You cannot change your own role" },
+          { status: 400 }
         );
       }
 
-      // Check if user already has an admin role
-      const existingAdminUser = await db.query.adminUserTable.findFirst({
-        where: eq(adminUserTable.userId, userId),
+      const targetUser = await db.query.userTable.findFirst({
+        where: eq(userTable.id, userId),
+        columns: { id: true },
       });
 
-      if (existingAdminUser) {
-        // Update existing admin role
-        await db.update(adminUserTable)
-          .set({
-            roleId: roleRecord.id,
-            updatedAt: new Date(),
-          })
-          .where(eq(adminUserTable.userId, userId));
-      } else {
-        // Create new admin user record
-        await db.insert(adminUserTable).values({
-          id: `admin-${Date.now()}`,
-          userId: userId,
-          roleId: roleRecord.id,
-          isActive: true,
-          // createdBy should reference the base user id, not the admin_user id
-          // Previous line kept for reference:
-          // createdBy: adminUser.id,
-          createdBy: adminUser.user?.id ?? null,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        });
+      if (!targetUser) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 });
       }
 
-      return NextResponse.json({ 
+      // Check + mutation run under one lock so two concurrent demotions
+      // can't both pass the "last manager" check.
+      const outcome = await withManagerLock(async (tx) => {
+        if (role !== "manager" && (await isLastActiveManager(tx, userId))) {
+          return { kind: "last-manager" } as const;
+        }
+
+        if (role === "none") {
+          await tx.delete(adminUserTable).where(eq(adminUserTable.userId, userId));
+          return { kind: "removed" } as const;
+        }
+
+        const roleRecord = await tx.query.adminRoleTable.findFirst({
+          where: eq(adminRoleTable.name, role),
+        });
+        if (!roleRecord) return { kind: "no-role" } as const;
+
+        const now = new Date();
+        const existingAdminUser = await tx.query.adminUserTable.findFirst({
+          where: eq(adminUserTable.userId, userId),
+          columns: { id: true },
+        });
+        if (existingAdminUser) {
+          await tx
+            .update(adminUserTable)
+            .set({ roleId: roleRecord.id, updatedAt: now })
+            .where(eq(adminUserTable.userId, userId));
+        } else {
+          await tx.insert(adminUserTable).values({
+            id: `admin-${crypto.randomUUID()}`,
+            userId,
+            roleId: roleRecord.id,
+            isActive: true,
+            // createdBy references the base user id, not the admin_user id.
+            createdBy: adminUser.user?.id ?? null,
+            createdAt: now,
+            updatedAt: now,
+          });
+        }
+        return { kind: "updated", roleRecord } as const;
+      });
+
+      if (outcome.kind === "last-manager") {
+        return NextResponse.json(
+          { error: "Cannot demote or remove the last active manager" },
+          { status: 409 },
+        );
+      }
+      if (outcome.kind === "no-role") {
+        return NextResponse.json({ error: "Role not found" }, { status: 404 });
+      }
+      if (outcome.kind === "removed") {
+        return NextResponse.json({ message: "User role removed successfully", role: null });
+      }
+
+      return NextResponse.json({
         message: "User role updated successfully",
         role: {
-          name: roleRecord.name,
-          description: roleRecord.description || '',
-        }
+          name: outcome.roleRecord.name,
+          description: outcome.roleRecord.description || "",
+        },
       });
     } catch (error) {
       console.error("Error updating user role:", error);

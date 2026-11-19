@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAdminAuth } from "@/lib/admin-middleware";
 import { db } from "@/db";
+import { adminUserTable } from "@/db/schema";
+import { desc } from "drizzle-orm";
 
-const handler = withAdminAuth(async () => {
+const handler = withAdminAuth(async (request: NextRequest) => {
   try {
+    const limitParam = Number(request.nextUrl.searchParams.get("limit"));
+    const limit =
+      Number.isInteger(limitParam) && limitParam > 0 ? Math.min(limitParam, 500) : 100;
+
     const adminUsers = await db.query.adminUserTable.findMany({
+      orderBy: desc(adminUserTable.createdAt),
+      limit,
       with: {
         user: true,
         role: true,

@@ -1,5 +1,6 @@
 import {
   boolean,
+  index,
   integer,
   pgTable,
   text,
@@ -24,7 +25,7 @@ export const userTable = pgTable("user", {
   phone: text("phone"),
   twoFactorEnabled: boolean("two_factor_enabled"),
   updatedAt: timestamp("updated_at").notNull(),
-});
+}).enableRLS();
 
 export const sessionTable = pgTable("session", {
   createdAt: timestamp("created_at").notNull(),
@@ -37,7 +38,9 @@ export const sessionTable = pgTable("session", {
   userId: text("user_id")
     .notNull()
     .references(() => userTable.id, { onDelete: "cascade" }),
-});
+}, (t) => [
+  index("session_user_idx").on(t.userId),
+]).enableRLS();
 
 export const verificationTable = pgTable("verification", {
   createdAt: timestamp("created_at"),
@@ -46,7 +49,7 @@ export const verificationTable = pgTable("verification", {
   identifier: text("identifier").notNull(),
   updatedAt: timestamp("updated_at"),
   value: text("value").notNull(),
-});
+}).enableRLS();
 
 export const twoFactorTable = pgTable("two_factor", {
   backupCodes: text("backup_codes").notNull(),
@@ -55,4 +58,6 @@ export const twoFactorTable = pgTable("two_factor", {
   userId: text("user_id")
     .notNull()
     .references(() => userTable.id, { onDelete: "cascade" }),
-});
+}, (t) => [
+  index("two_factor_user_idx").on(t.userId),
+]).enableRLS();

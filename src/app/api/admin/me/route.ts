@@ -17,7 +17,7 @@ export async function GET() {
 
     let adminUser = await getAdminUser(user.id);
 
-    if (!adminUser && isOwnerEmail(user.email)) {
+    if (!adminUser && user.emailVerified && isOwnerEmail(user.email)) {
       await makeUserAdmin(user.id, "manager");
       adminUser = await getAdminUser(user.id);
     }

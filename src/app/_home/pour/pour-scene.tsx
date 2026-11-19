@@ -150,6 +150,7 @@ function Stage({ replay, theme, layout }: { replay: number; theme: Theme; layout
     [],
   );
 
+  // eslint-disable-next-line react-hooks/immutability -- three.js/R3F objects are mutated imperatively inside useFrame
   useFrame((state, rawDt) => {
     const dt = Math.min(rawDt, 0.05); // no jump after a backgrounded tab
     // Let the ingredients land before the pot appears and pours.
@@ -204,11 +205,13 @@ function Stage({ replay, theme, layout }: { replay: number; theme: Theme; layout
     }
     // Liquid in the pot stays level (world-space clip plane) and drains as the cup fills.
     const potLevel = potY + THREE.MathUtils.lerp(POT.liquidFull, POT.liquidEmpty, s.fill) * k;
+    // eslint-disable-next-line react-hooks/immutability -- three.js/R3F objects are mutated imperatively inside useFrame
     potPlane.constant = potLevel;
 
     // ---- tea in the cup
     const level = THREE.MathUtils.lerp(CUP.levelEmpty, CUP.levelFull, s.fill);
     const surfaceY = cupNowY + level * k;
+    // eslint-disable-next-line react-hooks/immutability -- three.js/R3F objects are mutated imperatively inside useFrame
     cupPlane.constant = surfaceY;
     if (cupTea.current) cupTea.current.visible = s.fill > 0.004;
     if (surface.current) {
@@ -255,6 +258,7 @@ function Stage({ replay, theme, layout }: { replay: number; theme: Theme; layout
             nor.setXYZ(kk, ox, oy, sz);
           }
         }
+        // eslint-disable-next-line react-hooks/immutability -- three.js/R3F objects are mutated imperatively inside useFrame
         pos.needsUpdate = true;
         nor.needsUpdate = true;
       }

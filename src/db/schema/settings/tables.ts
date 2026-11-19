@@ -15,7 +15,9 @@ export const siteSettingTable = pgTable("site_setting", {
     onDelete: "set null",
   }),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (t) => [
+  index("site_setting_updated_by_idx").on(t.updatedBy),
+]).enableRLS();
 
 /** Append-only change history for site settings; powers "revert". */
 export const settingAuditTable = pgTable(
@@ -30,5 +32,8 @@ export const settingAuditTable = pgTable(
     }),
     changedAt: timestamp("changed_at").notNull().defaultNow(),
   },
-  (t) => [index("setting_audit_key_changed_at_idx").on(t.key, t.changedAt.desc())],
-);
+  (t) => [
+    index("setting_audit_key_changed_at_idx").on(t.key, t.changedAt.desc()),
+    index("setting_audit_changed_by_idx").on(t.changedBy),
+  ],
+).enableRLS();

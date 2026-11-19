@@ -20,12 +20,12 @@ const getHandler = withAdminAuth(
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
-      // console.error("❌ Status check failed:", error);
+      console.error("Status check failed:", error);
       return NextResponse.json(
         {
           status: "unhealthy",
           database: "disconnected",
-          error: error instanceof Error ? error.message : String(error),
+          error: "Database check failed",
           timestamp: new Date().toISOString(),
         },
         { status: 500 }

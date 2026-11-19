@@ -20,7 +20,7 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
   const adminUser = await isAdmin();
 
   if (!adminUser) {
-    redirect("/auth/sign-in");
+    redirect("/auth/sign-in?next=/admin");
   }
 
   return (

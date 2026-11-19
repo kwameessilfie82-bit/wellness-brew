@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { getRequestOrigin } from "@/lib/app-url";
-import { AUTH_NEXT_COOKIE } from "@/lib/auth-redirect";
+import { AUTH_NEXT_COOKIE, safeNextPath } from "@/lib/auth-redirect";
 import { syncUserFromSupabase } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
@@ -12,7 +12,7 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
   const cookieStore = await cookies();
   const nextFromCookie = cookieStore.get(AUTH_NEXT_COOKIE)?.value;
-  const next = searchParams.get("next") ?? nextFromCookie ?? "/";
+  const next = safeNextPath(searchParams.get("next") ?? nextFromCookie);
 
   if (code) {
     const supabase = await createClient();

@@ -3,6 +3,7 @@ import { Suspense } from "react";
 
 import { SYSTEM_CONFIG } from "@/app";
 import { getCurrentUser } from "@/lib/auth";
+import { safeNextPath } from "@/lib/auth-redirect";
 
 import { SignInPageClient } from "./page.client";
 
@@ -15,7 +16,7 @@ export default async function SignInPage({
   const user = await getCurrentUser();
 
   if (user) {
-    redirect(next && next.startsWith("/") ? next : SYSTEM_CONFIG.redirectAfterSignIn);
+    redirect(safeNextPath(next, SYSTEM_CONFIG.redirectAfterSignIn));
   }
 
   return (

@@ -7,7 +7,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { storeOrderTable } from "@/db/schema";
 import { parsePrice } from "@/lib/format";
-import { round2 } from "@/lib/orders/money";
+import { subtractMoney } from "@/lib/orders/money";
 import { rateLimit } from "@/lib/orders/server/rate-limit";
 import { addEvent, transitionLocked } from "@/lib/orders/server/transitions";
 import { isOrderStatus, TERMINAL } from "@/lib/orders/status";
@@ -91,7 +91,7 @@ export async function riderConfirm(token: string, code: string, cashCollected: b
 
     const patch: Partial<typeof storeOrderTable.$inferInsert> = { deliveryProof: "code" };
     const isCod = order.preferredPayment === "cash_on_delivery";
-    const due = round2(parsePrice(order.total) - parsePrice(order.amountPaid));
+    const due = subtractMoney(parsePrice(order.total), parsePrice(order.amountPaid));
     if (isCod && cashCollected && due > 0 && order.paymentStatus !== "paid") {
       patch.amountPaid = parsePrice(order.total).toFixed(2);
       patch.paymentStatus = "paid";

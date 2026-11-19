@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateCatalog } from "@/lib/products/revalidate";
 import { withAdminAuth } from "@/lib/admin-middleware";
 import { db } from "@/db";
 import { productTable, categoryTable } from "@/db/schema";
@@ -24,7 +25,7 @@ function getCategoryFromName(productName: string): string {
   return "Paper Packs";
 }
 
-const handler = withAdminAuth(async (_request: NextRequest, adminUser) => {
+const handler = withAdminAuth(async () => {
   try {
     // Get all categories
     const categories = await db.query.categoryTable.findMany({
@@ -82,6 +83,7 @@ const handler = withAdminAuth(async (_request: NextRequest, adminUser) => {
       }
     }
 
+    revalidateCatalog();
     return NextResponse.json({
       message: "Product categories updated successfully",
       updated: updatedCount,

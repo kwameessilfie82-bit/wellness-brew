@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Edit, Loader2, Trash2, Search, UserPlus, Shield, UserX } from "lucide-react";
+import { Edit, Trash2, Search, UserPlus, Shield, UserX } from "lucide-react";
 
 import { Button } from "@/ui/primitives/button";
 import { Input } from "@/ui/primitives/input";

@@ -1,9 +1,9 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 
 import { BrewSlideshow, type Slide } from "@/ui/components/brew-slideshow";
-// import Link from "next/link";
 import { useState } from "react";
 
 import { useSiteSettings } from "@/lib/settings/site-settings-context";
@@ -230,9 +230,9 @@ export function SignUpPageClient({ slides = [] }: { slides?: Slide[] }) {
 
               <div className="mt-6 text-center text-sm text-muted-foreground">
                 Already have an account?{" "}
-                <a href="/auth/sign-in" className="font-medium text-primary hover:underline">
+                <Link href="/auth/sign-in" className="font-medium text-primary hover:underline">
                   Sign in
-                </a>
+                </Link>
               </div>
             </CardContent>
           </Card>

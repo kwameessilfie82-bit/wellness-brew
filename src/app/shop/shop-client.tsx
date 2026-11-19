@@ -82,11 +82,13 @@ export function ShopClient({ initial }: { initial: ShopInitialData }) {
       }
   }, [selectedCategory, searchQuery])
 
-  useEffect(() => {
-    // Read search query from URL params
-    const urlSearch = searchParams.get("search") || ""
+  // Keep the search query in step with the URL (derived during render, no effect).
+  const urlSearch = searchParams.get("search") || ""
+  const [seenUrlSearch, setSeenUrlSearch] = useState(urlSearch)
+  if (seenUrlSearch !== urlSearch) {
+    setSeenUrlSearch(urlSearch)
     setSearchQuery(urlSearch)
-  }, [searchParams])
+  }
 
   useEffect(() => {
     const key = `${selectedCategory}|${searchQuery}`
@@ -95,7 +97,7 @@ export function ShopClient({ initial }: { initial: ShopInitialData }) {
       return
     }
     serverFilters.current = null
-    // Reset to page 1 when category or search changes
+    // Reset to page 1 when category or search changes (syncs the list with the products API)
     setProducts([])
     fetchProducts(1, false)
   }, [selectedCategory, searchQuery, fetchProducts])
@@ -111,6 +113,7 @@ export function ShopClient({ initial }: { initial: ShopInitialData }) {
     }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fallback data fetch on mount
     if (initial.categories.length <= 1) fetchCategories()
   }, [initial.categories.length])
 
@@ -181,7 +184,7 @@ export function ShopClient({ initial }: { initial: ShopInitialData }) {
                 <p className="text-sm text-muted-foreground">Search results for:</p>
                 <p className="text-lg font-semibold">&ldquo;{searchQuery}&rdquo;</p>
               </div>
-              <button
+              <button type="button"
                 onClick={() => {
                   setSearchQuery("")
                   const params = new URLSearchParams(searchParams.toString())
@@ -198,7 +201,7 @@ export function ShopClient({ initial }: { initial: ShopInitialData }) {
             <h3 className="text-sm font-semibold text-muted-foreground mb-4">Filter by Category</h3>
             <div className="flex flex-wrap gap-2">
               {categories.map((cat) => (
-                <button
+                <button type="button"
                   key={cat}
                   onClick={() => handleCategoryChange(cat)}
                   className={`px-4 py-2 rounded-lg transition capitalize ${

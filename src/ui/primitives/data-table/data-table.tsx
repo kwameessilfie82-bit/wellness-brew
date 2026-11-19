@@ -46,6 +46,7 @@ export function DataTable<TData, TValue>({
     React.useState<VisibilityState>(initialColumnVisibility ?? {});
   const [rowSelection, setRowSelection] = React.useState({});
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table API is not memoizable; compiler skip is expected
   const table = useReactTable({
     columns,
     data,

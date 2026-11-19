@@ -2,7 +2,7 @@
 
 import { Copy, MessageCircle, Phone, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { toast } from "sonner";
 
 import { useCart } from "@/lib/cart-context";
@@ -12,6 +12,7 @@ import { Input } from "@/ui/primitives/input";
 
 import { customerCancel, customerPaid, customerReceived, logHandoffClick } from "./actions";
 
+const noopSubscribe = () => () => {};
 const WA_GREEN = "bg-[#25D366] text-white hover:bg-[#1ebe5a]";
 
 /** Re-render server data every 30s while visible, and when the tab regains focus. */
@@ -52,7 +53,11 @@ export function HandoffPanel(props: {
   responseTime: string;
   note: string;
 }) {
-  const [mobile, setMobile] = useState<boolean | null>(null);
+  const mobile = useSyncExternalStore(
+    noopSubscribe,
+    () => isMobile(),
+    () => null,
+  );
   const [opening, setOpening] = useState(false);
   const [copying, setCopying] = useState(false);
   const opened = useRef(false);
@@ -65,7 +70,6 @@ export function HandoffPanel(props: {
 
   useEffect(() => {
     const m = isMobile();
-    setMobile(m);
     // Fresh order on a phone: open WhatsApp automatically after a short beat (never on desktop).
     if (props.autoOpen && m && !opened.current) {
       opened.current = true;
@@ -97,7 +101,7 @@ export function HandoffPanel(props: {
     <section className="mt-6 rounded-2xl border-2 border-[#25D366] bg-[#25D366]/5 p-5">
       <h2 className="font-semibold">Last step: send your order on WhatsApp</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        Your order is saved, but we only see it once you send the message. We'll sort out delivery and payment with you there.
+        Your order is saved, but we only see it once you send the message. We&apos;ll sort out delivery and payment with you there.
       </p>
       {opening ? <p className="mt-3 text-sm font-medium">Opening WhatsApp…</p> : null}
       <Button type="button" size="lg" className={`mt-4 h-12 w-full rounded-full text-base ${WA_GREEN}`} loading={opening} onClick={open} data-testid="send-whatsapp">

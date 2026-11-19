@@ -165,21 +165,16 @@ export function EnhancedInventoryManagement({
     setFn(getArr.filter((_, i) => i !== index));
   };
 
-  // Initialize edit images when opening the edit dialog
-  useEffect(() => {
-    if (isEditDialogOpen && editingProduct) {
-      try {
-        const parsed = JSON.parse(editingProduct.images || "[]");
-        if (Array.isArray(parsed)) {
-          setEditProductImages(parsed.length > 0 ? [parsed[0]] : []);
-        } else {
-          setEditProductImages([]);
-        }
-      } catch {
-        setEditProductImages([]);
-      }
+  // Select a product for editing and seed its image preview (done on open, not on every keystroke).
+  const startEditing = (p: Product) => {
+    setEditingProduct(p);
+    try {
+      const parsed = JSON.parse(p.images || "[]");
+      setEditProductImages(Array.isArray(parsed) && parsed.length > 0 ? [parsed[0]] : []);
+    } catch {
+      setEditProductImages([]);
     }
-  }, [isEditDialogOpen, editingProduct]);
+  };
 
   const fetchCategories = useCallback(async () => {
     try {
@@ -400,7 +395,6 @@ export function EnhancedInventoryManagement({
     try {
       setIsUpdating(true);
       const url = `/api/admin/inventory/${editingProduct.id}`;
-      console.log('🔍 Updating product at URL:', url);
       const response = await fetch(url, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -440,7 +434,6 @@ export function EnhancedInventoryManagement({
     try {
       setRowAction("delete:" + productId);
       const url = `/api/admin/inventory/${productId}`;
-      console.log('🔍 Deleting product at URL:', url);
       const response = await fetch(url, {
         method: 'DELETE',
       });
@@ -709,6 +702,7 @@ export function EnhancedInventoryManagement({
                 <div className="grid grid-cols-1 gap-2">
                   <div className="relative group aspect-square rounded overflow-hidden border">
                     {newProductImages[0] && (newProductImages[0].startsWith('data:') || newProductImages[0].startsWith('blob:')) ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- admin preview of data-URL image
                       <img alt="New product image" className="h-full w-full object-cover" src={newProductImages[0]} />
                     ) : (
                       <FallbackImage src={newProductImages[0] || "/placeholder.svg"} alt="New product image" className="object-cover" fill sizes="(max-width: 768px) 100vw, 600px" />
@@ -926,6 +920,7 @@ export function EnhancedInventoryManagement({
                   <div className="grid grid-cols-1 gap-2">
                     <div className="relative group aspect-square rounded overflow-hidden border">
                       {editProductImages[0] && (editProductImages[0].startsWith('data:') || editProductImages[0].startsWith('blob:')) ? (
+                        // eslint-disable-next-line @next/next/no-img-element -- admin preview of data-URL image
                         <img alt="Product image" className="h-full w-full object-cover" src={editProductImages[0]} />
                       ) : (
                         <FallbackImage src={editProductImages[0] || "/placeholder.svg"} alt="Product image" className="object-cover" fill sizes="(max-width: 768px) 100vw, 600px" />
@@ -1288,12 +1283,12 @@ export function EnhancedInventoryManagement({
                               );
                               if (res.ok) {
                                 const data = await res.json();
-                                setEditingProduct(data.product ?? product);
+                                startEditing(data.product ?? product);
                               } else {
-                                setEditingProduct(product);
+                                startEditing(product);
                               }
                             } catch {
-                              setEditingProduct(product);
+                              startEditing(product);
                             } finally {
                               setRowAction(null);
                             }

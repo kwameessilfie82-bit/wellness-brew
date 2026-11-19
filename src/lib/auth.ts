@@ -165,7 +165,9 @@ export async function syncUserFromSupabase(
     updatedAt: now,
   };
 
-  if (!existing && supabaseUser.email) {
+  // Only re-link a legacy row by email once Supabase has verified the address;
+  // otherwise anyone signing up with a victim's email could take over the row.
+  if (!existing && supabaseUser.email && supabaseUser.email_confirmed_at) {
     const existingByEmail = await db.query.userTable.findFirst({
       where: eq(userTable.email, supabaseUser.email),
     });

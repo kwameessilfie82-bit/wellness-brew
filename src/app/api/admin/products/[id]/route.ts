@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateCatalog } from "@/lib/products/revalidate";
 import { withAdminAuth } from "@/lib/admin-middleware";
 import { db } from "@/db";
 import { productTable } from "@/db/schema";
@@ -112,6 +113,7 @@ const putHandler = withAdminAuth(
         .set(updatedProduct)
         .where(eq(productTable.id, params.id));
 
+      revalidateCatalog();
       return NextResponse.json({ product: updatedProduct });
     } catch (error) {
       console.error("Error updating product:", error);
@@ -148,6 +150,7 @@ const deleteHandler = withAdminAuth(
       await db.delete(productTable)
         .where(eq(productTable.id, params.id));
 
+      revalidateCatalog();
       return NextResponse.json({ message: "Product deleted successfully" });
     } catch (error) {
       console.error("Error deleting product:", error);

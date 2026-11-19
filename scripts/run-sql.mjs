@@ -9,7 +9,10 @@ import postgres from "postgres";
 // Local overrides first (.env.local), then .env — same order as drizzle.config.ts.
 config({ path: [".env.local", ".env"] });
 
-const file = process.argv[2];
+const args = process.argv.slice(2);
+// --tx: run the whole file as one transaction (atomic; supports DO $$ blocks).
+const wholeFileTx = args.includes("--tx");
+const file = args.find((a) => !a.startsWith("--"));
 if (!file) {
   console.error("Usage: node scripts/run-sql.mjs <path-to.sql>");
   process.exit(1);
@@ -42,9 +45,14 @@ const db = postgres(url, {
   idle_timeout: 20,
 });
 
-const statements = splitStatements(readFileSync(file, "utf8"));
+const source = readFileSync(file, "utf8");
+const statements = wholeFileTx ? [] : splitStatements(source);
 
 try {
+  if (wholeFileTx) {
+    await db.begin((tx) => tx.unsafe(source));
+    console.log("OK (single transaction):", file);
+  }
   for (const statement of statements) {
     try {
       await db.unsafe(`${statement};`);
