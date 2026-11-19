@@ -1,4 +1,6 @@
 -- 0011: lock down the Data API + index every foreign key / hot filter.
+-- Contains a DO block: apply with `npm run db:migrate-0011` (runs the whole
+-- file in ONE transaction, so it applies fully or not at all).
 --
 -- SECURITY: Supabase exposes the `public` schema through PostgREST, and the
 -- anon key ships to every browser. Until now RLS was off and anon/authenticated
@@ -8,26 +10,26 @@
 -- which bypasses RLS, so enabling RLS with NO policies denies the Data API
 -- while leaving the app untouched.
 
-ALTER TABLE "admin_role"            ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "admin_user"            ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "category"              ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "inventory"             ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "inventory_transaction" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "invoice"               ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "invoice_item"          ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "order_event"           ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "order_item"            ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "product"               ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "product_variant"       ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "rate_limit"            ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "session"               ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "setting_audit"         ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "site_setting"          ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "store_order"           ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "two_factor"            ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "uploads"               ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "user"                  ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "verification"          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "admin_role"            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "admin_user"            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "category"              ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "inventory"             ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "inventory_transaction" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "invoice"               ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "invoice_item"          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "order_event"           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "order_item"            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "product"               ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "product_variant"       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "rate_limit"            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "session"               ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "setting_audit"         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "site_setting"          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "store_order"           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "two_factor"            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "uploads"               ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "user"                  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "verification"          ENABLE ROW LEVEL SECURITY;
 
 -- Defence in depth: the Data API roles get no table privileges at all.
 REVOKE ALL ON ALL TABLES IN SCHEMA public FROM anon, authenticated;
@@ -65,7 +67,13 @@ CREATE INDEX IF NOT EXISTS "admin_user_role_idx" ON "admin_user" ("role_id");
 CREATE INDEX IF NOT EXISTS "admin_user_created_by_idx" ON "admin_user" ("created_by");
 CREATE INDEX IF NOT EXISTS "session_user_idx" ON "session" ("user_id");
 CREATE INDEX IF NOT EXISTS "two_factor_user_idx" ON "two_factor" ("user_id");
-CREATE INDEX IF NOT EXISTS "uploads_user_idx" ON "uploads" ("user_id");
+-- `uploads` doesn't exist in every environment (absent in production).
+DO $$
+BEGIN
+  IF to_regclass('public.uploads') IS NOT NULL THEN
+    CREATE INDEX IF NOT EXISTS "uploads_user_idx" ON "uploads" ("user_id");
+  END IF;
+END $$;
 CREATE INDEX IF NOT EXISTS "site_setting_updated_by_idx" ON "site_setting" ("updated_by");
 CREATE INDEX IF NOT EXISTS "setting_audit_changed_by_idx" ON "setting_audit" ("changed_by");
 
